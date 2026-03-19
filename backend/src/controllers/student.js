@@ -5,7 +5,7 @@ import { User } from "../models/index.js";
 export const getMyProfile = async (req, res) => {
     try {
         const student = await User.findByPk(req.user.id, {
-            attributes: ['id', 'firstName', 'lastName', 'email', 'profileImage', 'role', 'createdAt']
+            attributes: ['id', 'firstName', 'lastName', 'email', 'phoneNumber', 'street', 'city', 'profileImage', 'role', 'createdAt']
         });
 
         if (!student) {

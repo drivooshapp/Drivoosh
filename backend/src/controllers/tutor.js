@@ -26,7 +26,7 @@ export const getMyProfile = async (req, res) => {
             where: { userId: req.user.id },
             include: [{
                 model: User,
-                attributes: ['firstName', 'lastName', 'email', 'profileImage', 'role']
+                attributes: ['firstName', 'lastName', 'email', 'street', 'city', 'phoneNumber', 'profileImage', 'role']
             }]
         });
 

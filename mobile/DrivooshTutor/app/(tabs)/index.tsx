@@ -1,12 +1,12 @@
-import { StyleSheet, View, Text } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Drivoosh is live!</ThemedText>
+        <ThemedText type="title">Drivoosh for tutor is live!</ThemedText>
       </ThemedView>
       
       {/* כאן תתחילי להוסיף את הרכיבים שלך */}

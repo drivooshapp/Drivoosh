@@ -3,11 +3,7 @@ import sequelize from '../config/db.js';
 
 
 const Tutor = sequelize.define('Tutor', {
-    userId: {
-        type: DataTypes.UUID,
-        allowNull: false,
-        unique: true
-    },
+    userId: { type: DataTypes.UUID, allowNull: false, unique: true },
     carModel: { type: DataTypes.STRING },
     gearbox: { type: DataTypes.ENUM('manual', 'automatic') },
     pricePerLesson: { type: DataTypes.INTEGER },

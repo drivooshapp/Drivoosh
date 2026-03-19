@@ -6,7 +6,7 @@ export default function HomeScreen() {
   return (
     <ThemedView style={styles.container}>
       <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Drivoosh is live!</ThemedText>
+        <ThemedText type="title">Drivoosh for student is live!</ThemedText>
       </ThemedView>
       
       {/* כאן תתחילי להוסיף את הרכיבים שלך */}
