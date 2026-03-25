@@ -14,13 +14,11 @@ const GoogleLogo = () => (
   </Svg>
 );
 
-export default function LoginScreen({ navigation }: any) {
+export default function LoginScreen({ navigation, onLoginSuccess }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
-    // navigation.navigate('Profile');
-
     if (!email || !password) {
       Alert.alert('שגיאה', 'נא למלא את כל השדות');
       return;
@@ -28,11 +26,9 @@ export default function LoginScreen({ navigation }: any) {
 
     try {
       const response = await apiClient.post('/user/login', { email, password });
-      const token = response?.data?.token;
-      const user = response?.data?.user;
-      const firstName = user?.firstName;
+      const { token, user } = response.data;
+      const { firstName, isSetupComplete } = user;
       const role = user?.role;
-      const isSetupComplete = user?.isSetupComplete;
 
       if (!token || !firstName) {
         console.log('ERROR: token או firstName לא התקבלו מהשרת', response.data);
@@ -46,17 +42,15 @@ export default function LoginScreen({ navigation }: any) {
 
       await AsyncStorage.setItem('userToken', token);
       await AsyncStorage.setItem('userName', firstName);
+      await AsyncStorage.setItem('isSetupComplete', String(isSetupComplete));
 
       const storedName = await AsyncStorage.getItem('userName');
       alert("התחברת בהצלחה! " + storedName);
       Alert.alert('הצלחה', 'התחברת בהצלחה');
 
-      if (!isSetupComplete) {
-        Alert.alert('פעולה נדרשת', 'התחברת בהצלחה. כדי לאפשר גישה מלאה לאפליקציה, יש להשלים את פרטי הפרופיל.');
-        navigation.navigate('Profile');
+      if (onLoginSuccess) {
+        await onLoginSuccess();
       }
-      else
-        navigation.navigate('Home');
 
     } catch (error: any) {
       console.log("Error details:", error.response?.data || error.message);
@@ -74,10 +68,8 @@ export default function LoginScreen({ navigation }: any) {
       >
         <View style={styles.content}>
 
-          <View style={styles.header}>
-            <Text style={styles.brandName}>Drivoosh</Text>
-            <Text style={styles.title}>התחברות</Text>
-          </View>
+          <Text style={styles.brandName}>DRIVOOSH</Text>
+          <Text style={styles.title}>התחברות</Text>
 
           <View style={styles.form}>
 
@@ -145,14 +137,13 @@ export default function LoginScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' }, inner: { flex: 1 }, content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
-  header: { marginBottom: 40, alignItems: 'flex-end' },
-  brandName: { fontSize: 34, fontWeight: '700', color: '#00C2E8', marginBottom: 6 },
-  title: { fontSize: 22, fontWeight: '500', color: '#111' },
+  brandName: { fontSize: 25, textAlign: 'center', fontWeight: '700', color: '#0197b5', marginBottom: 6 },
+  title: { fontSize: 20, fontWeight: '500', marginBottom: 10, marginTop: 40, alignItems: 'flex-end', color: '#111' },
   form: { width: '100%' },
   inputContainer: { marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginBottom: 6, textAlign: 'right' },
   input: { height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
-  button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+  button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   socialContainer: { marginTop: 40, alignItems: 'center' },
   dividerContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, width: '100%' },

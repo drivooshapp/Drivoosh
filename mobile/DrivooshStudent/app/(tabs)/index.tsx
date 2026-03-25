@@ -9,7 +9,6 @@ export default function HomeScreen() {
         <ThemedText type="title">Drivoosh for student is live!</ThemedText>
       </ThemedView>
       
-      {/* כאן תתחילי להוסיף את הרכיבים שלך */}
       <View style={styles.content}>
         <Text style={{ color: 'gray' }}>Welcome to your new app.</Text>
       </View>

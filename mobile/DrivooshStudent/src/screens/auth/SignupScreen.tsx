@@ -38,10 +38,8 @@ export default function SignupScreen({ navigation }: any) {
 
                 <View style={styles.content}>
 
-                    <View style={styles.header}>
-                        <Text style={styles.brandName}>Drivoosh</Text>
-                        <Text style={styles.title}>יצירת חשבון</Text>
-                    </View>
+                    <Text style={styles.brandName}>DRIVOOSH</Text>
+                    <Text style={styles.title}>יצירת חשבון</Text>
 
                     <View style={styles.form}>
 
@@ -125,14 +123,12 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#FFFFFF' },
     inner: { flexGrow: 1, justifyContent: 'center' },
     content: { paddingHorizontal: 24 },
-    header: { marginBottom: 40, alignItems: 'flex-end' },
-    brandName: { fontSize: 34, fontWeight: '700', color: '#00C2E8', marginBottom: 6 },
-    title: { fontSize: 22, fontWeight: '500', color: '#111' },
-    form: { width: '100%' },
+    brandName: { fontSize: 25, textAlign: 'center', fontWeight: '700', color: '#0197b5', marginBottom: 6 },
+    title: { fontSize: 20, fontWeight: '500', marginBottom: 10, marginTop: 20, alignItems: 'flex-end', color: '#111' }, form: { width: '100%' },
     inputContainer: { marginBottom: 16 },
     label: { fontSize: 13, color: '#666', marginBottom: 6, textAlign: 'right' },
     input: { height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
-    button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 20 },
+    button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
     linkContainer: { marginTop: 30, alignItems: 'center' },
     linkText: { fontSize: 14, color: '#888' },
