@@ -1,11 +1,11 @@
 import express from 'express';
-import { authenticate } from '../middleware/auth.js';
-import { createBooking, getMyBookings, updateBookingStatus, cancelBooking, completeBooking } from '../controllers/bookingController.js';
+import { authenticate } from "../middleware/authMiddleware.js";
+import { createBooking, getMyBookings, updateBookingStatus, cancelBooking, completeBooking } from '../controllers/booking.js';
 
 
 const router = express.Router();
 
-router.post("/newBooking", authenticate, createBooking);
+router.post("/:studentId/newBooking", authenticate, createBooking);
 router.get("/myHistory", authenticate, getMyBookings);
 router.patch("/status", authenticate, updateBookingStatus);
 router.patch("/:bookingId/cancel", authenticate, cancelBooking);

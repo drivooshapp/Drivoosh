@@ -4,7 +4,7 @@ import { Op } from 'sequelize';
 
 export const createBooking = async (req, res) => {
     try {
-        const { tutorId, dateTime, pickupLocation, duration } = req.body;
+        const { lessonDate, startTime, tutorId, pickupLocation, notes } = req.body;
         const studentId = req.user.id;
 
         const tutor = await Tutor.findByPk(tutorId);
@@ -13,9 +13,11 @@ export const createBooking = async (req, res) => {
         const newBooking = await Booking.create({
             studentId,
             tutorId,
-            dateTime,
+            lessonDate,
             pickupLocation,
-            duration: duration || 40,
+            startTime,
+            endTime: startTime - lessonDuration,
+            notes,
             priceAtBooking: tutor.pricePerLesson,
             status: 'pending'
         });
@@ -49,16 +51,16 @@ export const getMyBookings = async (req, res) => {
             where: whereCondition,
             include: [
                 { model: User, as: 'student', attributes: ['firstName', 'lastName', 'phoneNumber'] },
-                { 
-                    model: Tutor, 
-                    include: [{ model: User, attributes: ['firstName', 'lastName'] }] 
+                {
+                    model: Tutor,
+                    include: [{ model: User, attributes: ['firstName', 'lastName'] }]
                 }
             ],
             order: [['dateTime', 'ASC']]
         });
 
         res.status(200).json(bookings);
-        
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: "שגיאה בשליפת הזמנות" });

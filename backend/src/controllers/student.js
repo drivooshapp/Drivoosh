@@ -22,7 +22,7 @@ export const getMyProfile = async (req, res) => {
 
 export const updateStudentProfile = async (req, res) => {
     try {
-        const { firstName, lastName, profileImage } = req.body;
+        const { firstName, lastName, phoneNumber, city, street, profileImage } = req.body;
         const userId = req.user.id;
 
         const user = await User.findByPk(userId);
@@ -31,11 +31,21 @@ export const updateStudentProfile = async (req, res) => {
             return res.status(404).json({ message: "משתמש לא נמצא" });
         }
 
-        if (firstName) user.firstName = firstName;
-        if (lastName) user.lastName = lastName;
-        if (profileImage) user.profileImage = profileImage;
+        if (firstName !== undefined) user.firstName = firstName;
+        if (lastName !== undefined) user.lastName = lastName;
+        if (phoneNumber !== undefined) user.phoneNumber = phoneNumber || user.phoneNumber;
+        if (city !== undefined) user.city = city;
+        if (street !== undefined) user.street = street;
+        if (profileImage !== undefined) user.profileImage = profileImage;
 
-        user.isSetupComplete = true;
+        const isAllFieldsFull =
+            user.firstName?.trim() &&
+            user.lastName?.trim() &&
+            user.phoneNumber?.trim() &&
+            user.city?.trim() &&
+            user.street?.trim();
+
+        user.isSetupComplete = !!isAllFieldsFull;
 
         await user.save();
 
@@ -45,6 +55,9 @@ export const updateStudentProfile = async (req, res) => {
                 id: user.id,
                 firstName: user.firstName,
                 lastName: user.lastName,
+                phoneNumber: user.phoneNumber,
+                city: user.city,
+                street: user.street,
                 email: user.email,
                 profileImage: user.profileImage,
                 isSetupComplete: user.isSetupComplete

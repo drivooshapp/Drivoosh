@@ -29,6 +29,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
       const { token, user } = response.data;
       const { firstName, isSetupComplete } = user;
       const role = user?.role;
+      const currentUserId = user?.id;
 
       if (!token || !firstName) {
         console.log('ERROR: token או firstName לא התקבלו מהשרת', response.data);
@@ -38,10 +39,12 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
 
       if (role === 'tutor') {
         Alert.alert('אין הרשאה', 'הגישה לאפליקציה זו מוגבלת לתלמידים בלבד. החשבון שלך מזוהה כמורה. אנא התחבר דרך אפליקציית המורים.');
+        return;
       }
 
       await AsyncStorage.setItem('userToken', token);
       await AsyncStorage.setItem('userName', firstName);
+      await AsyncStorage.setItem('currentUserId', currentUserId);
       await AsyncStorage.setItem('isSetupComplete', String(isSetupComplete));
 
       const storedName = await AsyncStorage.getItem('userName');

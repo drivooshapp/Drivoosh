@@ -1,16 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Alert } from 'react-native';
+import { View, ActivityIndicator, Text, Image } from 'react-native';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import 'react-native-gesture-handler';
-
 import HomeScreen from './src/screens/auth/HomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import ProfileScreen from './src/screens/auth/ProfileScreen';
 import SignupScreen from './src/screens/auth/SignupScreen';
+import NewBooking from './src/screens/main/BookingScreen';
+import PaymentsScreen from './src/screens/main/PaymentsScreen';
+import SearchTutors from './src/screens/main/SearchTutors';
+import MessagesScreen from './src/screens/main/MessagesScreen';
+
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -23,8 +27,8 @@ function CustomDrawerContent(props: any) {
       <View style={{ marginTop: 'auto', borderTopWidth: 1, borderTopColor: '#eee' }}>
         <DrawerItem
           label="התנתקות"
-          labelStyle={{ color: '#cf2d24', textAlign: 'right', fontWeight: '600', fontSize: 16 }}
-          icon={() => <Ionicons name="log-out-outline" size={22} color="#FF3B30" />}
+          labelStyle={{ color: '#348d9f', textAlign: 'right', fontWeight: '600', fontSize: 14 }}
+          icon={() => <Ionicons name="log-out-outline" size={22} color="#348d9f" />}
           onPress={() => {
             props.onLogout();
           }}
@@ -34,14 +38,40 @@ function CustomDrawerContent(props: any) {
   );
 }
 
-function DrawerNavigator({ onLogout }: any) {
+function DrawerNavigator({ onLogout, userData }: any) {
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} onLogout={onLogout} />}
       screenOptions={{
-        // drawerPosition: 'right',
         headerTitleAlign: 'center',
-        drawerActiveTintColor: '#02a4c5',
+        drawerActiveTintColor: '#42909f',
+        drawerItemStyle: {
+          borderRadius: 15,
+          marginVertical: 7,
+        },
+        headerRight: () => (
+          <View style={{ marginRight: 15 }}>
+            {userData?.image ? (
+              <Image
+                source={{ uri: userData.image }}
+                style={{ width: 30, height: 30, borderRadius: 17.5 }}
+              />
+            ) : (
+              <View style={{
+                width: 30,
+                height: 30,
+                borderRadius: 17.5,
+                backgroundColor: '#558892',
+                justifyContent: 'center',
+                alignItems: 'center'
+              }}>
+                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
+                  {userData?.name ? userData.name.charAt(0).toUpperCase() : '?'}
+                </Text>
+              </View>
+            )}
+          </View>
+        ),
       }}
     >
       <Drawer.Screen
@@ -62,6 +92,53 @@ function DrawerNavigator({ onLogout }: any) {
           drawerIcon: ({ color }) => <Ionicons name="person-outline" size={22} color={color} />
         }}
       />
+      <Drawer.Screen
+        name="NewBooking"
+        component={NewBooking}
+        options={{
+          title: 'שיעור חדש',
+          drawerLabel: 'שיעור חדש',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="calendar-outline" size={22} color={color} />
+          )
+        }}
+      />
+
+      <Drawer.Screen
+        name="SearchTutors"
+        component={SearchTutors}
+        options={{
+          title: 'סינון מורים',
+          drawerLabel: 'סינון מורים',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="search-outline" size={22} color={color} />
+          )
+        }}
+      />
+
+      <Drawer.Screen
+        name="Payments"
+        component={PaymentsScreen}
+        options={{
+          title: 'תשלומים',
+          drawerLabel: 'תשלומים',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="card-outline" size={22} color={color} />
+          )
+        }}
+      />
+
+      <Drawer.Screen
+        name="Messages"
+        component={MessagesScreen}
+        options={{
+          title: 'הודעות מהמורה',
+          drawerLabel: 'הודעות מהמורה',
+          drawerIcon: ({ color }) => (
+            <Ionicons name="chatbubble-outline" size={22} color={color} />
+          )
+        }}
+      />
     </Drawer.Navigator>
   );
 }
@@ -70,15 +147,21 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState<string | null>(null);
   const [isSetupComplete, setIsSetupComplete] = useState<boolean>(false);
+  const [userName, setUserName] = useState<string | null>(null);
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const checkLoginStatus = async () => {
     try {
       // await AsyncStorage.clear(); // ניקוי נתוני המשתמש
       const token = await AsyncStorage.getItem('userToken');
       const setupStatus = await AsyncStorage.getItem('isSetupComplete');
+      const name = await AsyncStorage.getItem('userName');
+      const image = await AsyncStorage.getItem('profileImage');
 
       setUserToken(token);
       setIsSetupComplete(setupStatus === 'true');
+      setUserName(name);
+      setProfileImage(image);
     } catch (e) {
       console.error("טעות בטעינת נתוני AsyncStorage", e);
     } finally {
@@ -126,7 +209,8 @@ export default function App() {
             </Stack.Screen>
           ) : (
             <Stack.Screen name="MainApp">
-              {(props) => <DrawerNavigator {...props} onLogout={handleLogout} />}
+              {(props) => <DrawerNavigator {...props} onLogout={handleLogout}
+                userData={{ name: userName, image: profileImage }} />}
             </Stack.Screen>
           )}
 

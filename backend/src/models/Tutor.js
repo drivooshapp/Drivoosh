@@ -7,6 +7,7 @@ const Tutor = sequelize.define('Tutor', {
     carModel: { type: DataTypes.STRING },
     gearbox: { type: DataTypes.ENUM('manual', 'automatic') },
     pricePerLesson: { type: DataTypes.INTEGER },
+    lessonDuration: { type: DataTypes.INTEGER },
     experienceYears: { type: DataTypes.INTEGER },
     bio: { type: DataTypes.TEXT }
 });

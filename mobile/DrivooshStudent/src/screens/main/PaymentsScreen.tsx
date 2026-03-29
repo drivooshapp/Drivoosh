@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function SearchTutors() {
+export default function PaymentsScreen() {
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>סינון מורים</Text>
+      <Text style={styles.text}>תשלומים</Text>
     </View>
   );
 }
