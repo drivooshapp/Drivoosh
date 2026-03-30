@@ -23,7 +23,7 @@ interface InputFieldProps {
     editable?: boolean;
 }
 
-const ProfileScreen: React.FC<any> = ({ onSetupComplete }) => {
+const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isModalVisible, setModalVisible] = useState(false);
     const [tempProfile, setTempProfile] = useState<any>({});
@@ -45,6 +45,36 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete }) => {
         } finally {
             setFetching(false);
         }
+    };
+
+    const handleDeleteAccount = () => {
+        Alert.alert(
+            "מחיקת חשבון",
+            "האם אתה בטוח שברצונך למחוק את החשבון? פעולה זו היא בלתי הפיכה וכל הנתונים יימחקו.",
+            [
+                { text: "ביטול", style: "cancel" },
+                {
+                    text: "מחק חשבון",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            setLoading(true);
+                            await apiClient.delete('/user/deleteAccount');
+                            await AsyncStorage.multiRemove(['userToken', 'userName', 'isSetupComplete', 'profileImage']);
+                            console.log("החשבון נמחק", "חשבונך הוסר בהצלחה.")
+                            Alert.alert("החשבון נמחק", "חשבונך הוסר בהצלחה.");
+
+                            if (onLogout) onLogout();
+                        } catch (error) {
+                            console.log(error)
+                            Alert.alert("שגיאה", "לא ניתן היה למחוק את החשבון כרגע.");
+                        } finally {
+                            setLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const handleSave = async () => {
@@ -174,6 +204,13 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete }) => {
                     <InputField label="רחוב" value={profile.street || ''} editable={false} />
                 </View>
 
+                <View style={styles.footerSection}>
+                    <TouchableOpacity style={styles.deleteAccountBtn} onPress={handleDeleteAccount}>
+                        <Ionicons name="trash-outline" size={18} color="#FF4A4A" />
+                        <Text style={styles.deleteAccountText}>מחיקת חשבון לצמיתות</Text>
+                    </TouchableOpacity>
+                </View>
+
             </ScrollView>
         </KeyboardAvoidingView>
     );
@@ -202,8 +239,8 @@ const styles = StyleSheet.create({
     imageSection: { alignItems: 'center', marginVertical: 20 },
     imageContainer: { position: 'relative' },
     profileImage: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#00C2E8' },
-    initialsContainer: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#fff' },
-    initialsText: { color: '#fff', fontSize: 45, fontWeight: 'bold' },
+    initialsContainer: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#fff', overflow: 'hidden' },
+    initialsText: { color: '#fff', fontSize: 45, fontWeight: 'bold', textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center', paddingBottom: 5, lineHeight: 55 },
     cameraIconBadge: { position: 'absolute', right: 0, bottom: 5, backgroundColor: '#fff', borderRadius: 15, padding: 6, elevation: 3 },
     actionButtonsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 30 },
     outlineButton: { borderWidth: 1, borderColor: '#00C2E8', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 25 },
@@ -221,7 +258,25 @@ const styles = StyleSheet.create({
     modalInput: { flex: 1, paddingVertical: 8, textAlign: 'right', fontSize: 15, color: '#333' },
     saveBtn: { backgroundColor: '#00C2E8', padding: 12, borderRadius: 10, alignItems: 'center', marginTop: 10 },
     saveBtnText: { color: '#fff', fontWeight: 'bold' },
-    cancelText: { color: '#cf2d24', textAlign: 'center', marginTop: 15 }
+    cancelText: { color: '#cf2d24', textAlign: 'center', marginTop: 15 },
+
+    footerSection: {
+        marginTop: 50,
+        alignItems: 'center',
+        paddingHorizontal: 25,
+        marginBottom: 20,
+    },
+    deleteAccountBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 10,
+    },
+    deleteAccountText: {
+        color: '#FF4A4A',
+        fontSize: 14,
+        fontWeight: '500',
+        marginLeft: 8,
+    }
 });
 
 export default ProfileScreen;

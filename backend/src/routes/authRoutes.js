@@ -1,10 +1,7 @@
 import express from "express";
 import {
-    register,
-    login,
-    // googleAuth, 
-    getCurrentUser,
-    getAllUsers
+    register, login, getCurrentUser, getAllUsers, deleteAccount
+    // googleAuth,
 } from "../controllers/auth.js";
 import { authenticate } from "../middleware/authMiddleware.js";
 
@@ -16,5 +13,6 @@ router.post("/login", login);
 // router.post("/googleAuth", googleAuth);
 router.get("/userProfile", authenticate, getCurrentUser);
 router.get("/allUsers", authenticate, getAllUsers);
+router.delete("/deleteAccount", authenticate, deleteAccount);
 
 export default router;

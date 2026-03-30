@@ -16,6 +16,7 @@ app.use(express.json());
 
 // DB connection
 sequelize.sync({ alter: true })
+// sequelize.sync({ force: true })
     .then(() => {
         console.log("All tables synced successfully in PostgreSQL.");
     })

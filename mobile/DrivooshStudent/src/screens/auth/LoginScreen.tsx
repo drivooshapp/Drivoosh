@@ -48,7 +48,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
       await AsyncStorage.setItem('isSetupComplete', String(isSetupComplete));
 
       const storedName = await AsyncStorage.getItem('userName');
-      alert("התחברת בהצלחה! " + storedName);
+      // alert("התחברת בהצלחה! " + storedName);
       Alert.alert('הצלחה', 'התחברת בהצלחה');
 
       if (onLoginSuccess) {
@@ -112,7 +112,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
             <View style={styles.socialContainer}>
               <View style={styles.dividerContainer}>
                 <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>או המשך עם</Text>
+                <Text style={styles.dividerText}>או</Text>
                 <View style={styles.dividerLine} />
               </View>
 
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   input: { height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
   button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
-  socialContainer: { marginTop: 40, alignItems: 'center' },
+  socialContainer: { marginTop: 22, alignItems: 'center' },
   dividerContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 20, width: '100%' },
   dividerLine: { flex: 1, height: 1, backgroundColor: '#E5E7EB' },
   dividerText: { marginHorizontal: 10, fontSize: 13, color: '#888' },

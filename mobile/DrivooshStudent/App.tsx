@@ -54,18 +54,28 @@ function DrawerNavigator({ onLogout, userData }: any) {
             {userData?.image ? (
               <Image
                 source={{ uri: userData.image }}
-                style={{ width: 30, height: 30, borderRadius: 17.5 }}
+                style={{ width: 30, height: 30, borderRadius: 15 }}
               />
             ) : (
               <View style={{
                 width: 30,
                 height: 30,
-                borderRadius: 17.5,
+                borderRadius: 15,
                 backgroundColor: '#558892',
                 justifyContent: 'center',
-                alignItems: 'center'
+                alignItems: 'center',
+                overflow: 'hidden',
               }}>
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>
+                <Text style={{
+                  color: '#fff',
+                  fontSize: 15,
+                  fontWeight: 'bold',
+                  textAlign: 'center',
+                  includeFontPadding: false,
+                  textAlignVertical: 'center',
+                  paddingBottom: 2,
+                  lineHeight: 20,
+                }}>
                   {userData?.name ? userData.name.charAt(0).toUpperCase() : '?'}
                 </Text>
               </View>

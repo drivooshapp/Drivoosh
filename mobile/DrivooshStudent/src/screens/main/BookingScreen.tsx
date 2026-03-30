@@ -1,30 +1,64 @@
-import React, { useState } from 'react';
-import {
-    View, Text, StyleSheet, TextInput, TouchableOpacity,
-    ScrollView, Alert, ActivityIndicator, Modal, Platform
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';
-import { Calendar } from 'react-native-calendars';
 import apiClient from '@/src/api/apiClient';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useEffect, useState, useCallback } from 'react';
+import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Calendar } from 'react-native-calendars';
+
 
 export default function NewBookingScreen({ navigation }: any) {
     const [loading, setLoading] = useState(false);
+    const [fetchingSlots, setFetchingSlots] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
-
-    // נתוני הטופס
-    const [lessonDate, setLessonDate] = useState(new Date().toISOString().split('T')[0]);
-    const [startTime, setStartTime] = useState("10:00");
+    const [lessonDate, setLessonDate] = useState('');
+    const [startTime, setStartTime] = useState('');
     const [pickupLocation, setPickupLocation] = useState('');
+    const [notes, setNotes] = useState('');
+    const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
-    // יצירת רשימת שעות מהירה (07:00 עד 21:00)
-    const timeSlots = [];
-    for (let i = 7; i <= 21; i++) {
-        timeSlots.push(`${i.toString().padStart(2, '0')}:00`);
-        if (i < 21) timeSlots.push(`${i.toString().padStart(2, '0')}:30`);
-    }
+    // const tutorId = "075e76af-360b-48eb-a8b6-36227e8c9c3a";
+    const tutorId = "6bb1eb75-58a2-429d-a98a-82ab65761a4e";
 
-    // פונקציה להוספת תווים מפרידים בתאריך (DD/MM/YYYY)
+    useFocusEffect(
+        useCallback(() => {
+            setStartTime('');
+            setAvailableSlots([]);
+
+            if (lessonDate.length === 10) {
+                fetchAvailableSlots();
+            }
+        }, [lessonDate])
+    );
+
+    useEffect(() => {
+        if (lessonDate.length === 10) {
+            fetchAvailableSlots();
+        }
+    }, [lessonDate]);
+
+    const fetchAvailableSlots = async () => {
+        if (lessonDate.length < 10) return;
+
+        setFetchingSlots(true);
+        try {
+            let dateParam = lessonDate;
+            if (lessonDate.includes('/')) {
+                const [day, month, year] = lessonDate.split('/');
+                dateParam = `${year}-${month}-${day}`;
+            }
+            const response = await apiClient.get(`/booking/tutor/${tutorId}/availableSlots?date=${dateParam}`);
+            setAvailableSlots(response.data);
+        } catch (error) {
+            console.error("Error fetching slots:", error);
+            setAvailableSlots([]);
+        } finally {
+            setFetchingSlots(false);
+        }
+    };
+
+    const getTextColor = (value: string) => (value ? '#333' : '#999');
+
     const handleDateTyping = (text: string) => {
         const cleaned = text.replace(/\D/g, '');
         let formatted = cleaned;
@@ -33,46 +67,64 @@ export default function NewBookingScreen({ navigation }: any) {
         setLessonDate(formatted);
     };
 
+    const handleTimeTyping = (text: string) => {
+        const cleaned = text.replace(/\D/g, '');
+        let formatted = cleaned;
+        if (cleaned.length >= 3) formatted = `${cleaned.slice(0, 2)}:${cleaned.slice(2, 4)}`;
+        const hours = parseInt(cleaned.slice(0, 2));
+        const mins = parseInt(cleaned.slice(2, 4));
+        if (hours > 23) formatted = '23' + (formatted.length > 2 ? formatted.slice(2) : '');
+        if (mins > 59) formatted = formatted.slice(0, 3) + '59';
+        setStartTime(formatted);
+    };
+
     const handleBooking = async () => {
-        // המרה לפורמט YYYY-MM-DD לפני שליחה לשרת
-        let finalDate = lessonDate;
-        if (lessonDate.includes('/')) {
-            const [day, month, year] = lessonDate.split('/');
-            finalDate = `${year}-${month}-${day}`;
+        if (!lessonDate || !startTime || !pickupLocation) {
+            Alert.alert("שגיאה", "נא למלא תאריך, שעה ומיקום איסוף");
+            return;
         }
 
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
-        if (!timeRegex.test(startTime)) {
-            Alert.alert("שגיאה", "נא להזין שעה תקינה (HH:mm)");
+        if (availableSlots.length > 0 && !availableSlots.includes(startTime)) {
+            Alert.alert("שעה לא חוקית", "השעה שהזנת אינה פנויה. נא לבחור שעה מהרשימה.");
             return;
+        }
+
+        const now = new Date();
+        const [d, m, y] = lessonDate.split('/');
+        const selectedDate = new Date(`${y}-${m}-${d}`);
+        const isToday = selectedDate.toDateString() === now.toDateString();
+
+        if (isToday) {
+            const [selH, selM] = startTime.split(':').map(Number);
+            if (selH < now.getHours() || (selH === now.getHours() && selM <= now.getMinutes())) {
+                Alert.alert("שגיאה", "לא ניתן לקבוע שעה שכבר עברה היום");
+                return;
+            }
         }
 
         setLoading(true);
         try {
             const token = await AsyncStorage.getItem('userToken');
             const currentUserId = await AsyncStorage.getItem('currentUserId');
+            let finalDate = `${y}-${m}-${d}`;
 
-            const [hours, minutes] = startTime.split(':').map(Number);
-            const endTime = `${(hours + 1) % 24}:${minutes.toString().padStart(2, '0')}`;
-
-            const bookingData = {
-                lessonDate: finalDate,
-                startTime,
-                endTime,
-                tutorId: "dfdc0458-448f-44b0-be1a-6d6be7cbef19",
-                pickupLocation,
-            };
+            const bookingData = { lessonDate: finalDate, startTime, tutorId, pickupLocation, notes };
 
             const response = await apiClient.post(`/booking/${currentUserId}/newBooking`, bookingData, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
 
-            if (response.status === 200 || response.status === 201) {
-                Alert.alert("הצלחה!", "השיעור נקבע בהצלחה");
+            if (response.status === 201) {
+                Alert.alert("הצלחה", "פרטי השיעור הועברו לאישור המורה");
+                setLessonDate('');
+                setStartTime('');
+                setPickupLocation('');
+                setNotes('');
+
                 navigation.goBack();
             }
         } catch (error: any) {
-            Alert.alert("שגיאה", error.response?.data?.message || "ודאי שהפרטים תקינים");
+            Alert.alert("שגיאה", error.response?.data?.message || "שגיאה ביצירת הזמנה");
         } finally {
             setLoading(false);
         }
@@ -85,49 +137,61 @@ export default function NewBookingScreen({ navigation }: any) {
             <Text style={styles.label}>תאריך השיעור</Text>
             <View style={styles.inputWrapper}>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: getTextColor(lessonDate), outline: 'none' }]}
                     value={lessonDate}
                     onChangeText={handleDateTyping}
                     placeholder="DD/MM/YYYY"
                     keyboardType="numeric"
                     maxLength={10}
-                    textAlign="right"
                 />
                 <TouchableOpacity onPress={() => setShowCalendar(true)}>
-                    <Ionicons name="calendar-outline" size={24} color="#00C2E8" style={{ marginLeft: 10 }} />
+                    <Ionicons name="calendar-outline" size={24} color="#00C2E8" />
                 </TouchableOpacity>
             </View>
 
-            <Text style={styles.label}>שעת התחלה</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.timeList}>
-                {timeSlots.map((slot) => (
-                    <TouchableOpacity
-                        key={slot}
-                        style={[styles.timeTag, startTime === slot && styles.timeTagSelected]}
-                        onPress={() => setStartTime(slot)}
+            <Text style={styles.label}>שעות פנויות</Text>
+            <View style={{ minHeight: 60 }}>
+                {fetchingSlots ? (
+                    <ActivityIndicator color="#00C2E8" style={{ alignSelf: 'center', marginTop: 10 }} />
+                ) : (
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.timeList}
+                        contentContainerStyle={{
+                            flexGrow: 1,
+                            justifyContent: availableSlots.length > 0 ? 'flex-start' : 'flex-end'
+                        }}
                     >
-                        <Text style={[styles.timeTagText, startTime === slot && styles.timeTagTextSelected]}>
-                            {slot}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
-            </ScrollView>
+                        {availableSlots.length > 0 ? (
+                            availableSlots.map((slot) => (
+                                <TouchableOpacity
+                                    key={slot}
+                                    style={[styles.timeTag, startTime === slot && styles.timeTagSelected]}
+                                    onPress={() => setStartTime(slot)}
+                                >
+                                    <Text style={[styles.timeTagText, startTime === slot && styles.timeTagTextSelected]}>
+                                        {slot}
+                                    </Text>
+                                </TouchableOpacity>
+                            ))
+                        ) : (
+                            <Text style={{ color: '#999', textAlign: 'right', width: '100%', paddingRight: 5 }}>
+                                {lessonDate.length === 10 ? "אין שעות פנויות לתאריך זה" : "בחר תאריך כדי לראות שעות"}
+                            </Text>
+                        )}
+                    </ScrollView>
+                )}
+            </View>
 
             <View style={[styles.inputWrapper, { marginTop: 10 }]}>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: getTextColor(startTime), outline: 'none' }]}
                     value={startTime}
-                    onChangeText={(text) => {
-                        if (text.length === 2 && !text.includes(':') && text.length > startTime.length) {
-                            setStartTime(text + ':');
-                        } else {
-                            setStartTime(text);
-                        }
-                    }}
-                    placeholder="HH:mm"
-                    maxLength={5}
+                    onChangeText={handleTimeTyping}
+                    placeholder="hh:mm"
                     keyboardType="numeric"
-                    textAlign="right"
+                    maxLength={5}
                 />
                 <Ionicons name="time-outline" size={24} color="#00C2E8" />
             </View>
@@ -135,29 +199,49 @@ export default function NewBookingScreen({ navigation }: any) {
             <Text style={styles.label}>מיקום איסוף</Text>
             <View style={styles.inputWrapper}>
                 <TextInput
-                    style={styles.input}
+                    style={[styles.input, { color: getTextColor(pickupLocation), outline: 'none' }]}
                     value={pickupLocation}
                     onChangeText={setPickupLocation}
-                    placeholder="כתובת איסוף..."
-                    textAlign="right"
+                    placeholder="(עיר, רחוב)"
                 />
                 <Ionicons name="location-outline" size={24} color="#00C2E8" />
             </View>
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleBooking} disabled={loading}>
+            <Text style={styles.label}>הערות למורה (אופציונלי)</Text>
+            <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
+                <TextInput
+                    style={[styles.input, styles.textArea, { color: getTextColor(notes), outline: 'none' }]}
+                    value={notes}
+                    onChangeText={setNotes}
+                    placeholder="דגשים מיוחדים לשיעור..."
+                    multiline
+                    numberOfLines={3}
+                />
+                <Ionicons name="chatbubble-ellipses-outline" size={24} color="#00C2E8" style={{ marginTop: 10 }} />
+            </View>
+
+            <TouchableOpacity
+                style={[styles.submitButton, loading && { opacity: 0.7 }]}
+                onPress={handleBooking}
+                disabled={loading}
+            >
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>קבע שיעור</Text>}
             </TouchableOpacity>
 
-            <Modal visible={showCalendar} transparent={true} animationType="fade">
+            <Modal visible={showCalendar} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarContainer}>
                         <Calendar
                             onDayPress={(day: any) => {
-                                setLessonDate(day.dateString);
+                                setLessonDate(day.dateString.split('-').reverse().join('/'));
                                 setShowCalendar(false);
                             }}
-                            markedDates={{ [lessonDate]: { selected: true, selectedColor: '#00C2E8' } }}
-                            theme={{ todayTextColor: '#00C2E8', arrowColor: '#00C2E8' }}
+                            markedDates={{
+                                [lessonDate.split('/').reverse().join('-')]: {
+                                    selected: true,
+                                    selectedColor: '#00C2E8'
+                                }
+                            }}
                             minDate={new Date().toISOString().split('T')[0]}
                         />
                         <TouchableOpacity style={styles.closeButton} onPress={() => setShowCalendar(false)}>
@@ -173,53 +257,21 @@ export default function NewBookingScreen({ navigation }: any) {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#fff' },
     content: { padding: 25 },
-    title: { fontSize: 24, fontWeight: 'bold', color: '#333', textAlign: 'right', marginBottom: 25 },
-    label: { fontSize: 16, fontWeight: '600', color: '#555', textAlign: 'right', marginBottom: 8, marginTop: 15 },
-    inputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#f9f9f9',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#eee',
-        paddingHorizontal: 15,
-        height: 55
-    },
-    input: { flex: 1, fontSize: 16, color: '#333', height: '100%' },
+    title: { fontSize: 21, fontWeight: 'bold', color: '#333', textAlign: 'right', marginBottom: 5 },
+    label: { fontSize: 16, fontWeight: '600', color: '#555', textAlign: 'right', marginBottom: 8, marginTop: 30 },
+    inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9f9f9', borderRadius: 12, borderWidth: 1, borderColor: '#eee', paddingHorizontal: 15, height: 55 },
+    textAreaWrapper: { height: 100, alignItems: 'flex-start' },
+    input: { flex: 1, textAlign: 'right', paddingRight: 10, fontSize: 16, writingDirection: 'rtl' },
+    textArea: { textAlignVertical: 'top', paddingTop: 15 },
     timeList: { flexDirection: 'row', marginVertical: 8 },
-    timeTag: {
-        backgroundColor: '#f0f0f0',
-        paddingHorizontal: 16,
-        paddingVertical: 10,
-        borderRadius: 20,
-        marginRight: 10,
-        borderWidth: 1,
-        borderColor: '#ddd'
-    },
+    timeTag: { backgroundColor: '#f0f0f0', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd', height: 45, justifyContent: 'center' },
     timeTagSelected: { backgroundColor: '#00C2E8', borderColor: '#00C2E8' },
     timeTagText: { color: '#555', fontWeight: '600' },
     timeTagTextSelected: { color: '#fff' },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        alignItems: 'center'
-    },
-    calendarContainer: {
-        backgroundColor: '#fff',
-        borderRadius: 20,
-        padding: 15,
-        width: '90%',
-        elevation: 10
-    },
+    modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+    calendarContainer: { backgroundColor: '#fff', borderRadius: 20, padding: 15, width: '90%' },
     closeButton: { marginTop: 15, alignItems: 'center', padding: 12, backgroundColor: '#f0f0f0', borderRadius: 10 },
     closeButtonText: { color: '#333', fontWeight: 'bold' },
-    submitButton: {
-        backgroundColor: '#00C2E8',
-        padding: 18,
-        borderRadius: 15,
-        alignItems: 'center',
-        marginTop: 40
-    },
+    submitButton: { backgroundColor: '#00C2E8', padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 40, marginBottom: 20 },
     submitText: { color: '#fff', fontSize: 18, fontWeight: 'bold' }
 });

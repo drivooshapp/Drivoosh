@@ -5,10 +5,53 @@ import { Op } from 'sequelize';
 export const createBooking = async (req, res) => {
     try {
         const { lessonDate, startTime, tutorId, pickupLocation, notes } = req.body;
-        const studentId = req.user.id;
+        const studentId = req.user?.id;
+        const BUFFER_TIME = 15;
 
         const tutor = await Tutor.findByPk(tutorId);
-        if (!tutor) return res.status(404).json({ message: "המורה לא נמצא" });
+        if (!tutor) {
+            return res.status(404).json({ message: "המורה לא נמצא" });
+        }
+
+        const lessonDuration = tutor.lessonDuration || 45;
+        const timeParts = startTime.split(':');
+
+        if (timeParts.length !== 2) {
+            return res.status(400).json({ message: "פורמט שעה לא תקין" });
+        }
+
+        const [hours, minutes] = timeParts.map(Number);
+        const startTotalMinutes = hours * 60 + minutes;
+        const endTotalMinutes = startTotalMinutes + lessonDuration;
+
+        const endH = Math.floor(endTotalMinutes / 60);
+        const endM = endTotalMinutes % 60;
+        const endTime = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+
+        const startOfDay = new Date(`${lessonDate}T00:00:00.000Z`);
+        const endOfDay = new Date(`${lessonDate}T23:59:59.999Z`);
+
+        const overlappingBookings = await Booking.findAll({
+            where: {
+                tutorId,
+                lessonDate: { [Op.between]: [startOfDay, endOfDay] },
+                status: { [Op.ne]: 'cancelled' }
+            }
+        });
+
+        const isTaken = overlappingBookings.some(b => {
+            const [bStartH, bStartM] = b.startTime.split(':').map(Number);
+            const [bEndH, bEndM] = b.endTime.split(':').map(Number);
+
+            const bStartMinutes = bStartH * 60 + bStartM;
+            const bEndWithBuffer = (bEndH * 60 + bEndM) + BUFFER_TIME;
+
+            return startTotalMinutes < bEndWithBuffer && (startTotalMinutes + lessonDuration) > bStartMinutes;
+        });
+
+        if (isTaken) {
+            return res.status(400).json({ message: "השעה שנבחרה כבר אינה פנויה (או קרובה מדי לשיעור אחר)" });
+        }
 
         const newBooking = await Booking.create({
             studentId,
@@ -16,19 +59,99 @@ export const createBooking = async (req, res) => {
             lessonDate,
             pickupLocation,
             startTime,
-            endTime: startTime - lessonDuration,
-            notes,
-            priceAtBooking: tutor.pricePerLesson,
+            endTime,
+            notes: notes || "",
+            priceAtBooking: tutor.pricePerLesson || 0,
             status: 'pending'
         });
 
-        res.status(201).json({ message: "בקשת שיעור נשלחה למורה", booking: newBooking });
+        return res.status(201).json({
+            message: "בקשת השיעור נשלחה למורה בהצלחה",
+            booking: newBooking
+        });
 
     } catch (error) {
-        res.status(500).json({ message: "שגיאה ביצירת הזמנה" });
+        console.error("SERVER ERROR:", error);
+        return res.status(500).json({ message: "שגיאה ביצירת ההזמנה", details: error.message });
     }
 };
 
+
+export const getAvailableSlots = async (req, res) => {
+    try {
+        const { tutorId } = req.params;
+        const { date } = req.query;
+
+        const tutor = await Tutor.findByPk(tutorId);
+        if (!tutor) return res.status(404).json({ message: "המורה לא נמצא" });
+
+        const BUFFER_TIME = 15;
+        const lessonDuration = tutor.lessonDuration || 45; 
+
+        const now = new Date();
+        const israelTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));
+        const todayStr = israelTime.toISOString().split('T')[0];
+
+        const startOfDay = new Date(`${date}T00:00:00.000Z`);
+        const endOfDay = new Date(`${date}T23:59:59.999Z`);
+
+        const existingBookings = await Booking.findAll({
+            where: {
+                tutorId,
+                lessonDate: { [Op.between]: [startOfDay, endOfDay] },
+                status: { [Op.ne]: 'cancelled' }
+            },
+            attributes: ['startTime', 'endTime']
+        });
+
+        const busyRanges = existingBookings.map(b => {
+            const [startH, startM] = b.startTime.split(':').map(Number);
+            const [endH, endM] = b.endTime.split(':').map(Number);
+            
+            return {
+                start: startH * 60 + startM,
+                end: endH * 60 + endM + BUFFER_TIME
+            };
+        });
+
+        const startH = parseInt((tutor.workStartHour || "08:00").split(':')[0]);
+        const endH = parseInt((tutor.workEndHour || "20:00").split(':')[0]);
+
+        const allPossibleSlots = [];
+        const step = 15; 
+
+        for (let totalMin = startH * 60; totalMin + lessonDuration <= endH * 60; totalMin += step) {
+            const h = Math.floor(totalMin / 60).toString().padStart(2, '0');
+            const m = (totalMin % 60).toString().padStart(2, '0');
+            allPossibleSlots.push(`${h}:${m}`);
+        }
+
+        const availableSlots = allPossibleSlots.filter(slot => {
+            const [h, m] = slot.split(':').map(Number);
+            const slotStartMinutes = h * 60 + m;
+            const slotEndMinutes = slotStartMinutes + lessonDuration;
+
+            const isOverlap = busyRanges.some(range => {
+                return slotStartMinutes < range.end && slotEndMinutes > range.start;
+            });
+
+            if (isOverlap) return false;
+
+            if (date === todayStr) {
+                const currentTotalMinutes = israelTime.getUTCHours() * 60 + israelTime.getUTCMinutes();
+                if (slotStartMinutes <= currentTotalMinutes) return false;
+            }
+
+            return true;
+        });
+
+        res.status(200).json(availableSlots);
+
+    } catch (error) {
+        console.error("CRITICAL SERVER ERROR:", error);
+        res.status(500).json({ message: "שגיאה בחישוב שעות", error: error.message });
+    }
+};
 
 export const getMyBookings = async (req, res) => {
     try {

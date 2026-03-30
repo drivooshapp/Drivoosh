@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
     title: { fontSize: 20, fontWeight: '500', marginBottom: 10, marginTop: 20, alignItems: 'flex-end', color: '#111' }, form: { width: '100%' },
     inputContainer: { marginBottom: 16 },
     label: { fontSize: 13, color: '#666', marginBottom: 6, textAlign: 'right' },
-    input: { height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
+    input: { height: 52, borderRadius: 12,  backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
     button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
     linkContainer: { marginTop: 30, alignItems: 'center' },
