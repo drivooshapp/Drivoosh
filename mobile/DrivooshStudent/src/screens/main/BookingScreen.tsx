@@ -2,12 +2,13 @@ import apiClient from '@/src/api/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 
 
 export default function NewBookingScreen({ navigation }: any) {
+    const [address, setAddress] = useState('');
     const [loading, setLoading] = useState(false);
     const [fetchingSlots, setFetchingSlots] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
@@ -19,6 +20,24 @@ export default function NewBookingScreen({ navigation }: any) {
 
     // const tutorId = "075e76af-360b-48eb-a8b6-36227e8c9c3a";
     const tutorId = "6bb1eb75-58a2-429d-a98a-82ab65761a4e";
+
+    useEffect(() => {
+        fetchProfile();
+    }, []);
+
+    const fetchProfile = async () => {
+        try {
+            const response = await apiClient.get('/student/myProfile');
+            const street = response.data.street;
+            const city = response.data.city;
+            const fullAddress = `${street}, ${city}`;
+
+            setAddress(fullAddress);
+            setPickupLocation(fullAddress);
+        } catch (error) {
+            console.error("שגיאה בטעינת הפרופיל:", error);
+        }
+    };
 
     useFocusEffect(
         useCallback(() => {
@@ -176,7 +195,7 @@ export default function NewBookingScreen({ navigation }: any) {
                                 </TouchableOpacity>
                             ))
                         ) : (
-                            <Text style={{ color: '#999', textAlign: 'right', width: '100%', paddingRight: 5 }}>
+                            <Text style={{ color: '#999', textAlign: 'right', width: '100%' }}>
                                 {lessonDate.length === 10 ? "אין שעות פנויות לתאריך זה" : "בחר תאריך כדי לראות שעות"}
                             </Text>
                         )}
@@ -189,7 +208,7 @@ export default function NewBookingScreen({ navigation }: any) {
                     style={[styles.input, { color: getTextColor(startTime), outline: 'none' }]}
                     value={startTime}
                     onChangeText={handleTimeTyping}
-                    placeholder="hh:mm"
+                    placeholder="HH:MM"
                     keyboardType="numeric"
                     maxLength={5}
                 />

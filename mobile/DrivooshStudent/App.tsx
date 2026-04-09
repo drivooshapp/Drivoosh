@@ -14,7 +14,7 @@ import NewBooking from './src/screens/main/BookingScreen';
 import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import SearchTutors from './src/screens/main/SearchTutors';
 import MessagesScreen from './src/screens/main/MessagesScreen';
-
+import HistoryScreen from './src/screens/main/HistoryScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -147,6 +147,17 @@ function DrawerNavigator({ onLogout, userData }: any) {
           drawerIcon: ({ color }) => (
             <Ionicons name="chatbubble-outline" size={22} color={color} />
           )
+        }}
+      />
+
+      {/* Hidden Routes */}
+      <Drawer.Screen
+        name="History"
+        component={HistoryScreen}
+        options={{
+          title: 'היסטוריית שיעורים',
+          drawerItemStyle: { display: 'none' },
+          headerShown: true,
         }}
       />
     </Drawer.Navigator>

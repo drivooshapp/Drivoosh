@@ -206,8 +206,8 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
 
                 <View style={styles.footerSection}>
                     <TouchableOpacity style={styles.deleteAccountBtn} onPress={handleDeleteAccount}>
-                        <Ionicons name="trash-outline" size={18} color="#FF4A4A" />
                         <Text style={styles.deleteAccountText}>מחיקת חשבון לצמיתות</Text>
+                        <Ionicons name="trash-outline" size={18} color="#FF4A4A" />
                     </TouchableOpacity>
                 </View>
 
@@ -250,7 +250,6 @@ const styles = StyleSheet.create({
     rowContainer: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginTop: 15, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#eee', },
     labelText: { fontSize: 14, color: '#727272', textAlign: 'right', width: 80 },
     valueInput: { fontSize: 14, fontWeight: '500', color: '#000000', flex: 1, textAlign: 'left' },
-
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     modalContent: { backgroundColor: '#fff', width: '85%', borderRadius: 4, padding: 25, elevation: 10 },
     modalHeader: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
@@ -259,24 +258,9 @@ const styles = StyleSheet.create({
     saveBtn: { backgroundColor: '#00C2E8', padding: 12, borderRadius: 10, alignItems: 'center', marginTop: 10 },
     saveBtnText: { color: '#fff', fontWeight: 'bold' },
     cancelText: { color: '#cf2d24', textAlign: 'center', marginTop: 15 },
-
-    footerSection: {
-        marginTop: 50,
-        alignItems: 'center',
-        paddingHorizontal: 25,
-        marginBottom: 20,
-    },
-    deleteAccountBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 10,
-    },
-    deleteAccountText: {
-        color: '#FF4A4A',
-        fontSize: 14,
-        fontWeight: '500',
-        marginLeft: 8,
-    }
+    footerSection: { marginTop: 50, alignItems: 'center', paddingHorizontal: 25 },
+    deleteAccountBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
+    deleteAccountText: { color: '#FF4A4A', fontSize: 14, fontWeight: '500', marginRight: 8 }
 });
 
 export default ProfileScreen;

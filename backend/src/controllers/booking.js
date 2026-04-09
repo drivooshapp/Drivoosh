@@ -86,7 +86,7 @@ export const getAvailableSlots = async (req, res) => {
         if (!tutor) return res.status(404).json({ message: "המורה לא נמצא" });
 
         const BUFFER_TIME = 15;
-        const lessonDuration = tutor.lessonDuration || 45; 
+        const lessonDuration = tutor.lessonDuration || 45;
 
         const now = new Date();
         const israelTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));
@@ -107,7 +107,7 @@ export const getAvailableSlots = async (req, res) => {
         const busyRanges = existingBookings.map(b => {
             const [startH, startM] = b.startTime.split(':').map(Number);
             const [endH, endM] = b.endTime.split(':').map(Number);
-            
+
             return {
                 start: startH * 60 + startM,
                 end: endH * 60 + endM + BUFFER_TIME
@@ -118,7 +118,7 @@ export const getAvailableSlots = async (req, res) => {
         const endH = parseInt((tutor.workEndHour || "20:00").split(':')[0]);
 
         const allPossibleSlots = [];
-        const step = 15; 
+        const step = 15;
 
         for (let totalMin = startH * 60; totalMin + lessonDuration <= endH * 60; totalMin += step) {
             const h = Math.floor(totalMin / 60).toString().padStart(2, '0');
@@ -179,7 +179,7 @@ export const getMyBookings = async (req, res) => {
                     include: [{ model: User, attributes: ['firstName', 'lastName'] }]
                 }
             ],
-            order: [['dateTime', 'ASC']]
+            order: [['lessonDate', 'ASC']]
         });
 
         res.status(200).json(bookings);
