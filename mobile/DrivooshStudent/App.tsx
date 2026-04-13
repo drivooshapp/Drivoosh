@@ -1,20 +1,22 @@
-import React, { useState, useEffect } from 'react';
-import { View, ActivityIndicator, Text, Image } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { NavigationContainer, NavigationIndependentTree } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList, DrawerItem } from '@react-navigation/drawer';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { Image, Text, View } from 'react-native';
 import 'react-native-gesture-handler';
+import LoadingScreen from './src/components/LoadingScreen';
 import HomeScreen from './src/screens/auth/HomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import ProfileScreen from './src/screens/auth/ProfileScreen';
 import SignupScreen from './src/screens/auth/SignupScreen';
 import NewBooking from './src/screens/main/BookingScreen';
+import HistoryScreen from './src/screens/main/HistoryScreen';
+import MessagesScreen from './src/screens/main/MessagesScreen';
 import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import SearchTutors from './src/screens/main/SearchTutors';
-import MessagesScreen from './src/screens/main/MessagesScreen';
-import HistoryScreen from './src/screens/main/HistoryScreen';
+
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -205,11 +207,7 @@ export default function App() {
   }, []);
 
   if (isLoading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" color="#00C2E8" />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (

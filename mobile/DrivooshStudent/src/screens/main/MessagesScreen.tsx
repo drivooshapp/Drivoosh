@@ -1,7 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import LoadingScreen from '@/src/components/LoadingScreen';
+
 
 export default function MessagesScreen() {
+
   return (
     <View style={styles.container}>
       <Text style={styles.text}>הודעות מהמורה</Text>

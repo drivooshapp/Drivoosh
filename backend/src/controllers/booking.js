@@ -85,8 +85,9 @@ export const getAvailableSlots = async (req, res) => {
         const tutor = await Tutor.findByPk(tutorId);
         if (!tutor) return res.status(404).json({ message: "המורה לא נמצא" });
 
-        const BUFFER_TIME = 15;
-        const lessonDuration = tutor.lessonDuration || 45;
+        // const BUFFER_TIME = 15;
+        const BUFFER_TIME = tutor.BufferTime;
+        const lessonDuration = tutor.lessonDuration;
 
         const now = new Date();
         const israelTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));

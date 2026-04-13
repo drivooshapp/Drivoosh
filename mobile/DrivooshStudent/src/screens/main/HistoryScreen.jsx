@@ -2,6 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { FlatList, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator, Image } from 'react-native';
 import apiClient from '../../api/apiClient';
+import LoadingScreen from '@/src/components/LoadingScreen';
+
 
 export default function HistoryScreen({ navigation }) {
     const [history, setHistory] = useState([]);
@@ -52,11 +54,7 @@ export default function HistoryScreen({ navigation }) {
     };
 
     if (loading) {
-        return (
-            <View style={[styles.container, { justifyContent: 'center' }]}>
-                <ActivityIndicator size="large" color="#0194b1" />
-            </View>
-        );
+        return <LoadingScreen />;
     }
 
     return (
@@ -119,26 +117,25 @@ export default function HistoryScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#f8f9fa' },
-    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 15, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#eee', },
-    headerTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', textAlign: 'right', flex: 1 },
-    countText: { color: '#888', fontWeight: 'normal', marginRight: 10 },
+    container: { flex: 1, backgroundColor: '#FFFFFF' },
+    header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 20, paddingBottom: 20, paddingHorizontal: 20, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f2f2f2' },
+    headerTitle: { fontSize: 20, fontWeight: 'bold', color: '#1A1A1A', textAlign: 'right', flex: 1 },
+    countText: { color: '#9e9e9e', fontWeight: '400', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8, marginRight: 7 },
     listContent: { padding: 20 },
-    historyCard: { backgroundColor: '#fff', borderRadius: 15, padding: 15, marginBottom: 15, borderWidth: 1, borderColor: '#eee', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 5, elevation: 2, },
+    historyCard: { backgroundColor: '#fff', borderRadius: 18, padding: 16, marginBottom: 16, shadowColor: '#00C2E8', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10, elevation: 2, borderWidth: 1, borderColor: '#F0F9FA' },
     cardTopRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-    statusBadge: { backgroundColor: '#e8f5e9', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-    statusText: { color: '#4CAF50', fontSize: 12, fontWeight: '600' },
-    dateText: { fontSize: 14, color: '#888', fontWeight: '500' },
+    statusBadge: { backgroundColor: '#E6F6F7', paddingHorizontal: 12, paddingVertical: 5, borderRadius: 10 },
+    statusText: { color: '#00A8B5', fontSize: 12, fontWeight: '600' },    dateText: { fontSize: 13, color: '#8e8e93', fontWeight: '600' },
     cardMainRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
     infoColumn: { flex: 1, alignItems: 'flex-end', marginRight: 15 },
-    teacherName: { fontSize: 16, fontWeight: 'bold', color: '#333', marginBottom: 2 },
+    teacherName: { fontSize: 17, fontWeight: '700', color: '#1A1A1A', marginBottom: 3 },
     timeText: { fontSize: 14, color: '#666', marginBottom: 2 },
     locationText: { fontSize: 13, color: '#999' },
-    avatar: { width: 45, height: 45, borderRadius: 22.5, marginLeft: 10 },
+    avatar: { width: 50, height: 50, borderRadius: 30, marginLeft: 10 },
     avatarPlaceholder: { backgroundColor: '#0194b1', justifyContent: 'center', alignItems: 'center' },
-    avatarInitial: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-    priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#f5f5f5', },
-    priceText: { fontSize: 14, fontWeight: 'bold', color: '#333', marginRight: 5 },
-    emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-    emptyText: { marginTop: 15, fontSize: 16, color: '#999' },
+    avatarInitial: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
+    priceRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F9F9F9' },
+    priceText: { fontSize: 15, fontWeight: '700', color: '#1A1A1A', marginRight: 5 },
+    emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 100 },
+    emptyText: { marginTop: 15, fontSize: 16, color: '#BDBDBD' },
 });

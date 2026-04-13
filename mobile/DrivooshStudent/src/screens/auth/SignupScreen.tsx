@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
+import LoadingScreen from '@/src/components/LoadingScreen';
 
 
 export default function SignupScreen({ navigation }: any) {
@@ -8,6 +9,7 @@ export default function SignupScreen({ navigation }: any) {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleSignup = async () => {
         if (!firstName || !lastName || !email || !password) {
@@ -16,6 +18,7 @@ export default function SignupScreen({ navigation }: any) {
         }
 
         try {
+            setLoading(true);
             await apiClient.post('/user/register', {
                 firstName,
                 lastName,
@@ -29,8 +32,14 @@ export default function SignupScreen({ navigation }: any) {
         } catch (error: any) {
             console.log("Error details:", error.response?.data || error.message);
             Alert.alert('שגיאה', 'הרישום נכשל. ודא שהפרטים תקינים.');
+        } finally {
+            setLoading(false);
         }
     };
+
+    if (loading) {
+        return <LoadingScreen />;
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -127,7 +136,7 @@ const styles = StyleSheet.create({
     title: { fontSize: 20, fontWeight: '500', marginBottom: 10, marginTop: 20, alignItems: 'flex-end', color: '#111' }, form: { width: '100%' },
     inputContainer: { marginBottom: 16 },
     label: { fontSize: 13, color: '#666', marginBottom: 6, textAlign: 'right' },
-    input: { height: 52, borderRadius: 12,  backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
+    input: { height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
     button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
     linkContainer: { marginTop: 30, alignItems: 'center' },

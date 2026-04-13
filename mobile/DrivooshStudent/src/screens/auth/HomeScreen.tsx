@@ -4,6 +4,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useState, useCallback } from 'react';
 import { Alert, FlatList, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
 import apiClient from '../../api/apiClient';
+import LoadingScreen from '@/src/components/LoadingScreen';
 
 const getGreetingByTime = () => {
   const currentHour = new Date().getHours();
@@ -90,11 +91,7 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   if (loading) {
-    return (
-      <View style={[styles.container, { justifyContent: 'center' }]}>
-        <ActivityIndicator size="large" color="#0194b1" />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (

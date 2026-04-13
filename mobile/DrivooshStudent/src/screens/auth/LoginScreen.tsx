@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import apiClient from '../../api/apiClient';
+import LoadingScreen from '@/src/components/LoadingScreen';
 
 
 const GoogleLogo = () => (
@@ -17,6 +18,7 @@ const GoogleLogo = () => (
 export default function LoginScreen({ navigation, onLoginSuccess }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -25,6 +27,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
     }
 
     try {
+      setLoading(true);
       const response = await apiClient.post('/user/login', { email, password });
       const { token, user } = response.data;
       const { firstName, isSetupComplete } = user;
@@ -58,8 +61,14 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
     } catch (error: any) {
       console.log("Error details:", error.response?.data || error.message);
       Alert.alert('שגיאה', error.response?.data?.message || 'התחברות נכשלה');
+    } finally {
+      setLoading(false);
     }
   };
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>

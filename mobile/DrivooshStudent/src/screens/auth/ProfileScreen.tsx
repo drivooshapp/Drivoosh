@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Alert, Modal, StyleSheet, View, Text, TextInput, Image, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, KeyboardTypeOptions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../../api/apiClient';
+import LoadingScreen from '@/src/components/LoadingScreen';
 
 interface UserProfile {
     firstName: string;
@@ -101,11 +102,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     };
 
     if (fetching) {
-        return (
-            <View style={[styles.container, { justifyContent: 'center' }]}>
-                <ActivityIndicator size="large" color="#4A78FF" />
-            </View>
-        );
+        return <LoadingScreen />;
     }
 
     if (!profile) return null;
@@ -251,13 +248,13 @@ const styles = StyleSheet.create({
     labelText: { fontSize: 14, color: '#727272', textAlign: 'right', width: 80 },
     valueInput: { fontSize: 14, fontWeight: '500', color: '#000000', flex: 1, textAlign: 'left' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-    modalContent: { backgroundColor: '#fff', width: '85%', borderRadius: 4, padding: 25, elevation: 10 },
+    modalContent: { backgroundColor: '#fff', width: '85%', borderRadius: 15, padding: 25, elevation: 10 },
     modalHeader: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
     modalInputWrapper: { flexDirection: 'row', alignItems: 'center', borderBottomColor: '#ccc', borderBottomWidth: 1.5, marginBottom: 15, paddingHorizontal: 5 },
     modalInput: { flex: 1, paddingVertical: 8, textAlign: 'right', fontSize: 15, color: '#333' },
-    saveBtn: { backgroundColor: '#00C2E8', padding: 12, borderRadius: 10, alignItems: 'center', marginTop: 10 },
-    saveBtnText: { color: '#fff', fontWeight: 'bold' },
-    cancelText: { color: '#cf2d24', textAlign: 'center', marginTop: 15 },
+    saveBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+    saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
+    cancelText: { color: '#01829b', fontWeight: 600, textAlign: 'center', marginTop: 15 },
     footerSection: { marginTop: 50, alignItems: 'center', paddingHorizontal: 25 },
     deleteAccountBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
     deleteAccountText: { color: '#FF4A4A', fontSize: 14, fontWeight: '500', marginRight: 8 }

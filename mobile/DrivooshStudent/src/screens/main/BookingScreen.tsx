@@ -5,6 +5,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
+import LoadingScreen from '@/src/components/LoadingScreen';
+// import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 
 export default function NewBookingScreen({ navigation }: any) {
@@ -149,6 +151,10 @@ export default function NewBookingScreen({ navigation }: any) {
         }
     };
 
+    if (loading) {
+        return <LoadingScreen />;
+    }
+
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
             <Text style={styles.title}>קביעת שיעור נהיגה</Text>
@@ -225,6 +231,38 @@ export default function NewBookingScreen({ navigation }: any) {
                 />
                 <Ionicons name="location-outline" size={24} color="#00C2E8" />
             </View>
+            {/* <Text style={styles.label}>מיקום איסוף</Text>
+            <View style={[styles.inputWrapper, { zIndex: 1000, height: 'auto', minHeight: 55 }]}>
+                <GooglePlacesAutocomplete
+                    placeholder="חפש עיר ורחוב..."
+                    onPress={(data, details = null) => {
+                        setPickupLocation(data.description);
+                    }}
+                    query={{
+                        key: 'YOUR_GOOGLE_API_KEY', // כאן שמים את המפתח מגוגל
+                        language: 'iw', // עברית
+                        components: 'country:il', // הגבלה לישראל בלבד
+                    }}
+                    styles={{
+                        container: { flex: 1, width: '100%' },
+                        textInput: {
+                            height: 50,
+                            color: '#1A1A1A',
+                            fontSize: 16,
+                            textAlign: 'right',
+                            backgroundColor: 'transparent',
+                        },
+                        description: { textAlign: 'right' },
+                        predefinedPlacesDescription: { color: '#00C2E8' },
+                        listView: { backgroundColor: '#fff', borderRadius: 10, elevation: 3, zIndex: 999 },
+                    }}
+                    enablePoweredByContainer={false} // מסיר את הלוגו של גוגל למטה
+                    fetchDetails={false}
+                    nearbyPlacesAPI="GooglePlacesSearch"
+                    debounce={400} // מחכה חצי שניה בין הקלדות כדי לחסוך קריאות ל-API
+                />
+                <Ionicons name="location-outline" size={24} color="#00A8B5" style={{ marginLeft: 10 }} />
+            </View> */}
 
             <Text style={styles.label}>הערות למורה (אופציונלי)</Text>
             <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
@@ -244,7 +282,7 @@ export default function NewBookingScreen({ navigation }: any) {
                 onPress={handleBooking}
                 disabled={loading}
             >
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>קבע שיעור</Text>}
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>הזמן שיעור</Text>}
             </TouchableOpacity>
 
             <Modal visible={showCalendar} transparent animationType="fade">
