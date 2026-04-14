@@ -1,14 +1,27 @@
-
-
-
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { FlatList, Image, Modal, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { FlatList, Image, Modal, SafeAreaView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from 'react-native';
+import Slider from '@react-native-community/slider';
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '../../components/LoadingScreen';
 
-interface TutorUser { firstName: string; lastName: string; profileImage?: string; city?: string; }
-interface Tutor { id: string; carModel: string; gearbox: 'manual' | 'automatic'; pricePerLesson: number; User: TutorUser; }
+interface TutorUser {
+  firstName: string;
+  lastName: string;
+  profileImage?: string;
+  city?: string;
+}
+
+interface Tutor {
+  id: string;
+  carModel: string;
+  gearbox: 'manual' | 'automatic';
+  pricePerLesson: number;
+  experienceYears: number;
+  workStartHour: string;
+  workEndHour: string;
+  User: TutorUser;
+}
 
 export default function SearchTutors({ navigation }: any) {
   const [tutors, setTutors] = useState<Tutor[]>([]);
@@ -17,8 +30,12 @@ export default function SearchTutors({ navigation }: any) {
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [searchCity, setSearchCity] = useState('');
   const [gearboxFilter, setGearboxFilter] = useState<'manual' | 'automatic' | null>(null);
+  const [maxPrice, setMaxPrice] = useState(200);
+  const [minExperience, setMinExperience] = useState<number | null>(null);
 
-  useEffect(() => { fetchTutors(); }, []);
+  useEffect(() => {
+    fetchTutors();
+  }, []);
 
   const fetchTutors = async () => {
     try {
@@ -35,8 +52,19 @@ export default function SearchTutors({ navigation }: any) {
 
   const applyFilters = () => {
     let updatedList = [...tutors];
-    if (searchCity) { updatedList = updatedList.filter(t => t.User?.city?.toLowerCase().includes(searchCity.toLowerCase())); }
-    if (gearboxFilter) { updatedList = updatedList.filter(t => t.gearbox === gearboxFilter); }
+
+    if (searchCity) {
+      updatedList = updatedList.filter(t => t.User?.city?.toLowerCase().includes(searchCity.toLowerCase()));
+    }
+    if (gearboxFilter) {
+      updatedList = updatedList.filter(t => t.gearbox === gearboxFilter);
+    }
+    updatedList = updatedList.filter(t => t.pricePerLesson <= maxPrice);
+
+    if (minExperience !== null) {
+      updatedList = updatedList.filter(t => t.experienceYears >= minExperience);
+    }
+
     setFilteredTutors(updatedList);
     setFilterVisible(false);
   };
@@ -44,6 +72,8 @@ export default function SearchTutors({ navigation }: any) {
   const resetFilters = () => {
     setSearchCity('');
     setGearboxFilter(null);
+    setMaxPrice(200);
+    setMinExperience(null);
     setFilteredTutors(tutors);
     setFilterVisible(false);
   };
@@ -53,59 +83,138 @@ export default function SearchTutors({ navigation }: any) {
     return firstName.charAt(0).toUpperCase();
   };
 
-  if (loading) return <LoadingScreen />;
+  if (loading)
+    return <LoadingScreen />;
 
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
+
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>חיפוש מורים</Text>
+        <Text style={styles.headerTitle}>סינון מורים</Text>
         <TouchableOpacity onPress={() => setFilterVisible(true)} style={styles.filterBtn}>
           <Ionicons name="search-outline" size={22} color="#000000" />
         </TouchableOpacity>
       </View>
+
+      {/* List */}
       <FlatList
         data={filteredTutors}
         keyExtractor={(item) => item.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.tutorCard} onPress={() => navigation.navigate('TutorDetails', { tutorId: item.id })}>
+          <TouchableOpacity
+            style={styles.tutorCard}
+            onPress={() => navigation.navigate('TutorDetails', { tutorId: item.id })}          >
             <View style={styles.avatarContainer}>
-              {item.User?.profileImage ? <Image source={{ uri: item.User.profileImage }} style={styles.avatarImage} /> : <View style={[styles.avatarImage, styles.initialsContainer]}><Text style={styles.initialsText}>{getInitials(item.User?.firstName)}</Text></View>}
+              {item.User?.profileImage ? (
+                <Image source={{ uri: item.User.profileImage }} style={styles.avatarImage} />
+              ) : (
+                <View style={[styles.avatarImage, styles.initialsContainer]}>
+                  <Text style={styles.initialsText}>{getInitials(item.User?.firstName)}</Text>
+                </View>
+              )}
             </View>
             <View style={styles.tutorInfo}>
               <Text style={styles.tutorName}>{`${item.User?.firstName} ${item.User?.lastName}`}</Text>
-              <View style={styles.detailRow}><Text style={styles.detailText}>{item.carModel}</Text><Ionicons name="car-sport-outline" size={16} color="#00C2E8" style={styles.icon} /></View>
-              <View style={styles.detailRow}><Text style={styles.detailText}>{item.gearbox === 'automatic' ? 'אוטומט' : 'ידני'}</Text><Ionicons name="settings-outline" size={16} color="#00C2E8" style={styles.icon} /></View>
-              <View style={styles.detailRow}><Text style={styles.detailText}>{item.User?.city || 'מיקום לא צוין'}</Text><Ionicons name="location-outline" size={16} color="#00C2E8" style={styles.icon} /></View>
-              <View style={styles.priceContainer}><Text style={styles.priceValue}>₪{item.pricePerLesson}</Text><Text style={styles.priceLabel}>לשיעור</Text></View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailText}>{item.carModel}</Text>
+                <Ionicons name="car-sport-outline" size={16} color="#00C2E8" style={styles.icon} />
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailText}>{item.gearbox === 'automatic' ? 'אוטומט' : 'ידני'}</Text>
+                <Ionicons name="settings-outline" size={16} color="#00C2E8" style={styles.icon} />
+              </View>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailText}>{item.User?.city || 'מיקום לא צוין'}</Text>
+                <Ionicons name="location-outline" size={16} color="#00C2E8" style={styles.icon} />
+              </View>
+              <View style={styles.priceContainer}>
+                <Text style={styles.priceValue}>₪{item.pricePerLesson}</Text>
+                <Text style={styles.priceLabel}>לשיעור</Text>
+              </View>
             </View>
           </TouchableOpacity>
         )}
       />
-      <Modal visible={isFilterVisible} animationType="fade" transparent={true}>
+
+      {/* Filter Modal */}
+      <Modal visible={isFilterVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>סינון תוצאות</Text>
-            <View style={styles.inputWrapper}>
-              {/* ה-TextInput בא קודם */}
-              <TextInput
-                style={styles.input}
-                placeholder="בחר עיר"
-                value={searchCity}
-                onChangeText={setSearchCity}
-                textAlign="right" // דואג שהסמן והטקסט יתחילו מימין
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={styles.modalTitle}>סינון תוצאות</Text>
+
+              {/* סינון עיר */}
+              <Text style={styles.sectionLabel}>חפש עיר</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="לדוגמה: תל אביב"
+                  value={searchCity}
+                  onChangeText={setSearchCity}
+                  textAlign="right"
+                />
+                <Ionicons name="map-outline" size={20} color="#AAA" />
+              </View>
+
+              {/* סינון גיר */}
+              <Text style={styles.sectionLabel}>סוג גיר</Text>
+              <View style={styles.filterRow}>
+                <TouchableOpacity
+                  style={[styles.filterOption, gearboxFilter === 'manual' && styles.activeOption]}
+                  onPress={() => setGearboxFilter('manual')}
+                >
+                  <Text style={[styles.optionText, gearboxFilter === 'manual' && styles.activeOptionText]}>ידני</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.filterOption, gearboxFilter === 'automatic' && styles.activeOption]}
+                  onPress={() => setGearboxFilter('automatic')}
+                >
+                  <Text style={[styles.optionText, gearboxFilter === 'automatic' && styles.activeOptionText]}>אוטומט</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* סינון מחיר - סליידר */}
+              <View style={styles.labelRow}>
+                <Text style={styles.priceDisplay}>₪{maxPrice}</Text>
+                <Text style={styles.sectionLabel}>מחיר מקסימלי</Text>
+              </View>
+              <Slider
+                style={{ width: '100%', height: 40 }}
+                minimumValue={150}
+                maximumValue={200}
+                step={5}
+                minimumTrackTintColor="#00C2E8"
+                maximumTrackTintColor="#EEE"
+                thumbTintColor="#00C2E8"
+                value={maxPrice}
+                onValueChange={(val) => setMaxPrice(val)}
               />
-              {/* האייקון יופיע מימין לטקסט בגלל ה-row-reverse */}
-              <Ionicons name="map-outline" size={20} color="#AAA" style={styles.inputIcon} />
-            </View>
-            <View style={styles.filterRow}>
-              <TouchableOpacity style={[styles.filterOption, gearboxFilter === 'manual' && styles.activeOption]} onPress={() => setGearboxFilter('manual')}><Text style={[styles.optionText, gearboxFilter === 'manual' && styles.activeOptionText]}>ידני</Text></TouchableOpacity>
-              <TouchableOpacity style={[styles.filterOption, gearboxFilter === 'automatic' && styles.activeOption]} onPress={() => setGearboxFilter('automatic')}><Text style={[styles.optionText, gearboxFilter === 'automatic' && styles.activeOptionText]}>אוטומט</Text></TouchableOpacity>
-            </View>
-            <TouchableOpacity style={styles.applyBtn} onPress={applyFilters}><Text style={styles.applyBtnText}>הצג תוצאות</Text></TouchableOpacity>
-            <TouchableOpacity onPress={resetFilters} style={styles.resetBtn}><Text style={styles.resetText}>נקה הכל</Text></TouchableOpacity>
+
+              {/* סינון ותק */}
+              <Text style={styles.sectionLabel}>ותק המורה</Text>
+              <View style={styles.filterRow}>
+                {[5, 10, 15].map((years) => (
+                  <TouchableOpacity
+                    key={years}
+                    style={[styles.filterOption, minExperience === years && styles.activeOption]}
+                    onPress={() => setMinExperience(years)}
+                  >
+                    <Text style={[styles.optionText, minExperience === years && styles.activeOptionText]}>{years}+</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <TouchableOpacity style={styles.applyBtn} onPress={applyFilters}>
+                <Text style={styles.applyBtnText}>הצג תוצאות</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={resetFilters} style={styles.resetBtn}>
+                <Text style={styles.resetText}>נקה הכל</Text>
+              </TouchableOpacity>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -114,16 +223,16 @@ export default function SearchTutors({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F7F8' },
+  container: { flex: 1, backgroundColor: '#f4f7f8' },
   header: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', padding: 15, backgroundColor: '#FFF' },
   headerTitle: { fontSize: 21, fontWeight: 'bold', color: '#333', textAlign: 'right' },
   filterBtn: { padding: 10, backgroundColor: '#fafafa', borderRadius: 30 },
   listContent: { padding: 15 },
-  tutorCard: { flexDirection: 'row-reverse', backgroundColor: '#FFF', borderRadius: 20, padding: 15, marginBottom: 15, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, elevation: 3, alignItems: 'center' },
+  tutorCard: { flexDirection: 'row-reverse', backgroundColor: '#FFF', borderRadius: 15, padding: 15, marginBottom: 15, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, elevation: 3, alignItems: 'center' },
   avatarContainer: { marginLeft: 15 },
   avatarImage: { width: 70, height: 70, borderRadius: 35 },
   initialsContainer: { backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFF' },
-  initialsText: { color: '#FFF', fontSize: 28, fontWeight: 'bold', textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center' },
+  initialsText: { color: '#FFF', fontSize: 28, fontWeight: 'bold', textAlign: 'center' },
   tutorInfo: { flex: 1, alignItems: 'flex-end' },
   tutorName: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 8 },
   detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 4, justifyContent: 'flex-end' },
@@ -132,19 +241,21 @@ const styles = StyleSheet.create({
   priceContainer: { marginTop: 10, flexDirection: 'row-reverse', alignItems: 'baseline' },
   priceValue: { fontSize: 18, fontWeight: 'bold', color: '#1F2937' },
   priceLabel: { fontSize: 12, color: '#666', marginRight: 4 },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 20 },
-  modalContent: { backgroundColor: '#FFF', borderRadius: 25, padding: 25 },
-  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-  inputWrapper: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 15, paddingHorizontal: 15, marginBottom: 20 },
-  input: { flex: 1, height: 50, color: '#333', writingDirection: 'rtl', },
-  inputIcon: { marginLeft: 10, },
-  filterRow: { flexDirection: 'row', gap: 10, marginBottom: 25 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
+  modalContent: { backgroundColor: '#FFF', borderTopLeftRadius: 30, borderTopRightRadius: 30, padding: 25, maxHeight: '85%' },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
+  sectionLabel: { fontSize: 16, fontWeight: '600', color: '#444', marginBottom: 10, textAlign: 'right' },
+  labelRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
+  priceDisplay: { color: '#00C2E8', fontWeight: 'bold', fontSize: 16 },
+  inputWrapper: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 15, paddingHorizontal: 15, marginBottom: 20, height: 50 },
+  input: { flex: 1, height: '100%', color: '#333', writingDirection: 'rtl' },
+  filterRow: { flexDirection: 'row-reverse', gap: 10, marginBottom: 20 },
   filterOption: { flex: 1, height: 45, borderRadius: 12, borderWidth: 1, borderColor: '#EEE', justifyContent: 'center', alignItems: 'center' },
   activeOption: { backgroundColor: '#00C2E8', borderColor: '#00C2E8' },
   optionText: { color: '#666', fontWeight: 'bold' },
   activeOptionText: { color: '#FFF' },
-  applyBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  applyBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   applyBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-  resetBtn: { marginTop: 15 },
-  resetText: { textAlign: 'center', color: '#01829b', fontWeight: 600 }
+  resetBtn: { marginTop: 15, marginBottom: 20 },
+  resetText: { textAlign: 'center', color: '#01829b', fontWeight: '600' }
 });

@@ -7,7 +7,7 @@ const router = express.Router();
 
 router.get("/allTutors", authenticate, getAllTutors);
 router.get("/myProfile", authenticate, getMyProfile);
-router.get("/getTutor", authenticate, getTutorById);
+router.get("/getTutor/:id", authenticate, getTutorById);
 router.put("/updateProfile", authenticate, updateTutorProfile);
 router.get("/dashboard", authenticate, getTutorDashboardData);
 

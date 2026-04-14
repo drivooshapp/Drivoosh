@@ -78,10 +78,32 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
         );
     };
 
+    const formatPhoneNumber = (phone: string) => {
+        if (!phone) return '';
+
+        const cleanNumber = phone.replace(/\D/g, '');
+
+        if (cleanNumber.startsWith('0')) {
+            return `+972${cleanNumber.substring(1)}`;
+        }
+
+        if (cleanNumber.startsWith('972')) {
+            return `+${cleanNumber}`;
+        }
+
+        return cleanNumber.startsWith('+') ? cleanNumber : `+${cleanNumber}`;
+    };
+
     const handleSave = async () => {
         try {
             setLoading(true);
-            const response = await apiClient.put('/student/updateProfile', tempProfile);
+
+            const sanitizedProfile = {
+                ...tempProfile,
+                phoneNumber: formatPhoneNumber(tempProfile.phoneNumber)
+            };
+
+            const response = await apiClient.put('/student/updateProfile', sanitizedProfile);
 
             setProfile(response.data.user);
 

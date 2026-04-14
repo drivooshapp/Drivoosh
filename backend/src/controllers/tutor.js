@@ -7,8 +7,18 @@ export const getAllTutors = async (req, res) => {
         const tutors = await Tutor.findAll({
             include: [{
                 model: User,
-                attributes: ['firstName', 'lastName', 'profileImage']
-            }]
+                attributes: ['firstName', 'lastName', 'profileImage', 'city'] 
+            }],
+            attributes: [
+                'id', 
+                'carModel', 
+                'gearbox', 
+                'pricePerLesson', 
+                'experienceYears', 
+                'workStartHour', 
+                'workEndHour', 
+                'bio'
+            ]
         });
 
         res.status(200).json(tutors);
@@ -49,7 +59,7 @@ export const getTutorById = async (req, res) => {
         const tutor = await Tutor.findByPk(id, {
             include: [{
                 model: User,
-                attributes: ['firstName', 'lastName', 'email', 'profileImage']
+                attributes: ['firstName', 'lastName', 'street', 'city', 'phoneNumber', 'profileImage', 'role']
             }]
         });
 
