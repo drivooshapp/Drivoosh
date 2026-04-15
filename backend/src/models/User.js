@@ -13,6 +13,7 @@ const User = sequelize.define('User', {
     city: { type: DataTypes.STRING, allowNull: true },
     street: { type: DataTypes.STRING, allowNull: true },
     profileImage: { type: DataTypes.STRING, allowNull: true },
+    myTutor: { type: DataTypes.UUID, allowNull: true, references: { model: 'Tutors', key: 'id' } },
     isSetupComplete: { type: DataTypes.BOOLEAN, defaultValue: false }
 }, {
     timestamps: true

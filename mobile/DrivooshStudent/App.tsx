@@ -268,6 +268,8 @@ import MessagesScreen from './src/screens/main/MessagesScreen';
 import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import SearchTutors from './src/screens/main/SearchTutors';
 import TutorProfileCard from './src/screens/main/TutorProfileCard';
+import AllReviews from './src/screens/main/AllReviews';
+
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -278,6 +280,8 @@ function SearchStackScreen() {
     <SearchStack.Navigator screenOptions={{ headerShown: false }}>
       <SearchStack.Screen name="SearchMain" component={SearchTutors} />
       <SearchStack.Screen name="TutorDetails" component={TutorProfileCard} />
+
+      <SearchStack.Screen name="AllReviews" component={AllReviews} />
     </SearchStack.Navigator>
   );
 }
@@ -448,10 +452,10 @@ export default function App() {
           ) : (
             <Stack.Screen name="MainApp">
               {(props) => (
-                <DrawerNavigator 
-                  {...props} 
-                  onLogout={handleLogout} 
-                  userData={{ name: userName, image: profileImage }} 
+                <DrawerNavigator
+                  {...props}
+                  onLogout={handleLogout}
+                  userData={{ name: userName, image: profileImage }}
                 />
               )}
             </Stack.Screen>

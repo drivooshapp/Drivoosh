@@ -234,7 +234,6 @@ import { Alert, FlatList, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '@/src/components/LoadingScreen';
 
-/* ================= TYPES ================= */
 
 type UserType = {
   firstName?: string;
@@ -253,7 +252,6 @@ interface Lesson {
   Tutor?: UserType;
 }
 
-/* ================= HELPERS ================= */
 
 const getGreetingByTime = () => {
   const h = new Date().getHours();

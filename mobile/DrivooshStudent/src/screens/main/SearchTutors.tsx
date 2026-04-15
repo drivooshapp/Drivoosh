@@ -20,7 +20,7 @@ interface Tutor {
   experienceYears: number;
   workStartHour: string;
   workEndHour: string;
-  User: TutorUser;
+  user: TutorUser;
 }
 
 export default function SearchTutors({ navigation }: any) {
@@ -30,8 +30,9 @@ export default function SearchTutors({ navigation }: any) {
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [searchCity, setSearchCity] = useState('');
   const [gearboxFilter, setGearboxFilter] = useState<'manual' | 'automatic' | null>(null);
-  const [maxPrice, setMaxPrice] = useState(200);
   const [minExperience, setMinExperience] = useState<number | null>(null);
+  const [maxPrice, setMaxPrice] = useState(300);
+  const [absoluteMaxPrice, setAbsoluteMaxPrice] = useState(300);
 
   useEffect(() => {
     fetchTutors();
@@ -41,8 +42,16 @@ export default function SearchTutors({ navigation }: any) {
     try {
       setLoading(true);
       const response = await apiClient.get('/tutor/allTutors');
-      setTutors(response.data);
-      setFilteredTutors(response.data);
+      const allData = response.data;
+
+      setTutors(allData);
+      setFilteredTutors(allData);
+
+      if (allData.length > 0) {
+        const highestPrice = Math.max(...allData.map((t: Tutor) => t.pricePerLesson));
+        setAbsoluteMaxPrice(highestPrice);
+        setMaxPrice(highestPrice);
+      }
     } catch (error) {
       console.error("Error fetching tutors:", error);
     } finally {
@@ -54,7 +63,7 @@ export default function SearchTutors({ navigation }: any) {
     let updatedList = [...tutors];
 
     if (searchCity) {
-      updatedList = updatedList.filter(t => t.User?.city?.toLowerCase().includes(searchCity.toLowerCase()));
+      updatedList = updatedList.filter(t => t.user?.city?.toLowerCase().includes(searchCity.toLowerCase()));
     }
     if (gearboxFilter) {
       updatedList = updatedList.filter(t => t.gearbox === gearboxFilter);
@@ -72,7 +81,7 @@ export default function SearchTutors({ navigation }: any) {
   const resetFilters = () => {
     setSearchCity('');
     setGearboxFilter(null);
-    setMaxPrice(200);
+    setMaxPrice(absoluteMaxPrice);
     setMinExperience(null);
     setFilteredTutors(tutors);
     setFilterVisible(false);
@@ -97,7 +106,6 @@ export default function SearchTutors({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      {/* List */}
       <FlatList
         data={filteredTutors}
         keyExtractor={(item) => item.id}
@@ -108,16 +116,16 @@ export default function SearchTutors({ navigation }: any) {
             style={styles.tutorCard}
             onPress={() => navigation.navigate('TutorDetails', { tutorId: item.id })}          >
             <View style={styles.avatarContainer}>
-              {item.User?.profileImage ? (
-                <Image source={{ uri: item.User.profileImage }} style={styles.avatarImage} />
+              {item.user?.profileImage ? (
+                <Image source={{ uri: item.user.profileImage }} style={styles.avatarImage} />
               ) : (
                 <View style={[styles.avatarImage, styles.initialsContainer]}>
-                  <Text style={styles.initialsText}>{getInitials(item.User?.firstName)}</Text>
+                  <Text style={styles.initialsText}>{getInitials(item.user?.firstName)}</Text>
                 </View>
               )}
             </View>
             <View style={styles.tutorInfo}>
-              <Text style={styles.tutorName}>{`${item.User?.firstName} ${item.User?.lastName}`}</Text>
+              <Text style={styles.tutorName}>{`${item.user?.firstName} ${item.user?.lastName}`}</Text>
               <View style={styles.detailRow}>
                 <Text style={styles.detailText}>{item.carModel}</Text>
                 <Ionicons name="car-sport-outline" size={16} color="#00C2E8" style={styles.icon} />
@@ -127,7 +135,7 @@ export default function SearchTutors({ navigation }: any) {
                 <Ionicons name="settings-outline" size={16} color="#00C2E8" style={styles.icon} />
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.detailText}>{item.User?.city || 'מיקום לא צוין'}</Text>
+                <Text style={styles.detailText}>{item.user?.city || 'מיקום לא צוין'}</Text>
                 <Ionicons name="location-outline" size={16} color="#00C2E8" style={styles.icon} />
               </View>
               <View style={styles.priceContainer}>
@@ -139,14 +147,12 @@ export default function SearchTutors({ navigation }: any) {
         )}
       />
 
-      {/* Filter Modal */}
       <Modal visible={isFilterVisible} animationType="slide" transparent={true}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>סינון תוצאות</Text>
 
-              {/* סינון עיר */}
               <Text style={styles.sectionLabel}>חפש עיר</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
@@ -159,7 +165,6 @@ export default function SearchTutors({ navigation }: any) {
                 <Ionicons name="map-outline" size={20} color="#AAA" />
               </View>
 
-              {/* סינון גיר */}
               <Text style={styles.sectionLabel}>סוג גיר</Text>
               <View style={styles.filterRow}>
                 <TouchableOpacity
@@ -176,15 +181,14 @@ export default function SearchTutors({ navigation }: any) {
                 </TouchableOpacity>
               </View>
 
-              {/* סינון מחיר - סליידר */}
               <View style={styles.labelRow}>
                 <Text style={styles.priceDisplay}>₪{maxPrice}</Text>
                 <Text style={styles.sectionLabel}>מחיר מקסימלי</Text>
               </View>
               <Slider
                 style={{ width: '100%', height: 40 }}
-                minimumValue={150}
-                maximumValue={200}
+                minimumValue={100}
+                maximumValue={absoluteMaxPrice}
                 step={5}
                 minimumTrackTintColor="#00C2E8"
                 maximumTrackTintColor="#EEE"
@@ -193,7 +197,6 @@ export default function SearchTutors({ navigation }: any) {
                 onValueChange={(val) => setMaxPrice(val)}
               />
 
-              {/* סינון ותק */}
               <Text style={styles.sectionLabel}>ותק המורה</Text>
               <View style={styles.filterRow}>
                 {[5, 10, 15].map((years) => (
