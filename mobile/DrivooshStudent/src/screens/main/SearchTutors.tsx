@@ -92,8 +92,7 @@ export default function SearchTutors({ navigation }: any) {
     return firstName.charAt(0).toUpperCase();
   };
 
-  if (loading)
-    return <LoadingScreen />;
+  if (loading) return <LoadingScreen />;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -128,15 +127,15 @@ export default function SearchTutors({ navigation }: any) {
               <Text style={styles.tutorName}>{`${item.user?.firstName} ${item.user?.lastName}`}</Text>
               <View style={styles.detailRow}>
                 <Text style={styles.detailText}>{item.carModel}</Text>
-                <Ionicons name="car-sport-outline" size={16} color="#00C2E8" style={styles.icon} />
+                <Ionicons name="car-sport-outline" size={16} color="#017f98" style={styles.icon} />
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailText}>{item.gearbox === 'automatic' ? 'אוטומט' : 'ידני'}</Text>
-                <Ionicons name="settings-outline" size={16} color="#00C2E8" style={styles.icon} />
+                <Ionicons name="settings-outline" size={16} color="#017f98" style={styles.icon} />
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailText}>{item.user?.city || 'מיקום לא צוין'}</Text>
-                <Ionicons name="location-outline" size={16} color="#00C2E8" style={styles.icon} />
+                <Ionicons name="location-outline" size={16} color="#017f98" style={styles.icon} />
               </View>
               <View style={styles.priceContainer}>
                 <Text style={styles.priceValue}>₪{item.pricePerLesson}</Text>
@@ -234,7 +233,7 @@ const styles = StyleSheet.create({
   tutorCard: { flexDirection: 'row-reverse', backgroundColor: '#FFF', borderRadius: 15, padding: 15, marginBottom: 15, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 10, elevation: 3, alignItems: 'center' },
   avatarContainer: { marginLeft: 15 },
   avatarImage: { width: 70, height: 70, borderRadius: 35 },
-  initialsContainer: { backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFF' },
+  initialsContainer: { backgroundColor: '#017f98', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFF' },
   initialsText: { color: '#FFF', fontSize: 28, fontWeight: 'bold', textAlign: 'center' },
   tutorInfo: { flex: 1, alignItems: 'flex-end' },
   tutorName: { fontSize: 18, fontWeight: 'bold', color: '#1A1A1A', marginBottom: 8 },

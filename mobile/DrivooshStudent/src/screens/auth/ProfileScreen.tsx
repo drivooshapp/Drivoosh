@@ -14,6 +14,14 @@ interface UserProfile {
     street: string;
     profileImage?: string;
     isSetupComplete: boolean;
+    chosenTutor?: {
+        id: string;
+        user: {
+            firstName: string;
+            lastName: string;
+            profileImage: string;
+        };
+    };
 }
 
 interface InputFieldProps {
@@ -104,6 +112,14 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
             };
 
             const response = await apiClient.put('/student/updateProfile', sanitizedProfile);
+            setProfile(prev => {
+                if (!prev) return null;
+                return {
+                    ...prev,
+                    ...response.data.user,
+                    chosenTutor: prev.chosenTutor
+                };
+            });
 
             setProfile(response.data.user);
 
@@ -123,9 +139,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
         }
     };
 
-    if (fetching) {
-        return <LoadingScreen />;
-    }
+    if (fetching) return <LoadingScreen />;
 
     if (!profile) return null;
 
@@ -221,6 +235,29 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
 
                     <InputField label="עיר" value={profile.city || ''} editable={false} />
                     <InputField label="רחוב" value={profile.street || ''} editable={false} />
+
+                    <Text style={[styles.sectionTitle, { marginTop: 30 }]}>מורה</Text>
+                    <View style={styles.teacherRow}>
+                        <Text style={styles.valueInput}>
+                            {profile.chosenTutor
+                                ? `${profile.chosenTutor.user.firstName} ${profile.chosenTutor.user.lastName}`
+                                : 'טרם נבחר מורה'}
+                        </Text>
+                        {profile.chosenTutor && (
+                            profile.chosenTutor.user.profileImage ? (
+                                <Image
+                                    source={{ uri: profile.chosenTutor.user.profileImage }}
+                                    style={styles.teacherAvatar}
+                                />
+                            ) : (
+                                <View style={[styles.teacherAvatar, styles.avatarPlaceholder]}>
+                                    <Text style={styles.avatarInitial}>
+                                        {profile.chosenTutor.user.firstName?.[0]?.toUpperCase() || '?'}
+                                    </Text>
+                                </View>
+                            )
+                        )}
+                    </View>
                 </View>
 
                 <View style={styles.footerSection}>
@@ -263,12 +300,16 @@ const styles = StyleSheet.create({
     cameraIconBadge: { position: 'absolute', right: 0, bottom: 5, backgroundColor: '#fff', borderRadius: 15, padding: 6, elevation: 3 },
     actionButtonsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 30 },
     outlineButton: { borderWidth: 1, borderColor: '#00C2E8', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 25 },
-    outlineButtonText: { color: '#00C2E8', fontSize: 14, fontWeight: '600' },
+    outlineButtonText: { color: '#0194b1', fontSize: 14, fontWeight: '600' },
     formSection: { paddingHorizontal: 25 },
     sectionTitle: { fontSize: 16, fontWeight: 'bold', textAlign: 'right', marginBottom: 15, color: '#888' },
-    rowContainer: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginTop: 15, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#eee', },
+    rowContainer: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginTop: 15, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#eee' },
     labelText: { fontSize: 14, color: '#727272', textAlign: 'right', width: 80 },
     valueInput: { fontSize: 14, fontWeight: '500', color: '#000000', flex: 1, textAlign: 'left' },
+    teacherRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 5, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#eee' },
+    teacherAvatar: { width: 30, height: 30, borderRadius: 18, marginLeft: 12 },
+    avatarInitial: { color: '#fff', fontSize: 16, fontWeight: 'bold', textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center', },
+    avatarPlaceholder: { width: 30, height: 30, borderRadius: 18, backgroundColor: '#017f98', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     modalContent: { backgroundColor: '#fff', width: '85%', borderRadius: 15, padding: 25, elevation: 10 },
     modalHeader: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
@@ -276,7 +317,7 @@ const styles = StyleSheet.create({
     modalInput: { flex: 1, paddingVertical: 8, textAlign: 'right', fontSize: 15, color: '#333' },
     saveBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
-    cancelText: { color: '#01829b', fontWeight: 600, textAlign: 'center', marginTop: 15 },
+    cancelText: { color: '#01829b', fontWeight: '600', textAlign: 'center', marginTop: 15 },
     footerSection: { marginTop: 50, alignItems: 'center', paddingHorizontal: 25 },
     deleteAccountBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
     deleteAccountText: { color: '#FF4A4A', fontSize: 14, fontWeight: '500', marginRight: 8 }

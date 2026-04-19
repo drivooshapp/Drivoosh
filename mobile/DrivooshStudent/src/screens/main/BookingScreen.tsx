@@ -2,7 +2,7 @@ import apiClient from '@/src/api/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState, useRef } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import LoadingScreen from '@/src/components/LoadingScreen';
@@ -11,6 +11,7 @@ import LoadingScreen from '@/src/components/LoadingScreen';
 
 export default function NewBookingScreen({ navigation }: any) {
     const [address, setAddress] = useState('');
+    const [tutorId, setTutorId] = useState('');
     const [loading, setLoading] = useState(false);
     const [fetchingSlots, setFetchingSlots] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
@@ -20,9 +21,6 @@ export default function NewBookingScreen({ navigation }: any) {
     const [notes, setNotes] = useState('');
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
-    // const tutorId = "075e76af-360b-48eb-a8b6-36227e8c9c3a";
-    const tutorId = "6bb1eb75-58a2-429d-a98a-82ab65761a4e";
-
     useEffect(() => {
         fetchProfile();
     }, []);
@@ -30,51 +28,78 @@ export default function NewBookingScreen({ navigation }: any) {
     const fetchProfile = async () => {
         try {
             const response = await apiClient.get('/student/myProfile');
-            const street = response.data.street;
-            const city = response.data.city;
+
+            const tutor = response.data?.chosenTutor?.id;
+            if (!tutor) {
+                Alert.alert("שגיאה", "לא נמצא מורה משויך למשתמש");
+                return;
+            }
+
+            setTutorId(tutor);
+
+            const street = response.data?.street || '';
+            const city = response.data?.city || '';
             const fullAddress = `${street}, ${city}`;
 
             setAddress(fullAddress);
             setPickupLocation(fullAddress);
         } catch (error) {
             console.error("שגיאה בטעינת הפרופיל:", error);
+            Alert.alert("שגיאה", "בעיה בטעינת הפרופיל");
         }
     };
 
-    useFocusEffect(
-        useCallback(() => {
-            setStartTime('');
-            setAvailableSlots([]);
-
-            if (lessonDate.length === 10) {
-                fetchAvailableSlots();
-            }
-        }, [lessonDate])
-    );
-
     useEffect(() => {
-        if (lessonDate.length === 10) {
-            fetchAvailableSlots();
-        }
-    }, [lessonDate]);
+        if (!tutorId || lessonDate.length !== 10) return;
 
-    const fetchAvailableSlots = async () => {
-        if (lessonDate.length < 10) return;
+        const timeout = setTimeout(() => {
+            fetchAvailableSlots(tutorId, lessonDate);
+        }, 400);
+
+        return () => clearTimeout(timeout);
+    }, [tutorId, lessonDate]);
+
+
+    const requestIdRef = useRef(0);
+
+    const fetchAvailableSlots = async (id: string, date: string) => {
+        if (!id || date.length !== 10) return;
+
+        const requestId = ++requestIdRef.current;
 
         setFetchingSlots(true);
+
         try {
-            let dateParam = lessonDate;
-            if (lessonDate.includes('/')) {
-                const [day, month, year] = lessonDate.split('/');
+            let dateParam = date;
+
+            if (date.includes('/')) {
+                const [day, month, year] = date.split('/');
                 dateParam = `${year}-${month}-${day}`;
             }
-            const response = await apiClient.get(`/booking/tutor/${tutorId}/availableSlots?date=${dateParam}`);
-            setAvailableSlots(response.data);
+
+            const response = await apiClient.get(
+                `/booking/tutor/${id}/availableSlots?date=${dateParam}`
+            );
+
+            if (requestId !== requestIdRef.current) return;
+
+            const slots = Array.isArray(response.data)
+                ? response.data
+                : response.data?.slots || [];
+
+            setAvailableSlots(slots);
+
         } catch (error) {
+            if (requestId !== requestIdRef.current) return;
+
             console.error("Error fetching slots:", error);
             setAvailableSlots([]);
+            Alert.alert("שגיאה", "לא ניתן לטעון שעות פנויות");
+
         } finally {
-            setFetchingSlots(false);
+            if (requestId === requestIdRef.current) {
+                setFetchingSlots(false);
+            }
         }
     };
 
@@ -106,41 +131,50 @@ export default function NewBookingScreen({ navigation }: any) {
         }
 
         if (availableSlots.length > 0 && !availableSlots.includes(startTime)) {
-            Alert.alert("שעה לא חוקית", "השעה שהזנת אינה פנויה. נא לבחור שעה מהרשימה.");
+            Alert.alert("שעה לא חוקית", "השעה אינה פנויה");
             return;
         }
 
-        const now = new Date();
         const [d, m, y] = lessonDate.split('/');
         const selectedDate = new Date(`${y}-${m}-${d}`);
-        const isToday = selectedDate.toDateString() === now.toDateString();
+        const now = new Date();
 
-        if (isToday) {
-            const [selH, selM] = startTime.split(':').map(Number);
-            if (selH < now.getHours() || (selH === now.getHours() && selM <= now.getMinutes())) {
-                Alert.alert("שגיאה", "לא ניתן לקבוע שעה שכבר עברה היום");
+        if (selectedDate.toDateString() === now.toDateString()) {
+            const [h, min] = startTime.split(':').map(Number);
+            if (h < now.getHours() || (h === now.getHours() && min <= now.getMinutes())) {
+                Alert.alert("שגיאה", "לא ניתן לקבוע שעה שכבר עברה");
                 return;
             }
         }
 
         setLoading(true);
+
         try {
             const token = await AsyncStorage.getItem('userToken');
             const currentUserId = await AsyncStorage.getItem('currentUserId');
-            let finalDate = `${y}-${m}-${d}`;
 
-            const bookingData = { lessonDate: finalDate, startTime, tutorId, pickupLocation, notes };
+            const bookingData = {
+                lessonDate: `${y}-${m}-${d}`,
+                startTime,
+                tutorId,
+                pickupLocation,
+                notes
+            };
 
-            const response = await apiClient.post(`/booking/${currentUserId}/newBooking`, bookingData, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
+            const response = await apiClient.post(
+                `/booking/${currentUserId}/newBooking`,
+                bookingData,
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
 
             if (response.status === 201) {
-                Alert.alert("הצלחה", "פרטי השיעור הועברו לאישור המורה");
+                Alert.alert("בוצע", "הבקשה נשלחה לאישור המורה");
+
                 setLessonDate('');
                 setStartTime('');
                 setPickupLocation('');
                 setNotes('');
+                setAvailableSlots([]);
 
                 navigation.goBack();
             }
@@ -151,9 +185,7 @@ export default function NewBookingScreen({ navigation }: any) {
         }
     };
 
-    if (loading) {
-        return <LoadingScreen />;
-    }
+    if (loading) return <LoadingScreen />;
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>

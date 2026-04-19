@@ -37,9 +37,7 @@ export default function SignupScreen({ navigation }: any) {
         }
     };
 
-    if (loading) {
-        return <LoadingScreen />;
-    }
+  if (loading) return <LoadingScreen />;
 
     return (
         <SafeAreaView style={styles.container}>

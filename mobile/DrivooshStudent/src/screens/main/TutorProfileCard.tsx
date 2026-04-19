@@ -8,6 +8,7 @@ import LoadingScreen from '../../components/LoadingScreen';
 export default function TutorDetails({ route, navigation }: any) {
     const { tutorId } = route.params;
     const [tutor, setTutor] = useState<any>(null);
+    const [tutorOfUser, setTutorOfUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isReviewModalVisible, setReviewModalVisible] = useState(false);
     const [isStudentOfTutor, setIsStudentOfTutor] = useState(false);
@@ -34,11 +35,19 @@ export default function TutorDetails({ route, navigation }: any) {
 
     const checkStudentStatus = async () => {
         try {
-            const response = await apiClient.get('/user/userProfile');
+            const response = await apiClient.get('/student/myProfile');
             const currentUser = response.data;
 
-            if (currentUser.myTutor === tutorId) {
+            const currentSelectedId = currentUser.chosenTutor ? currentUser.chosenTutor.id : null;
+
+            console.log('Current Selected Tutor ID from Server:', currentSelectedId);
+
+            setTutorOfUser(currentSelectedId);
+
+            if (currentSelectedId === tutorId) {
                 setIsStudentOfTutor(true);
+            } else {
+                setIsStudentOfTutor(false);
             }
         } catch (e) {
             console.error("Error checking student status:", e);
@@ -53,7 +62,6 @@ export default function TutorDetails({ route, navigation }: any) {
 
         try {
             await apiClient.post('/review/addReview', { tutorId: tutor.id, content, rating });
-
             setReviewModalVisible(false);
             setContent('');
             setRating(5);
@@ -66,22 +74,43 @@ export default function TutorDetails({ route, navigation }: any) {
     };
 
     const handleSelectTutor = async () => {
-        try {
-            setLoading(true);
-            const response = await apiClient.put(`/student/selectTutor/${tutor.id}`);
-
-            if (response.status === 200) {
-                Alert.alert('בהצלחה!', `בחרת ב${tutor.user?.firstName} כמורה שלך.`);
-                setIsStudentOfTutor(true);
+        const executeSelection = async () => {
+            try {
+                setLoading(true);
+                const response = await apiClient.put(`/student/selectTutor/${tutor.id}`);
+                if (response.status === 200) {
+                    Alert.alert('בהצלחה!', `בחרת ב${tutor.user?.firstName} כמורה שלך.`);
+                    await checkStudentStatus();
+                }
+            } catch (e) {
+                console.error(e);
+                Alert.alert('שגיאה', 'בחירת המורה נכשלה');
+            } finally {
+                setLoading(false);
             }
-        } catch (e) {
-            Alert.alert('שגיאה', 'בחירת המורה נכשלה, נסה שוב מאוחר יותר');
-        } finally {
-            setLoading(false);
+        };
+
+        if (tutorOfUser) {
+            Alert.alert(
+                'החלפת מורה',
+                `שים לב שאתה כבר משויך למורה אחר. האם ברצונך להחליף אותו ב${tutor.user?.firstName}?`,
+                [
+                    { text: 'ביטול', style: 'cancel' },
+                    {
+                        text: 'כן, החלף מורה',
+                        style: 'destructive',
+                        onPress: executeSelection
+                    }
+                ]
+            );
+            // executeSelection();
+        }
+        else {
+            executeSelection();
         }
     };
 
-    const handleUnselectTutor = () => {
+    const handleUnselectTutor = async () => {
         Alert.alert(
             "ביטול בחירת מורה",
             "האם אתה בטוח שברצונך לבטל את השיוך למורה? פעולה זו עשויה להשפיע על תיאום השיעורים שלך.",
@@ -102,6 +131,14 @@ export default function TutorDetails({ route, navigation }: any) {
                 }
             ]
         );
+        // try {
+        //     await apiClient.put(`/student/unselectTutor`);
+        //     setIsStudentOfTutor(false);
+        //     setTutorOfUser(null);
+        //     Alert.alert("השיוך בוטל", "כעת ניתן לבחור מורה חדש.");
+        // } catch (e) {
+        //     Alert.alert("שגיאה", "הסרת מורה נכשלה");
+        // }
     };
 
     const handleCall = async () => {
@@ -178,10 +215,13 @@ export default function TutorDetails({ route, navigation }: any) {
                     <Text style={styles.bio}>{tutor.bio || 'אין מידע זמין כרגע.'}</Text>
 
                     <View style={styles.sectionHeader}>
-                        <TouchableOpacity onPress={() => navigation.navigate('AllReviews', { tutorId: tutor.id })}>
-                            <Text style={styles.linkText}>הצג הכל ({tutor.reviews?.length || 0})</Text>
-                        </TouchableOpacity>
                         <Text style={styles.title}>המלצות תלמידים</Text>
+
+                        {tutor.reviews?.length > 0 && (
+                            <TouchableOpacity onPress={() => navigation.navigate('AllReviews', { tutorId: tutor.id })}>
+                                <Text style={styles.linkText}>הצג הכל ({tutor.reviews.length})</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
 
                     {tutor.reviews && tutor.reviews.length > 0 ? (
@@ -254,7 +294,9 @@ export default function TutorDetails({ route, navigation }: any) {
                     </View>
                 ) : (
                     <TouchableOpacity style={styles.submitButton} onPress={handleSelectTutor}>
-                        <Text style={styles.submitButtonText}>בחר מורה לנהיגה</Text>
+                        <Text style={styles.submitButtonText}>
+                            {tutorOfUser ? 'החלף מורה' : 'בחר מורה'}
+                        </Text>
                     </TouchableOpacity>
                 )}
             </View>
@@ -309,7 +351,7 @@ export default function TutorDetails({ route, navigation }: any) {
 
 const Stat = ({ icon, label, value }: any) => (
     <View style={styles.stat}>
-        <Ionicons name={icon} size={22} color="#00C2E8" style={styles.statIcon} />
+        <Ionicons name={icon} size={22} color="#017f98" style={styles.statIcon} />
         <Text style={styles.statLabel}>{label}</Text>
         <Text style={styles.statValue}>{value}</Text>
     </View>
@@ -331,8 +373,8 @@ const styles = StyleSheet.create({
     profile: { alignItems: 'center', marginVertical: 19 },
     imgBox: { width: 110, height: 110, borderRadius: 55, overflow: 'hidden', marginBottom: 7 },
     img: { width: 110, height: 110, marginBottom: 7 },
-    placeholder: { flex: 1, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center' },
-    initial: { color: '#fff', fontSize: 34, fontWeight: 'bold' },
+    placeholder: { flex: 1, backgroundColor: '#017f98', justifyContent: 'center', alignItems: 'center' },
+    initial: { color: '#fff', fontSize: 42, fontWeight: 'bold' },
     name: { fontSize: 24, fontWeight: 'bold' },
     sub: { color: '#888', marginBottom: 2 },
     stats: { flexDirection: 'row-reverse', marginHorizontal: 20, backgroundColor: '#F9F9F9', borderRadius: 20, padding: 15, justifyContent: 'space-between', alignItems: 'flex-start' },
@@ -342,16 +384,16 @@ const styles = StyleSheet.create({
     statValue: { fontWeight: 'bold', textAlign: 'center' },
     divider: { width: 1, height: '100%', backgroundColor: '#E0E0E0' },
     info: { padding: 20, paddingBottom: 105 },
-    title: { fontSize: 18, fontWeight: 'bold', textAlign: 'right', paddingTop: 20 },
     bio: { color: '#555', textAlign: 'right', marginTop: 10 },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 30 },
-    linkText: { color: '#00C2E8', fontWeight: 'bold', paddingTop: 20 },
+    sectionHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginTop: 30, marginBottom: 10, width: '100%', },
+    title: { fontSize: 18, fontWeight: 'bold', textAlign: 'right', paddingTop: 30, },
+    linkText: { color: '#017f98', fontWeight: 'bold', paddingTop: 30, },
     reviewPreview: { backgroundColor: '#F9F9F9', borderRadius: 12, padding: 15, marginTop: 15 },
     reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
     reviewerName: { fontWeight: 'bold', fontSize: 14 },
     stars: { flexDirection: 'row-reverse', gap: 2 },
     reviewContent: { color: '#666', fontSize: 13, textAlign: 'right', fontStyle: 'italic' },
-    noReviews: { color: '#999', textAlign: 'center', marginTop: 15 },
+    noReviews: { color: '#999', textAlign: 'right', marginTop: 15 },
     addReviewBtn: { alignSelf: 'center', marginTop: 15 },
     addReviewText: { color: '#00C2E8', fontWeight: '600' },
     card: { backgroundColor: '#F9F9F9', borderRadius: 16, padding: 15, marginTop: 15 },

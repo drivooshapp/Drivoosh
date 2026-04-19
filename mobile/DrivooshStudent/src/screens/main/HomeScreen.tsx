@@ -1,238 +1,11 @@
-// import { Ionicons } from '@expo/vector-icons';
-// import AsyncStorage from '@react-native-async-storage/async-storage';
-// import { useFocusEffect } from '@react-navigation/native';
-// import React, { useState, useCallback } from 'react';
-// import { Alert, FlatList, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
-// import apiClient from '../../api/apiClient';
-// import LoadingScreen from '@/src/components/LoadingScreen';
-
-// const getGreetingByTime = () => {
-//   const currentHour = new Date().getHours();
-//   if (currentHour < 12) return 'בוקר טוב';
-//   if (currentHour < 18) return 'צהריים טובים';
-//   return 'ערב טוב';
-// };
-
-// const getDayName = (dateStr: string) => {
-//   const days = ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'];
-//   const d = new Date(dateStr);
-//   return days[d.getDay()];
-// };
-
-// export default function HomeScreen({ navigation }: any) {
-//   const [userName, setUserName] = useState<string | null>(null);
-//   const [loading, setLoading] = useState(true);
-//   const [nextLesson, setNextLesson] = useState<any>(null);
-//   const [upcomingLessons, setUpcomingLessons] = useState<any[]>([]);
-//   const [completedCount, setCompletedCount] = useState(0);
-
-//   useFocusEffect(
-//     useCallback(() => {
-//       const fetchData = async () => {
-//         try {
-//           const name = await AsyncStorage.getItem('userName');
-//           setUserName(name);
-
-//           const response = await apiClient.get('/booking/myHistory');
-//           const bookings = response.data;
-
-//           const now = new Date();
-
-//           const future = bookings
-//             .filter((b: any) => {
-//               const lessonFullDate = new Date(`${b.lessonDate.split('T')[0]}T${b.startTime}`);
-//               const isFuture = lessonFullDate > now;
-//               const isValidStatus = b.status === 'confirmed' || b.status === 'pending';
-//               return isFuture && isValidStatus;
-//             })
-//             .sort((a: any, b: any) => new Date(a.lessonDate).getTime() - new Date(b.lessonDate).getTime());
-
-//           if (future.length > 0) {
-//             setNextLesson(future[0]);
-//             setUpcomingLessons(future.slice(1));
-//           } else {
-//             setNextLesson(null);
-//             setUpcomingLessons([]);
-//           }
-
-//           const completed = bookings.filter((b: any) => b.status === 'completed' || new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now).length;
-//           setCompletedCount(completed);
-
-//         } catch (error) {
-//           console.error("טעינת נתונים מהשרת נכשלה", error);
-//         } finally {
-//           setLoading(false);
-//         }
-//       };
-
-//       fetchData();
-//     }, [])
-//   );
-
-//   const handleLessonCancel = (lessonId?: string) => {
-//     Alert.alert("ביטול שיעור", "האם אתה בטוח שברצונך לבטל את השיעור?");
-//   };
-
-//   const formatDate = (dateStr: string) => {
-//     const d = new Date(dateStr);
-//     return d.toLocaleDateString('he-IL');
-//   };
-
-//   const renderTeacherAvatar = (user: any) => {
-//     if (user?.profileImage) {
-//       return <Image source={{ uri: user.profileImage }} style={styles.teacherAvatar} />;
-//     }
-//     const initial = user?.firstName ? user.firstName.charAt(0).toUpperCase() : '?';
-//     return (
-//       <View style={[styles.teacherAvatar, styles.avatarPlaceholder]}>
-//         <Text style={styles.avatarInitial}>{initial}</Text>
-//       </View>
-//     );
-//   };
-
-//   if (loading) {
-//     return <LoadingScreen />;
-//   }
-
-//   return (
-//     <SafeAreaView style={styles.container}>
-//       <StatusBar barStyle="dark-content" />
-//       <ScrollView contentContainerStyle={styles.scrollContent}>
-
-//         <Text style={styles.headerTitle}>{`${getGreetingByTime()}, ${userName}`}</Text>
-
-//         <View style={styles.sectionCard}>
-//           <View style={styles.sectionHeaderRow}>
-//             <TouchableOpacity><Text style={styles.blueLink}>לצפייה</Text></TouchableOpacity>
-//             <Text style={styles.sectionTitle}>טופס מטרות</Text>
-//           </View>
-//           <Text style={styles.goalsProgressText}>
-//             {`${completedCount} מתוך 52 הושלמו`}
-//           </Text>
-//         </View>
-
-//         {nextLesson && (
-//           <View style={styles.sectionCard}>
-//             <View style={styles.sectionHeaderRow}>
-//               <TouchableOpacity onPress={() => handleLessonCancel(nextLesson?.id)}>
-//                 <Text style={styles.blueLink}>ביטול</Text>
-//               </TouchableOpacity>
-//               <Text style={styles.sectionTitle}>שיעור הבא</Text>
-//             </View>
-
-//             <View style={styles.nextLessonDetails}>
-//               <View style={styles.detailRow}>
-//                 <View style={{ flex: 1 }}>
-//                   <Text style={styles.detailText}>
-//                     {`${getDayName(nextLesson.lessonDate)}, ${formatDate(nextLesson.lessonDate)}`}
-//                   </Text>
-//                   <Text style={[styles.detailText, { color: '#666', fontSize: 14 }]}>
-//                     {`${nextLesson.startTime.slice(0, 5)} - ${nextLesson.endTime.slice(0, 5)}`}
-//                   </Text>
-//                 </View>
-//                 <Ionicons name="time-outline" size={22} color="#555" style={styles.detailIcon} />
-//               </View>
-
-//               <LessonDetailRow icon="location-outline" text={`איסוף: ${nextLesson.pickupLocation}`} />
-
-//               <View style={styles.teacherRow}>
-//                 <Text style={styles.detailText}>
-//                   {`${nextLesson.Tutor?.User?.firstName} ${nextLesson.Tutor?.User?.lastName}`}
-//                 </Text>
-//                 {renderTeacherAvatar(nextLesson.Tutor?.User)}
-//               </View>
-
-//               <LessonDetailRow
-//                 icon="cash-outline"
-//                 text={`${Math.floor(nextLesson.priceAtBooking)} ש"ח לשיעור`}
-//               />
-//             </View>
-//           </View>
-//         )}
-
-//         {upcomingLessons.length > 0 && (
-//           <View style={styles.sectionCard}>
-//             <Text style={[styles.sectionTitle, { textAlign: 'right', marginBottom: 15 }]}>
-//               שיעורים הבאים
-//             </Text>
-
-//             <FlatList
-//               data={upcomingLessons}
-//               keyExtractor={(item) => item.id}
-//               scrollEnabled={false}
-//               renderItem={({ item }) => (
-//                 <View style={styles.upcomingLessonRow}>
-//                   <TouchableOpacity onPress={() => handleLessonCancel(item.id)}>
-//                     <Text style={styles.blueLink}>ביטול</Text>
-//                   </TouchableOpacity>
-//                   <View style={styles.upcomingLessonText}>
-//                     <Text style={styles.upcomingTime}>
-//                       {`${item.startTime.slice(0, 5)} - ${item.endTime.slice(0, 5)}`}
-//                     </Text>
-//                     <Text style={styles.upcomingDayDate}>
-//                       {formatDate(item.lessonDate)}
-//                     </Text>
-//                   </View>
-//                 </View>
-//               )}
-//             />
-//           </View>
-//         )}
-
-//         <View style={styles.sectionCard}>
-//           <Text style={[styles.sectionTitle, { textAlign: 'right', marginBottom: 15 }]}>שיעורים שבוצעו</Text>
-//           <TouchableOpacity
-//             style={styles.prevLessonsRow}
-//             onPress={() => navigation.navigate('History')}
-//           >
-//             <Ionicons name="chevron-back-outline" size={20} color="#0194b1" />
-//             <Text style={styles.blueLink}>היסטוריית שיעורים קודמים</Text>
-//           </TouchableOpacity>
-//         </View>
-
-//       </ScrollView>
-//     </SafeAreaView>
-//   );
-// }
-
-// const LessonDetailRow = ({ icon, text }: { icon: any, text: string }) => (
-//   <View style={styles.detailRow}>
-//     <Text style={styles.detailText}>{text}</Text>
-//     <Ionicons name={icon} size={22} color="#555" style={styles.detailIcon} />
-//   </View>
-// );
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: '#fff' },
-//   scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
-//   headerTitle: { textAlign: 'right', fontSize: 15, fontWeight: '600', color: '#018aa6', paddingTop: 15, paddingBottom: 15 },
-//   sectionCard: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginTop: 20, borderWidth: 1, borderColor: '#eee', shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.05, shadowRadius: 3, elevation: 1, },
-//   sectionHeaderRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 15 },
-//   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
-//   blueLink: { color: '#0194b1', fontSize: 14, fontWeight: '600' },
-//   goalsProgressText: { fontSize: 16, color: '#666', textAlign: 'right' },
-//   nextLessonDetails: { gap: 12 },
-//   detailRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end' },
-//   detailText: { textAlign: 'right', fontSize: 15, color: '#444' },
-//   detailIcon: { marginLeft: 15 },
-//   teacherRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', marginTop: 5 },
-//   teacherAvatar: { width: 22, height: 22, borderRadius: 15, marginLeft: 15 },
-//   avatarPlaceholder: { backgroundColor: '#0194b1', justifyContent: 'center', alignItems: 'center' },
-//   avatarInitial: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-//   upcomingLessonRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12, borderTopWidth: 1, borderTopColor: '#f0f0f0' },
-//   upcomingLessonText: { alignItems: 'flex-end' },
-//   upcomingTime: { fontSize: 15, fontWeight: '600', color: '#222' },
-//   upcomingDayDate: { fontSize: 13, color: '#888', marginTop: 2 },
-//   prevLessonsRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 5, justifyContent: 'space-between' },
-// });
-
+import LoadingScreen from '@/src/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
-import React, { useState, useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
-import LoadingScreen from '@/src/components/LoadingScreen';
+import ProgressCircle from '@/src/components/ProgressCircle';
 
 
 type UserType = {
@@ -246,12 +19,13 @@ interface Lesson {
   lessonDate: string;
   startTime: string;
   endTime: string;
-  status: 'confirmed' | 'pending' | 'completed' | string;
+  status: string;
   pickupLocation: string;
   priceAtBooking: number;
-  Tutor?: UserType;
+  tutor?: {
+    user: UserType;
+  };
 }
-
 
 const getGreetingByTime = () => {
   const h = new Date().getHours();
@@ -267,68 +41,99 @@ const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('he-IL');
 
 const getDayName = (d: string) =>
-  ['יום ראשון','יום שני','יום שלישי','יום רביעי','יום חמישי','יום שישי','יום שבת'][new Date(d).getDay()];
-
-/* ================= COMPONENT ================= */
+  ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'][new Date(d).getDay()];
 
 export default function HomeScreen({ navigation }: any) {
   const [userName, setUserName] = useState<string | null>(null);
+  const [tutorId, setTutorId] = useState('');
   const [loading, setLoading] = useState(true);
   const [nextLesson, setNextLesson] = useState<Lesson | null>(null);
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
 
-  useFocusEffect(useCallback(() => {
-    let active = true;
+  const fetchData = async () => {
+    try {
+      setLoading(true);
 
-    const fetchData = async () => {
-      try {
-        const name = await AsyncStorage.getItem('userName');
-        if (active) setUserName(name);
+      const profileRes = await apiClient.get('/student/myProfile');
+      const tutor = profileRes.data?.chosenTutor?.id;
 
-        const { data } = await apiClient.get('/booking/myHistory');
-        const bookings: Lesson[] = data;
-
-        const now = new Date();
-
-        const future = bookings
-          .filter(b =>
-            getLessonDateTime(b) > now &&
-            (b.status === 'confirmed' || b.status === 'pending')
-          )
-          .sort(
-            (a, b) =>
-              getLessonDateTime(a).getTime() - getLessonDateTime(b).getTime()
-          );
-
-        if (active) {
-          setNextLesson(future[0] || null);
-          setUpcomingLessons(future.slice(1));
-
-          setCompletedCount(
-            bookings.filter(b =>
-              b.status === 'completed' ||
-              new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now
-            ).length
-          );
-        }
-      } catch (e) {
-        console.error('שגיאה בטעינת נתונים', e);
-      } finally {
-        if (active) setLoading(false);
+      if (!tutor) {
+        setLoading(false);
+        Alert.alert("שגיאה", "אין מורה משויך");
+        return;
       }
-    };
 
-    fetchData();
-    return () => { active = false; };
-  }, []));
+      setTutorId(tutor);
 
-  const handleLessonCancel = (id?: string) => {
-    Alert.alert('ביטול שיעור', 'האם אתה בטוח שברצונך לבטל את השיעור', [
-      { text: 'לא', style: 'cancel' },
-      { text: 'כן', onPress: () => console.log('cancel', id) }
-    ]);
+      const name = await AsyncStorage.getItem('userName');
+      setUserName(name);
+
+      const lessonsRes = await apiClient.get(`/booking/myHistory/${tutor}`);
+
+      const bookings: Lesson[] = lessonsRes.data || [];
+
+      const now = new Date();
+
+      const future = bookings
+        .filter(b =>
+          getLessonDateTime(b) > now &&
+          (b.status === 'confirmed' || b.status === 'pending')
+        )
+        .sort((a, b) =>
+          getLessonDateTime(a).getTime() - getLessonDateTime(b).getTime()
+        );
+
+      setNextLesson(future[0] || null);
+      setUpcomingLessons(future.slice(1));
+
+      setCompletedCount(
+        bookings.filter(b =>
+          b.status === 'completed' ||
+          new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now
+        ).length
+      );
+
+    } catch (e) {
+      console.error(e);
+      Alert.alert("שגיאה", "בעיה בטעינת נתונים");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [])
+  );
+
+  const handleLessonCancel = async (bookingId: string) => {
+    Alert.alert('ביטול שיעור', 'האם אתה בטוח שברצונך לבטל את השיעור', [
+
+      { text: 'חזור', style: 'cancel' },
+      {
+        text: 'בטל שיעור',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setLoading(true);
+            await apiClient.put(`/booking/cancel/${bookingId}`);
+            Alert.alert('בוצע', 'השיעור בוטל בהצלחה');
+            fetchData();
+
+          } catch (e: any) {
+            console.error(e);
+            const errorMessage = e.response?.data?.message || 'נסה שוב מאוחר יותר';
+            Alert.alert('שגיאה', errorMessage);
+
+          } finally {
+            setLoading(false);
+          }
+        }
+      }
+    ])
+  }
 
   const renderAvatar = (u?: UserType) =>
     u?.profileImage
@@ -348,17 +153,28 @@ export default function HomeScreen({ navigation }: any) {
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={styles.scrollContent}>
 
-        <Text style={styles.headerTitle}>
-          {`${getGreetingByTime()}${userName ? `, ${userName}` : ''}`}
-        </Text>
+        <View style={styles.welcomeContainer}>
+          <Text style={styles.headerTitle}>
+            {getGreetingByTime()},
+            <Text style={styles.userNameText}>{` ${userName}` || ''}</Text>
+          </Text>
+        </View>
 
         <Section
           title="טופס מטרות"
           action={<TouchableOpacity><Text style={styles.blueLink}>לצפייה</Text></TouchableOpacity>}
         >
-          <Text style={styles.goalsProgressText}>
-            {`${completedCount} מתוך 52 הושלמו`}
-          </Text>
+          <View style={styles.progressWrapper}>
+            <ProgressCircle
+              progress={(completedCount / 52) * 100}
+              size={135}
+              strokeWidth={8}
+            />
+
+            <Text style={styles.goalsProgressText}>
+              {`${completedCount} מתוך 52 הושלמו`}
+            </Text>
+          </View>
         </Section>
 
         {nextLesson && (
@@ -374,16 +190,16 @@ export default function HomeScreen({ navigation }: any) {
 
               <Row
                 icon="time-outline"
-                text={`${getDayName(nextLesson.lessonDate)}, ${formatDate(nextLesson.lessonDate)} | ${nextLesson.startTime.slice(0, 5)} - ${nextLesson.endTime.slice(0, 5)}`}
+                text={`${getDayName(nextLesson.lessonDate)}, ${formatDate(nextLesson.lessonDate)}\n${nextLesson.startTime.slice(0, 5)} - ${nextLesson.endTime.slice(0, 5)}`}
               />
 
               <Row icon="location-outline" text={`איסוף: ${nextLesson.pickupLocation}`} />
 
               <View style={styles.teacherRow}>
                 <Text style={styles.detailText}>
-                  {`${nextLesson.Tutor?.firstName || ''} ${nextLesson.Tutor?.lastName || ''}`}
+                  {`${nextLesson.tutor?.user?.firstName || ''} ${nextLesson.tutor?.user?.lastName || ''}`}
                 </Text>
-                {renderAvatar(nextLesson.Tutor)}
+                {renderAvatar(nextLesson.tutor?.user)}
               </View>
 
               <Row icon="cash-outline" text={`${Math.floor(nextLesson.priceAtBooking)} ש"ח`} />
@@ -450,25 +266,29 @@ const Row = ({ icon, text }: { icon: any; text: string }) => (
 );
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: '#f4f7f8' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
-  headerTitle: { textAlign: 'right', fontSize: 15, fontWeight: '600', color: '#018aa6', paddingVertical: 15 },
-  sectionCard: { backgroundColor: '#fff', padding: 15, borderRadius: 12, marginTop: 20, borderWidth: 1, borderColor: '#eee' },
+  welcomeContainer: { marginTop: 15, marginBottom: 18, paddingHorizontal: 5 },
+  headerTitle: { textAlign: 'right', fontSize: 17, fontWeight: '400', color: '#018aa6' },
+  userNameText: { fontWeight: 'bold', fontSize: 17, color: '#018aa6' },
+  progressWrapper: { alignItems: 'center', paddingVertical: 10 },
+  goalsProgressText: { textAlign: 'center', color: '#666', marginTop: 10 },
+  nextLessonCard: { backgroundColor: '#f0f9ff', borderColor: '#b3e5fc', borderWidth: 1.5 },
+  sectionCard: { backgroundColor: '#fff', padding: 18, borderRadius: 16, marginTop: 15, borderWidth: 1, borderColor: '#edf2f4', elevation: 2 },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold' },
-  blueLink: { color: '#0194b1', fontWeight: '600' },
-  goalsProgressText: { textAlign: 'right', color: '#666' },
-  nextLessonDetails: { gap: 12 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
+  blueLink: { color: '#0194b1', fontWeight: '700', fontSize: 15 },
+  nextLessonDetails: { gap: 14 },
   detailRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
-  detailText: { textAlign: 'right' },
-  detailIcon: { marginLeft: 10 },
-  teacherRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
-  teacherAvatar: { width: 24, height: 24, borderRadius: 12, marginLeft: 10 },
-  avatarPlaceholder: { backgroundColor: '#0194b1', justifyContent: 'center', alignItems: 'center' },
-  avatarInitial: { color: '#fff', fontSize: 12 },
-  upcomingLessonRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10 },
+  detailText: { textAlign: 'right', fontSize: 15, color: '#444', lineHeight: 22 },
+  detailIcon: { marginLeft: 12 },
+  teacherRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 5 },
+  teacherAvatar: { width: 22, height: 22, borderRadius: 14, marginLeft: 10 },
+  avatarPlaceholder: { backgroundColor: '#017f98', width: 22, height: 22, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
+  avatarInitial: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  upcomingLessonRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f9f9f9' },
   upcomingLessonText: { alignItems: 'flex-end' },
-  upcomingTime: { fontWeight: '600' },
-  upcomingDayDate: { color: '#888' },
-  prevLessonsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  upcomingTime: { fontWeight: '700', color: '#333' },
+  upcomingDayDate: { color: '#777', fontSize: 13 },
+  prevLessonsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
 });

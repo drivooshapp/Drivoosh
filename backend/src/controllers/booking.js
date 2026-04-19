@@ -6,13 +6,13 @@ export const createBooking = async (req, res) => {
     try {
         const { lessonDate, startTime, tutorId, pickupLocation, notes } = req.body;
         const studentId = req.user?.id;
-        const BUFFER_TIME = 15;
 
         const tutor = await Tutor.findByPk(tutorId);
         if (!tutor) {
             return res.status(404).json({ message: "המורה לא נמצא" });
         }
 
+        const BUFFER_TIME = tutor.BufferTime || 15;
         const lessonDuration = tutor.lessonDuration || 45;
         const timeParts = startTime.split(':');
 
@@ -50,7 +50,7 @@ export const createBooking = async (req, res) => {
         });
 
         if (isTaken) {
-            return res.status(400).json({ message: "השעה שנבחרה כבר אינה פנויה (או קרובה מדי לשיעור אחר)" });
+            return res.status(400).json({ message: "השעה שנבחרה אינה פנויה" });
         }
 
         const newBooking = await Booking.create({
@@ -85,7 +85,6 @@ export const getAvailableSlots = async (req, res) => {
         const tutor = await Tutor.findByPk(tutorId);
         if (!tutor) return res.status(404).json({ message: "המורה לא נמצא" });
 
-        // const BUFFER_TIME = 15;
         const BUFFER_TIME = tutor.BufferTime;
         const lessonDuration = tutor.lessonDuration;
 
@@ -174,10 +173,19 @@ export const getMyBookings = async (req, res) => {
         const bookings = await Booking.findAll({
             where: whereCondition,
             include: [
-                { model: User, as: 'student', attributes: ['firstName', 'lastName', 'phoneNumber'] },
+                {
+                    model: User,
+                    as: 'student',
+                    attributes: ['firstName', 'lastName', 'phoneNumber']
+                },
                 {
                     model: Tutor,
-                    include: [{ model: User, attributes: ['firstName', 'lastName'] }]
+                    as: 'tutor',
+                    include: [{
+                        model: User,
+                        as: 'user',
+                        attributes: ['firstName', 'lastName', 'profileImage']
+                    }]
                 }
             ],
             order: [['lessonDate', 'ASC']]
@@ -222,7 +230,18 @@ export const cancelBooking = async (req, res) => {
 
         if (!booking) return res.status(404).json({ message: "הזמנה לא נמצאה" });
 
-        booking.status = 'canceled';
+        const now = new Date();
+        const lessonDate = new Date(`${booking.lessonDate.split('T')[0]}T${booking.startTime}`);
+        const hoursLeft = (lessonDate - now) / (1000 * 60 * 60);
+
+        if (hoursLeft < 24) {
+            return res.status(400).json({
+                message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
+            });
+        }
+
+        booking.status = 'cancelled';
+
         await booking.save();
 
         res.status(200).json({ message: "השיעור בוטל בהצלחה" });

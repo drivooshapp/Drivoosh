@@ -5,7 +5,17 @@ import { User, Tutor } from "../models/index.js";
 export const getMyProfile = async (req, res) => {
     try {
         const student = await User.findByPk(req.user.id, {
-            attributes: ['id', 'firstName', 'lastName', 'email', 'phoneNumber', 'street', 'city', 'profileImage', 'role', 'createdAt']
+            attributes:
+                ['id', 'firstName', 'lastName', 'email', 'phoneNumber', 'street', 'city', 'profileImage', 'role', 'createdAt'],
+            include: [{
+                model: Tutor,
+                as: 'chosenTutor',
+                include: [{
+                    model: User,
+                    as: 'user',
+                    attributes: ['id', 'firstName', 'lastName', 'profileImage']
+                }]
+            }]
         });
 
         if (!student) {
@@ -49,19 +59,17 @@ export const updateStudentProfile = async (req, res) => {
 
         await user.save();
 
+        const updatedUser = await User.findByPk(userId, {
+            include: [{
+                model: Tutor,
+                as: 'chosenTutor',
+                include: [{ model: User, as: 'user', attributes: ['firstName', 'lastName', 'phoneNumber', 'profileImage'] }]
+            }]
+        });
+
         res.status(200).json({
             message: "הפרופיל עודכן בהצלחה",
-            user: {
-                id: user.id,
-                firstName: user.firstName,
-                lastName: user.lastName,
-                phoneNumber: user.phoneNumber,
-                city: user.city,
-                street: user.street,
-                email: user.email,
-                profileImage: user.profileImage,
-                isSetupComplete: user.isSetupComplete
-            }
+            user: updatedUser
         });
     } catch (error) {
         console.error("Error updating profile:", error);
@@ -98,7 +106,7 @@ export const unselectTutor = async (req, res) => {
 
     try {
         const student = await User.findByPk(studentId);
-        
+
         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
 
         student.myTutor = null;
