@@ -202,7 +202,7 @@ export default function NewBookingScreen({ navigation }: any) {
                     maxLength={10}
                 />
                 <TouchableOpacity onPress={() => setShowCalendar(true)}>
-                    <Ionicons name="calendar-outline" size={24} color="#00C2E8" />
+                    <Ionicons name="calendar-outline" style={styles.inputIcon} />
                 </TouchableOpacity>
             </View>
 
@@ -250,7 +250,7 @@ export default function NewBookingScreen({ navigation }: any) {
                     keyboardType="numeric"
                     maxLength={5}
                 />
-                <Ionicons name="time-outline" size={24} color="#00C2E8" />
+                <Ionicons name="time-outline" style={styles.inputIcon}/>
             </View>
 
             <Text style={styles.label}>מיקום איסוף</Text>
@@ -261,7 +261,7 @@ export default function NewBookingScreen({ navigation }: any) {
                     onChangeText={setPickupLocation}
                     placeholder="(עיר, רחוב)"
                 />
-                <Ionicons name="location-outline" size={24} color="#00C2E8" />
+                <Ionicons name="location-outline" style={styles.inputIcon}/>
             </View>
             {/* <Text style={styles.label}>מיקום איסוף</Text>
             <View style={[styles.inputWrapper, { zIndex: 1000, height: 'auto', minHeight: 55 }]}>
@@ -293,7 +293,7 @@ export default function NewBookingScreen({ navigation }: any) {
                     nearbyPlacesAPI="GooglePlacesSearch"
                     debounce={400} // מחכה חצי שניה בין הקלדות כדי לחסוך קריאות ל-API
                 />
-                <Ionicons name="location-outline" size={24} color="#00A8B5" style={{ marginLeft: 10 }} />
+                <Ionicons name="location-outline" style={styles.inputIcon} />
             </View> */}
 
             <Text style={styles.label}>הערות למורה (אופציונלי)</Text>
@@ -306,7 +306,7 @@ export default function NewBookingScreen({ navigation }: any) {
                     multiline
                     numberOfLines={3}
                 />
-                <Ionicons name="chatbubble-ellipses-outline" size={24} color="#00C2E8" style={{ marginTop: 10 }} />
+                <Ionicons name="chatbubble-ellipses-outline" style={styles.inputAreaIcon} />
             </View>
 
             <TouchableOpacity
@@ -348,10 +348,12 @@ const styles = StyleSheet.create({
     content: { padding: 25 },
     title: { fontSize: 21, fontWeight: 'bold', color: '#333', textAlign: 'right', marginBottom: 5 },
     label: { fontSize: 16, fontWeight: '600', color: '#555', textAlign: 'right', marginBottom: 8, marginTop: 30 },
-    inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9f9f9', borderRadius: 12, borderWidth: 1, borderColor: '#eee', paddingHorizontal: 15, height: 55 },
+    inputWrapper: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f9f9f9', borderRadius: 12, borderWidth: 1, borderColor: '#eee', height: 55 },
     textAreaWrapper: { height: 100, alignItems: 'flex-start' },
-    input: { flex: 1, textAlign: 'right', paddingRight: 10, fontSize: 16, writingDirection: 'rtl' },
+    input: { flex: 1, textAlign: 'right', fontSize: 16, writingDirection: 'rtl' },
     textArea: { textAlignVertical: 'top', paddingTop: 15 },
+    inputIcon: { fontSize: 24, color: '#00C2E8', marginLeft: 10, marginRight: 10 },
+    inputAreaIcon:{fontSize: 24, color: '#00C2E8', marginLeft: 10, marginRight: 10, marginTop: 10},
     timeList: { flexDirection: 'row', marginVertical: 8 },
     timeTag: { backgroundColor: '#f0f0f0', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd', height: 45, justifyContent: 'center' },
     timeTagSelected: { backgroundColor: '#00C2E8', borderColor: '#00C2E8' },

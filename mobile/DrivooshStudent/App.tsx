@@ -9,6 +9,7 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemL
 import LoadingScreen from './src/components/LoadingScreen';
 import HomeScreen from './src/screens/main/HomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
+import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import ProfileScreen from './src/screens/auth/ProfileScreen';
 import SignupScreen from './src/screens/auth/SignupScreen';
 import NewBooking from './src/screens/main/BookingScreen';
@@ -202,7 +203,14 @@ export default function App() {
               <Stack.Screen name="Login">
                 {(props) => <LoginScreen {...props} onLoginSuccess={checkLoginStatus} />}
               </Stack.Screen>
+
               <Stack.Screen name="Signup" component={SignupScreen} />
+
+              <Stack.Screen
+                name="ResetPassword"
+                component={ResetPasswordScreen}
+                options={{ headerShown: false }}
+              />
             </>
           ) : !isSetupComplete ? (
             <Stack.Screen name="Profile">

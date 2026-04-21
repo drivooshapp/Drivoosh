@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Image, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, FlatList, Image, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
 import ProgressCircle from '@/src/components/ProgressCircle';
 
@@ -44,12 +44,19 @@ const getDayName = (d: string) =>
   ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'][new Date(d).getDay()];
 
 export default function HomeScreen({ navigation }: any) {
-  const [userName, setUserName] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>('');
   const [tutorId, setTutorId] = useState('');
   const [loading, setLoading] = useState(true);
   const [nextLesson, setNextLesson] = useState<Lesson | null>(null);
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const openLessonDetails = (lesson: Lesson) => {
+    setSelectedLesson(lesson);
+    setModalVisible(true);
+  };
 
   const fetchData = async () => {
     try {
@@ -108,6 +115,13 @@ export default function HomeScreen({ navigation }: any) {
     }, [])
   );
 
+  const STATUS_TRANSLATIONS: Record<string, string> = {
+    pending: 'ממתין לאישור',
+    confirmed: 'מאושר',
+    completed: 'בוצע',
+    cancelled: 'בוטל',
+  };
+
   const handleLessonCancel = async (bookingId: string) => {
     Alert.alert('ביטול שיעור', 'האם אתה בטוח שברצונך לבטל את השיעור', [
 
@@ -155,8 +169,8 @@ export default function HomeScreen({ navigation }: any) {
 
         <View style={styles.welcomeContainer}>
           <Text style={styles.headerTitle}>
-            {getGreetingByTime()},
-            <Text style={styles.userNameText}>{` ${userName}` || ''}</Text>
+            {getGreetingByTime()}
+            {userName && <Text style={styles.userNameText}>{`, ${userName}`}</Text>}
           </Text>
         </View>
 
@@ -193,7 +207,7 @@ export default function HomeScreen({ navigation }: any) {
                 text={`${getDayName(nextLesson.lessonDate)}, ${formatDate(nextLesson.lessonDate)}\n${nextLesson.startTime.slice(0, 5)} - ${nextLesson.endTime.slice(0, 5)}`}
               />
 
-              <Row icon="location-outline" text={`איסוף: ${nextLesson.pickupLocation}`} />
+              <Row icon="location-outline" text={nextLesson.pickupLocation} />
 
               <View style={styles.teacherRow}>
                 <Text style={styles.detailText}>
@@ -203,6 +217,16 @@ export default function HomeScreen({ navigation }: any) {
               </View>
 
               <Row icon="cash-outline" text={`${Math.floor(nextLesson.priceAtBooking)} ש"ח`} />
+
+              <Row
+                icon="information-circle-outline"
+                text={
+                  <Text>
+                    <Text style={{ fontWeight: 'bold' }}>סטטוס: </Text>
+                    {STATUS_TRANSLATIONS[nextLesson.status] || nextLesson.status}
+                  </Text>
+                }
+              />
             </View>
           </Section>
         )}
@@ -214,11 +238,8 @@ export default function HomeScreen({ navigation }: any) {
               keyExtractor={i => i.id}
               scrollEnabled={false}
               renderItem={({ item }) => (
-                <View style={styles.upcomingLessonRow}>
-                  <TouchableOpacity onPress={() => handleLessonCancel(item.id)}>
-                    <Text style={styles.blueLink}>ביטול</Text>
-                  </TouchableOpacity>
-
+                <TouchableOpacity style={styles.upcomingLessonRow} onPress={() => openLessonDetails(item)}>
+                  <Ionicons name="chevron-back" size={18} color="#ccc" />
                   <View style={styles.upcomingLessonText}>
                     <Text style={styles.upcomingTime}>
                       {`${item.startTime.slice(0, 5)} - ${item.endTime.slice(0, 5)}`}
@@ -227,7 +248,7 @@ export default function HomeScreen({ navigation }: any) {
                       {formatDate(item.lessonDate)}
                     </Text>
                   </View>
-                </View>
+                </TouchableOpacity>
               )}
             />
           </Section>
@@ -244,6 +265,67 @@ export default function HomeScreen({ navigation }: any) {
         </Section>
 
       </ScrollView>
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            {selectedLesson && (
+              <>
+                <View style={styles.modalHeader}>
+                  <TouchableOpacity onPress={() => setModalVisible(false)}>
+                    <Ionicons name="close" size={24} color="#333" />
+                  </TouchableOpacity>
+                  <Text style={styles.modalTitle}>פרטי שיעור</Text>
+                </View>
+
+                <View style={styles.modalBody}>
+                  <Row icon="calendar-outline" text={`${getDayName(selectedLesson.lessonDate)}, ${formatDate(selectedLesson.lessonDate)}`} />
+                  <Row icon="time-outline" text={`${selectedLesson.startTime.slice(0, 5)} - ${selectedLesson.endTime.slice(0, 5)}`} />
+                  <Row icon="location-outline" text={`מיקום איסוף: ${selectedLesson.pickupLocation}`} />
+
+                  <View style={styles.teacherRow}>
+                    <Text style={styles.detailText}>
+                      {`${selectedLesson.tutor?.user?.firstName || ''} ${selectedLesson.tutor?.user?.lastName || ''}`}
+                    </Text>
+                    {renderAvatar(selectedLesson.tutor?.user)}
+                  </View>
+
+                  <Row
+                    icon="information-circle-outline"
+                    text={
+                      <Text>
+                        <Text style={{ fontWeight: 'bold' }}>סטטוס: </Text>
+                        {STATUS_TRANSLATIONS[selectedLesson.status] || selectedLesson.status}
+                      </Text>
+                    }
+                  />
+
+                  <View style={styles.separator} />
+
+                  <View style={styles.priceRow}>
+                    <Text style={styles.priceLabel}>עלות השיעור:</Text>
+                    <Text style={styles.priceValue}>₪ {Math.floor(selectedLesson.priceAtBooking)}</Text>
+                  </View>
+
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={() => {
+                      setModalVisible(false);
+                      handleLessonCancel(selectedLesson.id);
+                    }}
+                  >
+                    <Text style={styles.cancelButtonText}>ביטול שיעור</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -258,7 +340,7 @@ const Section = ({ title, children, action }: any) => (
   </View>
 );
 
-const Row = ({ icon, text }: { icon: any; text: string }) => (
+const Row = ({ icon, text }: { icon: any; text: any }) => (
   <View style={styles.detailRow}>
     <Text style={styles.detailText}>{text}</Text>
     <Ionicons name={icon} size={22} color="#555" style={styles.detailIcon} />
@@ -291,4 +373,15 @@ const styles = StyleSheet.create({
   upcomingTime: { fontWeight: '700', color: '#333' },
   upcomingDayDate: { color: '#777', fontSize: 13 },
   prevLessonsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', },
+  modalContent: { width: '85%', backgroundColor: '#fff', borderRadius: 20, padding: 20, elevation: 5, },
+  modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 10, },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#018aa6', },
+  modalBody: { gap: 15, },
+  separator: { height: 1, backgroundColor: '#eee', marginVertical: 5, },
+  priceRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', },
+  priceLabel: { fontSize: 16, color: '#666', },
+  priceValue: { fontSize: 18, fontWeight: 'bold', color: '#333', },
+  cancelButton: { marginTop: 15, alignItems: 'center', padding: 12, backgroundColor: '#f0f0f0', borderRadius: 10 },
+  cancelButtonText: { color: '#333', fontWeight: 'bold' },
 });

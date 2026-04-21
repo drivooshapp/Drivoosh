@@ -66,8 +66,26 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
     }
   };
 
-  if (loading) return <LoadingScreen />;
+  const handleForgotPassword = async () => {
+    if (!email) {
+      Alert.alert('שחזור סיסמה', 'אנא הזן את כתובת האימייל שלך לקבלת קוד');
+      return;
+    }
+    try {
+      setLoading(true);
+      await apiClient.post('/user/forgotPassword', { email });
+      // Alert.alert('קוד נשלח', 'בדוק את תיבת המייל שלך', [
+      //   { text: 'המשך', onPress: () => navigation.navigate('ResetPassword', { email }) }
+      // ]);
+      navigation.navigate('ResetPassword', { email })
+    } catch (error: any) {
+      Alert.alert('שגיאה', error.response?.data?.message || 'שגיאה בשליחת המייל');
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  if (loading) return <LoadingScreen />;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -107,6 +125,9 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
                 onChangeText={setPassword}
                 secureTextEntry
               />
+              <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotBtn}>
+                <Text style={styles.forgotText}>שכחת סיסמה?</Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
@@ -154,6 +175,8 @@ const styles = StyleSheet.create({
   inputContainer: { marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginBottom: 6, textAlign: 'right' },
   input: { height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
+  forgotBtn: { alignSelf: 'flex-start', marginTop: 8 },
+  forgotText: { color: '#00C2E8', fontSize: 13, fontWeight: '500' },
   button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
   buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   socialContainer: { marginTop: 22, alignItems: 'center' },

@@ -39,9 +39,6 @@ export default function TutorDetails({ route, navigation }: any) {
             const currentUser = response.data;
 
             const currentSelectedId = currentUser.chosenTutor ? currentUser.chosenTutor.id : null;
-
-            console.log('Current Selected Tutor ID from Server:', currentSelectedId);
-
             setTutorOfUser(currentSelectedId);
 
             if (currentSelectedId === tutorId) {
@@ -227,9 +224,6 @@ export default function TutorDetails({ route, navigation }: any) {
                     {tutor.reviews && tutor.reviews.length > 0 ? (
                         <View style={styles.reviewPreview}>
                             <View style={styles.reviewHeader}>
-                                <Text style={styles.reviewerName}>
-                                    {tutor.reviews[0].reviewer?.firstName} {tutor.reviews[0].reviewer?.lastName}
-                                </Text>
                                 <View style={styles.stars}>
                                     {[...Array(5)].map((_, i) => (
                                         <Ionicons
@@ -240,6 +234,9 @@ export default function TutorDetails({ route, navigation }: any) {
                                         />
                                     ))}
                                 </View>
+                                <Text style={styles.reviewerName}>
+                                    {tutor.reviews[0].reviewer?.firstName} {tutor.reviews[0].reviewer?.lastName}
+                                </Text>
                             </View>
                             <Text style={styles.reviewContent} numberOfLines={2}>
                                 "{tutor.reviews[0].content}"
@@ -390,8 +387,8 @@ const styles = StyleSheet.create({
     linkText: { color: '#017f98', fontWeight: 'bold', paddingTop: 30, },
     reviewPreview: { backgroundColor: '#F9F9F9', borderRadius: 12, padding: 15, marginTop: 15 },
     reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 },
-    reviewerName: { fontWeight: 'bold', fontSize: 14 },
-    stars: { flexDirection: 'row-reverse', gap: 2 },
+    reviewerName: { fontWeight: 'bold', fontSize: 13.5, color: '#5f5f5f' },
+    stars: { flexDirection: 'row', gap: 2 },
     reviewContent: { color: '#666', fontSize: 13, textAlign: 'right', fontStyle: 'italic' },
     noReviews: { color: '#999', textAlign: 'right', marginTop: 15 },
     addReviewBtn: { alignSelf: 'center', marginTop: 15 },

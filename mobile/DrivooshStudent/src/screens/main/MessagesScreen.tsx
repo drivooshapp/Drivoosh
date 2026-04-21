@@ -1,18 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import LoadingScreen from '@/src/components/LoadingScreen';
-
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function MessagesScreen() {
-
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>הודעות מהמורה</Text>
+      <MaterialCommunityIcons name="traffic-cone" size={80} color="#88c0cc" />
+      <Text style={styles.subtitle}>העמוד נמצא בתהליך בנייה</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  text: { fontSize: 20, fontWeight: 'bold' },
+  container: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF', padding: 20 },
+  title: { fontSize: 22, fontWeight: 'bold', color: '#374151', marginTop: 15 },
+  subtitle: { fontSize: 16, color: '#6e6e6e', marginTop: 8, textAlign: 'center' },
 });

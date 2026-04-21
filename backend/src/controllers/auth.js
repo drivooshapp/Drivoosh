@@ -1,5 +1,7 @@
 import { User, Tutor } from '../models/index.js';
 // import { OAuth2Client } from 'google-auth-library';
+import sgMail from '@sendgrid/mail';
+import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
@@ -103,6 +105,63 @@ export const login = async (req, res) => {
     catch (error) {
         console.error("Login Error:", error);
         res.status(500).json({ message: "שגיאה בתהליך ההתחברות" });
+    }
+};
+
+
+export const forgotPassword = async (req, res) => {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ where: { email } });
+
+        if (!user) return res.status(200).json({ message: "נשלח קוד למייל" });
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        user.resetPasswordToken = await bcrypt.hash(otp, 10);
+        user.resetPasswordExpires = Date.now() + 10 * 60 * 1000;
+        await user.save();
+
+        await sgMail.send({
+            to: email,
+            from: process.env.FROM_EMAIL,
+            subject: 'קוד אימות לאיפוס סיסמה - Drivoosh',
+            html: `<div style="direction: rtl; text-align: right;">
+                    <h2>שלום ${user.firstName},</h2>
+                    <p>הקוד שלך לאיפוס הסיסמה הוא: <b style="font-size: 20px;">${otp}</b></p>
+                    <p>הקוד תקף ל-10 דקות.</p>
+                   </div>`
+        });
+
+        res.status(200).json({ message: "הקוד נשלח בהצלחה" });
+    } catch (e) {
+        res.status(500).json({ message: "שגיאה בשליחת המייל" });
+    }
+};
+
+
+export const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+        const user = await User.findOne({ where: { email } });
+
+        if (!user || !user.resetPasswordToken || user.resetPasswordExpires < Date.now()) {
+            return res.status(400).json({ message: "הקוד פג תוקף או לא קיים" });
+        }
+
+        const isValid = await bcrypt.compare(otp, user.resetPasswordToken);
+        if (!isValid) return res.status(400).json({ message: "קוד שגוי" });
+
+        user.password = await bcrypt.hash(newPassword, 10);
+        user.resetPasswordToken = null;
+        user.resetPasswordExpires = null;
+        await user.save();
+
+        res.status(200).json({ message: "הסיסמה שונתה בהצלחה" });
+    } catch (e) {
+        res.status(500).json({ message: "שגיאה באיפוס הסיסמה" });
     }
 };
 

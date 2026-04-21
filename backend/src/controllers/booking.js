@@ -200,6 +200,46 @@ export const getMyBookings = async (req, res) => {
 };
 
 
+export const getBookingById = async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+
+        const booking = await Booking.findByPk(bookingId, {
+            include: [
+                {
+                    model: User,
+                    as: 'student',
+                    attributes: ['firstName', 'lastName', 'phoneNumber', 'email', 'profileImage']
+                },
+                {
+                    model: Tutor,
+                    as: 'tutor',
+                    include: [{
+                        model: User,
+                        as: 'user',
+                        attributes: ['firstName', 'lastName', 'profileImage', 'phoneNumber']
+                    }]
+                }
+            ]
+        });
+
+        if (!booking) {
+            return res.status(404).json({ message: "השיעור לא נמצא" });
+        }
+
+        if (booking.studentId !== req.user.id && booking.tutor.userId !== req.user.id) {
+            return res.status(403).json({ message: "אין לך הרשאה לצפות בשיעור זה" });
+        }
+
+        res.status(200).json(booking);
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "שגיאה בשליפת פרטי השיעור" });
+    }
+};
+
+
 export const updateBookingStatus = async (req, res) => {
     try {
         const { bookingId, status } = req.body;
