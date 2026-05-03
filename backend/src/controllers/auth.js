@@ -177,9 +177,6 @@ export const deleteAccount = async (req, res) => {
             return res.status(404).json({ message: "משתמש לא נמצא" });
         }
 
-        // 2. אופציונלי: מחיקת נתונים קשורים (כמו שיעורים שנקבעו, הודעות וכו')
-        // await Booking.deleteMany({ studentId: studentId });
-
         res.status(200).json({ message: "החשבון נמחק בהצלחה" });
     } catch (error) {
         console.error("Error deleting account:", error);

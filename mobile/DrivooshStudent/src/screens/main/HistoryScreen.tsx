@@ -129,7 +129,7 @@ const styles = StyleSheet.create({
   statusBadge: { backgroundColor: '#E6F6F7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },
   statusText: { color: '#00A8B5', fontWeight: '600' },
   dateText: { color: '#888' },
-  cardMainRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10 },
+  cardMainRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 10 },
   infoColumn: { alignItems: 'flex-end', flex: 1 },
   teacherName: { fontWeight: '700', fontSize: 16 },
   timeText: { color: '#666' },

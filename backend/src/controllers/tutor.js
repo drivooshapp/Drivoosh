@@ -39,6 +39,7 @@ export const etAllTutors = async (req, res) => {
     }
 };
 
+
 export const getAllTutors = async (req, res) => {
     try {
         const tutors = await Tutor.findAll({
@@ -83,6 +84,7 @@ export const getAllTutors = async (req, res) => {
     }
 };
 
+
 export const getTutorById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -122,6 +124,7 @@ export const getTutorById = async (req, res) => {
         res.status(500).json({ message: "שגיאה בשרת" });
     }
 };
+
 
 export const getMyProfile = async (req, res) => {
     try {

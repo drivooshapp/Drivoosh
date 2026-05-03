@@ -1,11 +1,10 @@
 import LoadingScreen from '@/src/components/LoadingScreen';
+import ProgressCircle from '@/src/components/ProgressCircle';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
-import ProgressCircle from '@/src/components/ProgressCircle';
 
 
 type UserType = {
@@ -63,6 +62,7 @@ export default function HomeScreen({ navigation }: any) {
       setLoading(true);
 
       const profileRes = await apiClient.get('/student/myProfile');
+      setUserName(profileRes.data?.firstName);
       const tutor = profileRes.data?.chosenTutor?.id;
 
       if (!tutor) {
@@ -72,9 +72,6 @@ export default function HomeScreen({ navigation }: any) {
       }
 
       setTutorId(tutor);
-
-      const name = await AsyncStorage.getItem('userName');
-      setUserName(name);
 
       const lessonsRes = await apiClient.get(`/booking/myHistory/${tutor}`);
 
@@ -193,7 +190,7 @@ export default function HomeScreen({ navigation }: any) {
 
         {nextLesson && (
           <Section
-            title="שיעור הבא"
+            title="השיעור הקרוב"
             action={
               <TouchableOpacity onPress={() => handleLessonCancel(nextLesson.id)}>
                 <Text style={styles.blueLink}>ביטול</Text>
@@ -209,14 +206,14 @@ export default function HomeScreen({ navigation }: any) {
 
               <Row icon="location-outline" text={nextLesson.pickupLocation} />
 
-              <View style={styles.teacherRow}>
+              {/* <View style={styles.teacherRow}>
                 <Text style={styles.detailText}>
                   {`${nextLesson.tutor?.user?.firstName || ''} ${nextLesson.tutor?.user?.lastName || ''}`}
                 </Text>
                 {renderAvatar(nextLesson.tutor?.user)}
               </View>
 
-              <Row icon="cash-outline" text={`${Math.floor(nextLesson.priceAtBooking)} ש"ח`} />
+              <Row icon="cash-outline" text={`${Math.floor(nextLesson.priceAtBooking)} ש"ח`} /> */}
 
               <Row
                 icon="information-circle-outline"
@@ -287,14 +284,14 @@ export default function HomeScreen({ navigation }: any) {
                   <Row icon="time-outline" text={`${selectedLesson.startTime.slice(0, 5)} - ${selectedLesson.endTime.slice(0, 5)}`} />
                   <Row icon="location-outline" text={`מיקום איסוף: ${selectedLesson.pickupLocation}`} />
 
-                  <View style={styles.teacherRow}>
+                  {/* <View style={styles.teacherRow}>
                     <Text style={styles.detailText}>
                       {`${selectedLesson.tutor?.user?.firstName || ''} ${selectedLesson.tutor?.user?.lastName || ''}`}
                     </Text>
                     {renderAvatar(selectedLesson.tutor?.user)}
-                  </View>
+                  </View> */}
 
-                  <Row
+                  {/* <Row
                     icon="information-circle-outline"
                     text={
                       <Text>
@@ -302,13 +299,20 @@ export default function HomeScreen({ navigation }: any) {
                         {STATUS_TRANSLATIONS[selectedLesson.status] || selectedLesson.status}
                       </Text>
                     }
-                  />
+                  /> */}
 
                   <View style={styles.separator} />
 
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceLabel}>עלות השיעור:</Text>
-                    <Text style={styles.priceValue}>₪ {Math.floor(selectedLesson.priceAtBooking)}</Text>
+                  <View style={{ alignItems: 'center' }}>
+                    <Row
+                      icon="information-circle-outline"
+                      text={
+                        <Text style={{ textAlignVertical: 'center' }}>
+                          <Text style={{ fontWeight: 'bold' }}>סטטוס: </Text>
+                          {STATUS_TRANSLATIONS[selectedLesson.status] || selectedLesson.status}
+                        </Text>
+                      }
+                    />
                   </View>
 
                   <TouchableOpacity
@@ -379,8 +383,8 @@ const styles = StyleSheet.create({
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#018aa6', },
   modalBody: { gap: 15, },
   separator: { height: 1, backgroundColor: '#eee', marginVertical: 5, },
-  priceRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', },
-  priceLabel: { fontSize: 16, color: '#666', },
+  statusRow: { justifyContent: 'center', alignItems: 'center', },
+  statusLabel: { fontSize: 16, fontWeight: 'bold', color: '#666' },
   priceValue: { fontSize: 18, fontWeight: 'bold', color: '#333', },
   cancelButton: { marginTop: 15, alignItems: 'center', padding: 12, backgroundColor: '#f0f0f0', borderRadius: 10 },
   cancelButtonText: { color: '#333', fontWeight: 'bold' },

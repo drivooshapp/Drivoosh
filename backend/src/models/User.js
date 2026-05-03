@@ -9,6 +9,8 @@ const User = sequelize.define('User', {
     role: { type: DataTypes.ENUM('student', 'tutor'), allowNull: false },
     email: { type: DataTypes.STRING, unique: true, allowNull: false, validate: { isEmail: true } },
     password: { type: DataTypes.STRING, allowNull: false, validate: { len: { args: [6, 100], msg: "הסיסמה חייבת לכלול בין 6 ל-12 תווים" } } },
+    // password: { type: DataTypes.STRING, allowNull: false, defaultValue: '325962694', validate: { len: { args: [6, 100], msg: "הסיסמה חייבת לכלול בין 6 ל-12 תווים" } } },
+
     phoneNumber: { type: DataTypes.STRING, allowNull: true, validate: { is: /^[0-9+\-\s]+$/i } },
     city: { type: DataTypes.STRING, allowNull: true },
     street: { type: DataTypes.STRING, allowNull: true },

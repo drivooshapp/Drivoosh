@@ -156,9 +156,10 @@ export default function SearchTutors({ navigation }: any) {
               <View style={styles.inputWrapper}>
                 <TextInput
                   style={styles.input}
-                  placeholder="לדוגמה: תל אביב"
+                  placeholder="תל אביב"
                   value={searchCity}
                   onChangeText={setSearchCity}
+                  placeholderTextColor="#9CA3AF"
                   textAlign="right"
                 />
                 <Ionicons name="map-outline" size={20} color="#AAA" />

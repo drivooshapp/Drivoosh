@@ -85,12 +85,26 @@ export const getAvailableSlots = async (req, res) => {
         const tutor = await Tutor.findByPk(tutorId);
         if (!tutor) return res.status(404).json({ message: "המורה לא נמצא" });
 
-        const BUFFER_TIME = tutor.BufferTime;
-        const lessonDuration = tutor.lessonDuration;
+        const BUFFER_TIME = Number(tutor.BufferTime || 0);
+        const lessonDuration = Number(tutor.lessonDuration);
 
         const now = new Date();
-        const israelTime = new Date(now.getTime() + (3 * 60 * 60 * 1000));
-        const todayStr = israelTime.toISOString().split('T')[0];
+
+        const todayStr = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Jerusalem',
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        }).format(now);
+
+        const israelTimeStr = now.toLocaleTimeString('en-GB', {
+            timeZone: 'Asia/Jerusalem',
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+        const [currH, currM] = israelTimeStr.split(':').map(Number);
+        const currentTotalMinutes = currH * 60 + currM;
 
         const startOfDay = new Date(`${date}T00:00:00.000Z`);
         const endOfDay = new Date(`${date}T23:59:59.999Z`);
@@ -110,7 +124,7 @@ export const getAvailableSlots = async (req, res) => {
 
             return {
                 start: startH * 60 + startM,
-                end: endH * 60 + endM + BUFFER_TIME
+                end: (endH * 60 + endM) + BUFFER_TIME
             };
         });
 
@@ -138,8 +152,7 @@ export const getAvailableSlots = async (req, res) => {
             if (isOverlap) return false;
 
             if (date === todayStr) {
-                const currentTotalMinutes = israelTime.getUTCHours() * 60 + israelTime.getUTCMinutes();
-                if (slotStartMinutes <= currentTotalMinutes) return false;
+                if (slotStartMinutes <= currentTotalMinutes + 5) return false;
             }
 
             return true;
@@ -152,6 +165,7 @@ export const getAvailableSlots = async (req, res) => {
         res.status(500).json({ message: "שגיאה בחישוב שעות", error: error.message });
     }
 };
+
 
 export const getMyBookings = async (req, res) => {
     try {

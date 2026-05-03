@@ -50,10 +50,6 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
       await AsyncStorage.setItem('currentUserId', currentUserId);
       await AsyncStorage.setItem('isSetupComplete', String(isSetupComplete));
 
-      const storedName = await AsyncStorage.getItem('userName');
-      // alert("התחברת בהצלחה! " + storedName);
-      Alert.alert('הצלחה', 'התחברת בהצלחה');
-
       if (onLoginSuccess) {
         await onLoginSuccess();
       }

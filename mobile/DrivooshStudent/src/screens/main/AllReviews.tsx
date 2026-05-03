@@ -90,6 +90,6 @@ const styles = StyleSheet.create({
     name: { fontWeight: 'bold', fontSize: 16, color: '#333' },
     stars: { flexDirection: 'row', gap: 2 },
     date: { fontSize: 12, color: '#999', marginBottom: 8, textAlign: 'right' },
-    content: { color: '#444', textAlign: 'right', lineHeight: 22, fontSize: 15 },
+    content: { color: '#444', textAlign: 'right',fontStyle: 'italic', lineHeight: 22, fontSize: 15 },
     emptyText: { textAlign: 'center', marginTop: 50, color: '#999', fontSize: 16 }
 });

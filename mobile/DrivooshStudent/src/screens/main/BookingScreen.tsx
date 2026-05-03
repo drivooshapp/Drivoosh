@@ -1,8 +1,7 @@
 import apiClient from '@/src/api/apiClient';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
-import React, { useCallback, useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
 import LoadingScreen from '@/src/components/LoadingScreen';
@@ -10,7 +9,8 @@ import LoadingScreen from '@/src/components/LoadingScreen';
 
 
 export default function NewBookingScreen({ navigation }: any) {
-    const [address, setAddress] = useState('');
+    const [token, setToken] = useState('');
+    const [currentUserId, setCurrentUserId] = useState('');
     const [tutorId, setTutorId] = useState('');
     const [loading, setLoading] = useState(false);
     const [fetchingSlots, setFetchingSlots] = useState(false);
@@ -20,9 +20,24 @@ export default function NewBookingScreen({ navigation }: any) {
     const [pickupLocation, setPickupLocation] = useState('');
     const [notes, setNotes] = useState('');
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
+    
+    const getTextColor = (value: string) => (value ? '#333' : '#999');
 
     useEffect(() => {
-        fetchProfile();
+        const initializeData = async () => {
+            const savedToken = await AsyncStorage.getItem('userToken');
+            const savedId = await AsyncStorage.getItem('currentUserId');
+
+            if (savedToken && savedId) {
+                setToken(savedToken!);
+                setCurrentUserId(savedId!);
+                fetchProfile();
+            } else {
+                Alert.alert("שגיאה", "שגיאה בטעינת הנתונים. נסה להתחבר שוב");
+            }
+        };
+
+        initializeData();
     }, []);
 
     const fetchProfile = async () => {
@@ -41,7 +56,6 @@ export default function NewBookingScreen({ navigation }: any) {
             const city = response.data?.city || '';
             const fullAddress = `${street}, ${city}`;
 
-            setAddress(fullAddress);
             setPickupLocation(fullAddress);
         } catch (error) {
             console.error("שגיאה בטעינת הפרופיל:", error);
@@ -103,14 +117,67 @@ export default function NewBookingScreen({ navigation }: any) {
         }
     };
 
-    const getTextColor = (value: string) => (value ? '#333' : '#999');
+    const today = new Date();
+    const minDateStr = today.toISOString().split('T')[0];
+
+    const maxDateObj = new Date();
+    maxDateObj.setDate(today.getDate() + 7);
+    const maxDateStr = maxDateObj.toISOString().split('T')[0];
+
+    const selectedDateFormatted = lessonDate.split('/').reverse().join('-');
+
+    const validateAndSetDate = (dateStr: string) => {
+        const parts = dateStr.split('/');
+        if (parts.length !== 3 || parts[2].length !== 4) return;
+
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1;
+        const year = parseInt(parts[2], 10);
+
+        const inputDate = new Date(year, month, day);
+        const now = new Date();
+        now.setHours(0, 0, 0, 0);
+
+        const maxLimit = new Date();
+        maxLimit.setDate(now.getDate() + 7);
+        maxLimit.setHours(23, 59, 59, 999);
+
+        const isValidDate = inputDate.getFullYear() === year &&
+            inputDate.getMonth() === month &&
+            inputDate.getDate() === day;
+
+        if (!isValidDate) {
+            Alert.alert('שגיאה', 'נא להזין תאריך אמיתי בלוח השנה');
+            setLessonDate('');
+            setAvailableSlots([]);
+            return;
+        }
+
+        if (inputDate < now || inputDate > maxLimit) {
+            Alert.alert('טווח לא חוקי', 'ניתן להזמין שיעור רק לשבוע הקרוב');
+            setLessonDate('');
+            setAvailableSlots([]);
+            return;
+        }
+    };
 
     const handleDateTyping = (text: string) => {
         const cleaned = text.replace(/\D/g, '');
         let formatted = cleaned;
-        if (cleaned.length > 2) formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
-        if (cleaned.length > 4) formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`;
+
+        if (cleaned.length <= 2) {
+            formatted = cleaned;
+        } else if (cleaned.length <= 4) {
+            formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2)}`;
+        } else {
+            formatted = `${cleaned.slice(0, 2)}/${cleaned.slice(2, 4)}/${cleaned.slice(4, 8)}`;
+        }
+
         setLessonDate(formatted);
+
+        if (cleaned.length === 8) {
+            validateAndSetDate(formatted);
+        }
     };
 
     const handleTimeTyping = (text: string) => {
@@ -150,9 +217,6 @@ export default function NewBookingScreen({ navigation }: any) {
         setLoading(true);
 
         try {
-            const token = await AsyncStorage.getItem('userToken');
-            const currentUserId = await AsyncStorage.getItem('currentUserId');
-
             const bookingData = {
                 lessonDate: `${y}-${m}-${d}`,
                 startTime,
@@ -250,7 +314,7 @@ export default function NewBookingScreen({ navigation }: any) {
                     keyboardType="numeric"
                     maxLength={5}
                 />
-                <Ionicons name="time-outline" style={styles.inputIcon}/>
+                <Ionicons name="time-outline" style={styles.inputIcon} />
             </View>
 
             <Text style={styles.label}>מיקום איסוף</Text>
@@ -261,7 +325,7 @@ export default function NewBookingScreen({ navigation }: any) {
                     onChangeText={setPickupLocation}
                     placeholder="(עיר, רחוב)"
                 />
-                <Ionicons name="location-outline" style={styles.inputIcon}/>
+                <Ionicons name="location-outline" style={styles.inputIcon} />
             </View>
             {/* <Text style={styles.label}>מיקום איסוף</Text>
             <View style={[styles.inputWrapper, { zIndex: 1000, height: 'auto', minHeight: 55 }]}>
@@ -317,7 +381,7 @@ export default function NewBookingScreen({ navigation }: any) {
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>הזמן שיעור</Text>}
             </TouchableOpacity>
 
-            <Modal visible={showCalendar} transparent animationType="fade">
+            {/* <Modal visible={showCalendar} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarContainer}>
                         <Calendar
@@ -338,6 +402,50 @@ export default function NewBookingScreen({ navigation }: any) {
                         </TouchableOpacity>
                     </View>
                 </View>
+            </Modal> */}
+            <Modal visible={showCalendar} transparent animationType="fade">
+                <View style={styles.modalOverlay}>
+                    <View style={styles.calendarContainer}>
+                        <Calendar
+                            // הגבלת טווח הבחירה
+                            minDate={minDateStr}
+                            maxDate={maxDateStr}
+
+                            // טיפול בבחירת תאריך
+                            onDayPress={(day: any) => {
+                                // הופך מ-YYYY-MM-DD ל-DD/MM/YYYY
+                                const formattedDate = day.dateString.split('-').reverse().join('/');
+                                setLessonDate(formattedDate);
+                                setShowCalendar(false);
+                            }}
+
+                            // סימון התאריך הנבחר
+                            markedDates={{
+                                [selectedDateFormatted]: {
+                                    selected: true,
+                                    selectedColor: '#00C2E8',
+                                    disableTouchEvent: false, // מאפשר ללחוץ על היום הנבחר שוב
+                                }
+                            }}
+
+                            // עיצוב הלוח
+                            theme={{
+                                todayTextColor: '#00C2E8',
+                                arrowColor: '#00C2E8',
+                                textDisabledColor: '#d9e1e8', // צבע אפור לימים שמחוץ לטווח (לפני היום ואחרי 7 ימים)
+                                selectedDayBackgroundColor: '#00C2E8',
+                                selectedDayTextColor: '#ffffff',
+                            }}
+                        />
+
+                        <TouchableOpacity
+                            style={styles.closeButton}
+                            onPress={() => setShowCalendar(false)}
+                        >
+                            <Text style={styles.closeButtonText}>ביטול</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </Modal>
         </ScrollView>
     );
@@ -353,7 +461,7 @@ const styles = StyleSheet.create({
     input: { flex: 1, textAlign: 'right', fontSize: 16, writingDirection: 'rtl' },
     textArea: { textAlignVertical: 'top', paddingTop: 15 },
     inputIcon: { fontSize: 24, color: '#00C2E8', marginLeft: 10, marginRight: 10 },
-    inputAreaIcon:{fontSize: 24, color: '#00C2E8', marginLeft: 10, marginRight: 10, marginTop: 10},
+    inputAreaIcon: { fontSize: 24, color: '#00C2E8', marginLeft: 10, marginRight: 10, marginTop: 10 },
     timeList: { flexDirection: 'row', marginVertical: 8 },
     timeTag: { backgroundColor: '#f0f0f0', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, marginRight: 10, borderWidth: 1, borderColor: '#ddd', height: 45, justifyContent: 'center' },
     timeTagSelected: { backgroundColor: '#00C2E8', borderColor: '#00C2E8' },
