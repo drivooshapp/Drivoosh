@@ -25,7 +25,7 @@ sequelize.sync({ alter: true })
         console.error("Failed to sync database:", err);
     });
 
-app.get("/test-db", async (req, res) => {
+app.get("/testDB", async (req, res) => {
     try {
         await sequelize.authenticate();
         res.json({ message: "Connection has been established successfully." });

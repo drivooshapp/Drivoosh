@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Alert, Modal, StyleSheet, View, Text, TextInput, Image, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, KeyboardTypeOptions, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import apiClient from '../../api/apiClient';
 import LoadingScreen from '@/src/components/LoadingScreen';
+import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, KeyboardTypeOptions, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import apiClient from '../../api/apiClient';
 
 interface UserProfile {
     firstName: string;
@@ -16,6 +16,7 @@ interface UserProfile {
     isSetupComplete: boolean;
     chosenTutor?: {
         id: string;
+        pricePerLesson: number;
         user: {
             firstName: string;
             lastName: string;
@@ -35,9 +36,10 @@ interface InputFieldProps {
 const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isModalVisible, setModalVisible] = useState(false);
+    const [phoneError, setPhoneError] = useState('');
     const [tempProfile, setTempProfile] = useState<any>({});
-    const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
+    const [loading, setLoading] = useState(false);
 
     useEffect(() => {
         fetchProfile();
@@ -86,34 +88,71 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
         );
     };
 
-    const formatPhoneNumber = (phone: string) => {
-        if (!phone) return '';
+    const validateAndFormatPhone = (phone: string) => {
+        if (!phone) {
+            return { isValid: false, error: 'נא להזין מספר טלפון' };
+        }
 
         const cleanNumber = phone.replace(/\D/g, '');
 
+        const isRepeated = /^(\d)\1+$/.test(cleanNumber);
+        if (isRepeated) {
+            return { isValid: false, error: 'מספר לא תקין (רצף ספרות זהות)' };
+        }
+
+        const isValidLength = cleanNumber.length >= 9 && cleanNumber.length <= 12;
+        if (!isValidLength) {
+            return { isValid: false, error: 'מספר טלפון חייב להכיל 9 עד 12 ספרות' };
+        }
+
+        let prefixCheck = '';
         if (cleanNumber.startsWith('0')) {
-            return `+972${cleanNumber.substring(1)}`;
+            prefixCheck = cleanNumber[1];
+        } else if (cleanNumber.startsWith('972')) {
+            prefixCheck = cleanNumber[3];
+        } else {
+            prefixCheck = cleanNumber[0];
         }
 
-        if (cleanNumber.startsWith('972')) {
-            return `+${cleanNumber}`;
+        const validPrefixes = ['2', '3', '4', '5', '7', '8', '9'];
+        if (!validPrefixes.includes(prefixCheck)) {
+            return { isValid: false, error: 'קידומת ישראלית לא מוכרת' };
         }
 
-        return cleanNumber.startsWith('+') ? cleanNumber : `+${cleanNumber}`;
+        let formatted = '';
+        if (cleanNumber.startsWith('0')) {
+            formatted = `+972${cleanNumber.substring(1)}`;
+        } else if (cleanNumber.startsWith('972')) {
+            formatted = `+${cleanNumber}`;
+        } else {
+            formatted = `+972${cleanNumber}`;
+        }
+
+        return { isValid: true, formatted };
     };
 
     const handleSave = async () => {
         try {
+            setPhoneError('');
             setLoading(true);
+
+            const result = validateAndFormatPhone(tempProfile.phoneNumber);
+
+            if (!result.isValid) {
+                setPhoneError(result.error || '');
+                setLoading(false);
+                return;
+            }
 
             const sanitizedProfile = {
                 ...tempProfile,
-                phoneNumber: formatPhoneNumber(tempProfile.phoneNumber)
+                phoneNumber: result.formatted
             };
 
             const response = await apiClient.put('/student/updateProfile', sanitizedProfile);
+
             setProfile(prev => {
-                if (!prev) return null;
+                if (!prev) return response.data.user;
                 return {
                     ...prev,
                     ...response.data.user,
@@ -121,22 +160,33 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                 };
             });
 
-            setProfile(response.data.user);
-
             await AsyncStorage.setItem('isSetupComplete', 'true');
 
             setModalVisible(false);
-            Alert.alert("הצלחה", "הפרופיל עודכן בהצלחה!");
+            Alert.alert("בוצע", "הפרופיל עודכן בהצלחה");
 
             if (onSetupComplete) {
                 onSetupComplete();
             }
-        } catch (error) {
+
+        } catch (error: any) {
             console.error("Update Error:", error);
-            Alert.alert("שגיאה", "לא הצלחנו לעדכן את הנתונים");
+
+            const serverMessage = error.response?.data?.message;
+
+            if (serverMessage && serverMessage.includes('טלפון')) {
+                setPhoneError(serverMessage);
+            } else {
+                Alert.alert("שגיאה", serverMessage || "תקלה בעדכון הנתונים");
+            }
         } finally {
             setLoading(false);
         }
+    };
+
+    const closeModal = () => {
+        setPhoneError('');
+        setModalVisible(false);
     };
 
     if (fetching) return <LoadingScreen />;
@@ -149,7 +199,6 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
             style={styles.container}
         >
             <ScrollView contentContainerStyle={styles.scrollContent} >
-
                 <Modal visible={isModalVisible} animationType="fade" transparent={true}>
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalContent}>
@@ -162,27 +211,41 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                                 { key: 'city', placeholder: 'עיר', keyboard: 'default' },
                                 { key: 'street', placeholder: 'רחוב', keyboard: 'default' },
                             ].map((field) => (
-                                <View key={field.key} style={styles.modalInputWrapper}>
-                                    <Ionicons name="pencil-sharp" size={14} color="#cccccc" />
-                                    <TextInput
-                                        style={[
-                                            styles.modalInput,
-                                            { color: tempProfile[field.key]?.trim() ? '#333' : '#BDBDBD' }
-                                        ]}
-                                        placeholder={field.placeholder}
-                                        placeholderTextColor="#b3b3b3"
-                                        value={tempProfile[field.key]}
-                                        keyboardType={field.keyboard as KeyboardTypeOptions}
-                                        onChangeText={(val) => setTempProfile({ ...tempProfile, [field.key]: val })}
-                                    />
+
+                                <View key={field.key} style={{ width: '100%', marginBottom: 15 }}>
+                                    <View style={styles.modalInputWrapper}>
+                                        <Ionicons name="pencil-sharp" size={14} color="#cccccc" />
+                                        <TextInput
+                                            style={[
+                                                styles.modalInput,
+                                                { color: tempProfile[field.key]?.trim() ? '#333' : '#BDBDBD' }
+                                            ]}
+                                            placeholder={field.placeholder}
+                                            placeholderTextColor="#b3b3b3"
+                                            value={tempProfile[field.key]}
+                                            keyboardType={field.keyboard as KeyboardTypeOptions}
+                                            onChangeText={(val) => {
+                                                if (field.key === 'phoneNumber') setPhoneError('');
+                                                setTempProfile({ ...tempProfile, [field.key]: val });
+                                            }}
+                                        />
+                                    </View>
+
+                                    {field.key === 'phoneNumber' && phoneError ? (
+                                        <Text style={styles.errorText}>{phoneError}</Text>
+                                    ) : null}
                                 </View>
                             ))}
 
-                            <TouchableOpacity style={styles.saveBtn} onPress={handleSave} disabled={loading}>
+                            <TouchableOpacity
+                                style={[styles.saveBtn, loading && { opacity: 0.7 }]}
+                                onPress={handleSave}
+                                disabled={loading}
+                            >
                                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.saveBtnText}>שמור שינויים</Text>}
                             </TouchableOpacity>
 
-                            <TouchableOpacity onPress={() => setModalVisible(false)}>
+                            <TouchableOpacity onPress={closeModal}>
                                 <Text style={styles.cancelText}>ביטול</Text>
                             </TouchableOpacity>
                         </View>
@@ -231,12 +294,12 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                     <InputField label="טלפון" value={profile.phoneNumber || ''} editable={false} />
                     <InputField label="מייל" value={profile.email} editable={false} />
 
-                    <Text style={[styles.sectionTitle, { marginTop: 30 }]}>כתובת</Text>
+                    <Text style={[styles.sectionTitle]}>כתובת</Text>
 
                     <InputField label="עיר" value={profile.city || ''} editable={false} />
                     <InputField label="רחוב" value={profile.street || ''} editable={false} />
 
-                    <Text style={[styles.sectionTitle, { marginTop: 30 }]}>מורה</Text>
+                    <Text style={[styles.sectionTitle]}>מורה</Text>
                     <View style={styles.teacherRow}>
                         <Text style={styles.valueInput}>
                             {profile.chosenTutor
@@ -258,6 +321,14 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                             )
                         )}
                     </View>
+
+                    {profile.chosenTutor && (
+                        <InputField
+                            label="עלות שיעור"
+                            value={`₪ ${profile.chosenTutor.pricePerLesson}`}
+                            editable={false}
+                        />
+                    )}
                 </View>
 
                 <View style={styles.footerSection}>
@@ -298,11 +369,11 @@ const styles = StyleSheet.create({
     initialsContainer: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#fff', overflow: 'hidden' },
     initialsText: { color: '#fff', fontSize: 45, fontWeight: 'bold', textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center', paddingBottom: 5, lineHeight: 55 },
     cameraIconBadge: { position: 'absolute', right: 0, bottom: 5, backgroundColor: '#fff', borderRadius: 15, padding: 6, elevation: 3 },
-    actionButtonsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 30 },
+    actionButtonsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 15 },
     outlineButton: { borderWidth: 1, borderColor: '#00C2E8', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 25 },
     outlineButtonText: { color: '#0194b1', fontSize: 14, fontWeight: '600' },
     formSection: { paddingHorizontal: 25 },
-    sectionTitle: { fontSize: 16, fontWeight: 'bold', textAlign: 'right', marginBottom: 15, color: '#888' },
+    sectionTitle: { fontSize: 16, fontWeight: 'bold', textAlign: 'right', marginBottom: 15, color: '#4ba1b2', marginTop: 50 },
     rowContainer: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', marginTop: 15, paddingVertical: 5, borderBottomWidth: 1, borderBottomColor: '#eee' },
     labelText: { fontSize: 14, color: '#727272', textAlign: 'right', width: 80 },
     valueInput: { fontSize: 14, fontWeight: '500', color: '#000000', flex: 1, textAlign: 'left' },
@@ -315,6 +386,7 @@ const styles = StyleSheet.create({
     modalHeader: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
     modalInputWrapper: { flexDirection: 'row', alignItems: 'center', borderBottomColor: '#ccc', borderBottomWidth: 1.5, marginBottom: 15, paddingHorizontal: 5 },
     modalInput: { flex: 1, paddingVertical: 8, textAlign: 'right', fontSize: 15, color: '#333' },
+    errorText: { color: '#D32F2F', fontSize: 12, fontWeight: '500', textAlign: 'right', marginTop: 4, paddingRight: 5, },
     saveBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
     cancelText: { color: '#01829b', fontWeight: '600', textAlign: 'center', marginTop: 15 },

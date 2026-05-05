@@ -1,3 +1,4 @@
+import { model } from "mongoose";
 import { User, Tutor } from "../models/index.js";
 
 
@@ -10,6 +11,7 @@ export const getMyProfile = async (req, res) => {
             include: [{
                 model: Tutor,
                 as: 'chosenTutor',
+                attributes: ['id', 'pricePerLesson'],
                 include: [{
                     model: User,
                     as: 'user',

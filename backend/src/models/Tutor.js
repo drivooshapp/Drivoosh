@@ -8,7 +8,7 @@ const Tutor = sequelize.define('Tutor', {
     id: { type: DataTypes.UUID, defaultValue: DataTypes.UUIDV4, primaryKey: true },
     userId: { type: DataTypes.UUID, allowNull: false, unique: true },
     carModel: { type: DataTypes.STRING },
-    gearbox: { type: DataTypes.ENUM('manual', 'automatic') },
+    // gearbox: { type: DataTypes.ENUM('manual', 'automatic') },
     pricePerLesson: { type: DataTypes.INTEGER },
     lessonDuration: { type: DataTypes.INTEGER || 45 },
     workStartHour: { type: DataTypes.STRING, defaultValue: "08:00" },

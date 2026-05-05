@@ -15,7 +15,6 @@ interface TutorUser {
 interface Tutor {
   id: string;
   carModel: string;
-  gearbox: 'manual' | 'automatic';
   pricePerLesson: number;
   experienceYears: number;
   workStartHour: string;
@@ -29,7 +28,9 @@ export default function SearchTutors({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [isFilterVisible, setFilterVisible] = useState(false);
   const [searchCity, setSearchCity] = useState('');
-  const [gearboxFilter, setGearboxFilter] = useState<'manual' | 'automatic' | null>(null);
+  const [searchName, setSearchName] = useState('');
+  const [dynamicPlaceholder, setDynamicPlaceholder] = useState('ישראל ישראלי');
+  const [lastIndex, setLastIndex] = useState<number>(-1);
   const [minExperience, setMinExperience] = useState<number | null>(null);
   const [maxPrice, setMaxPrice] = useState(300);
   const [absoluteMaxPrice, setAbsoluteMaxPrice] = useState(300);
@@ -37,6 +38,21 @@ export default function SearchTutors({ navigation }: any) {
   useEffect(() => {
     fetchTutors();
   }, []);
+
+  useEffect(() => {
+    let interval: any;
+    if (isFilterVisible) {
+      updatePlaceholder();
+
+      interval = setInterval(() => {
+        updatePlaceholder();
+      }, 1500);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isFilterVisible, tutors]);
 
   const fetchTutors = async () => {
     try {
@@ -62,12 +78,16 @@ export default function SearchTutors({ navigation }: any) {
   const applyFilters = () => {
     let updatedList = [...tutors];
 
+    if (searchName) {
+      updatedList = updatedList.filter(t =>
+        `${t.user?.firstName} ${t.user?.lastName}`.toLowerCase().includes(searchName.toLowerCase())
+      );
+    }
+
     if (searchCity) {
       updatedList = updatedList.filter(t => t.user?.city?.toLowerCase().includes(searchCity.toLowerCase()));
     }
-    if (gearboxFilter) {
-      updatedList = updatedList.filter(t => t.gearbox === gearboxFilter);
-    }
+
     updatedList = updatedList.filter(t => t.pricePerLesson <= maxPrice);
 
     if (minExperience !== null) {
@@ -79,12 +99,27 @@ export default function SearchTutors({ navigation }: any) {
   };
 
   const resetFilters = () => {
+    setSearchName('');
     setSearchCity('');
-    setGearboxFilter(null);
     setMaxPrice(absoluteMaxPrice);
     setMinExperience(null);
     setFilteredTutors(tutors);
     setFilterVisible(false);
+  };
+
+  const updatePlaceholder = () => {
+    if (tutors.length > 1) {
+      let randomIndex;
+      do {
+        randomIndex = Math.floor(Math.random() * tutors.length);
+      } while (randomIndex === lastIndex);
+
+      const tutor = tutors[randomIndex];
+      setLastIndex(randomIndex);
+      setDynamicPlaceholder(`${tutor.user.firstName} ${tutor.user.lastName}`);
+    } else if (tutors.length === 1) {
+      setDynamicPlaceholder(`${tutors[0].user.firstName} ${tutors[0].user.lastName}`);
+    }
   };
 
   const getInitials = (firstName: string) => {
@@ -130,10 +165,6 @@ export default function SearchTutors({ navigation }: any) {
                 <Ionicons name="car-sport-outline" size={16} color="#017f98" style={styles.icon} />
               </View>
               <View style={styles.detailRow}>
-                <Text style={styles.detailText}>{item.gearbox === 'automatic' ? 'אוטומט' : 'ידני'}</Text>
-                <Ionicons name="settings-outline" size={16} color="#017f98" style={styles.icon} />
-              </View>
-              <View style={styles.detailRow}>
                 <Text style={styles.detailText}>{item.user?.city || 'מיקום לא צוין'}</Text>
                 <Ionicons name="location-outline" size={16} color="#017f98" style={styles.icon} />
               </View>
@@ -152,6 +183,19 @@ export default function SearchTutors({ navigation }: any) {
             <ScrollView showsVerticalScrollIndicator={false}>
               <Text style={styles.modalTitle}>סינון תוצאות</Text>
 
+              <Text style={styles.sectionLabel}>חפש מורה</Text>
+              <View style={styles.inputWrapper}>
+                <TextInput
+                  style={styles.input}
+                  placeholder={dynamicPlaceholder}
+                  value={searchName}
+                  onChangeText={setSearchName}
+                  placeholderTextColor="#9CA3AF"
+                  textAlign="right"
+                />
+                <Ionicons name="person-outline" size={20} color="#AAA" />
+              </View>
+
               <Text style={styles.sectionLabel}>חפש עיר</Text>
               <View style={styles.inputWrapper}>
                 <TextInput
@@ -163,22 +207,6 @@ export default function SearchTutors({ navigation }: any) {
                   textAlign="right"
                 />
                 <Ionicons name="map-outline" size={20} color="#AAA" />
-              </View>
-
-              <Text style={styles.sectionLabel}>סוג גיר</Text>
-              <View style={styles.filterRow}>
-                <TouchableOpacity
-                  style={[styles.filterOption, gearboxFilter === 'manual' && styles.activeOption]}
-                  onPress={() => setGearboxFilter('manual')}
-                >
-                  <Text style={[styles.optionText, gearboxFilter === 'manual' && styles.activeOptionText]}>ידני</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.filterOption, gearboxFilter === 'automatic' && styles.activeOption]}
-                  onPress={() => setGearboxFilter('automatic')}
-                >
-                  <Text style={[styles.optionText, gearboxFilter === 'automatic' && styles.activeOptionText]}>אוטומט</Text>
-                </TouchableOpacity>
               </View>
 
               <View style={styles.labelRow}>
@@ -197,7 +225,7 @@ export default function SearchTutors({ navigation }: any) {
                 onValueChange={(val) => setMaxPrice(val)}
               />
 
-              <Text style={styles.sectionLabel}>ותק המורה</Text>
+              {/* <Text style={styles.sectionLabel}>ותק המורה</Text>
               <View style={styles.filterRow}>
                 {[5, 10, 15].map((years) => (
                   <TouchableOpacity
@@ -208,7 +236,7 @@ export default function SearchTutors({ navigation }: any) {
                     <Text style={[styles.optionText, minExperience === years && styles.activeOptionText]}>{years}+</Text>
                   </TouchableOpacity>
                 ))}
-              </View>
+              </View> */}
 
               <TouchableOpacity style={styles.applyBtn} onPress={applyFilters}>
                 <Text style={styles.applyBtnText}>הצג תוצאות</Text>

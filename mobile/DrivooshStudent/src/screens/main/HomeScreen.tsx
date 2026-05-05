@@ -119,6 +119,11 @@ export default function HomeScreen({ navigation }: any) {
     cancelled: 'בוטל',
   };
 
+  const getStatusColor = (status: string) => {
+    return status === 'confirmed' ? '#18875b' : '#000000';
+  };
+  // 00A693
+
   const handleLessonCancel = async (bookingId: string) => {
     Alert.alert('ביטול שיעור', 'האם אתה בטוח שברצונך לבטל את השיעור', [
 
@@ -172,8 +177,12 @@ export default function HomeScreen({ navigation }: any) {
         </View>
 
         <Section
-          title="טופס מטרות"
-          action={<TouchableOpacity><Text style={styles.blueLink}>לצפייה</Text></TouchableOpacity>}
+          title="לוח יעדים"
+          action={
+            <TouchableOpacity >
+              <Ionicons name="eye-outline" size={22} color="#0194b1" />
+            </TouchableOpacity>
+          }
         >
           <View style={styles.progressWrapper}>
             <ProgressCircle
@@ -206,21 +215,14 @@ export default function HomeScreen({ navigation }: any) {
 
               <Row icon="location-outline" text={nextLesson.pickupLocation} />
 
-              {/* <View style={styles.teacherRow}>
-                <Text style={styles.detailText}>
-                  {`${nextLesson.tutor?.user?.firstName || ''} ${nextLesson.tutor?.user?.lastName || ''}`}
-                </Text>
-                {renderAvatar(nextLesson.tutor?.user)}
-              </View>
-
-              <Row icon="cash-outline" text={`${Math.floor(nextLesson.priceAtBooking)} ש"ח`} /> */}
-
               <Row
                 icon="information-circle-outline"
                 text={
                   <Text>
                     <Text style={{ fontWeight: 'bold' }}>סטטוס: </Text>
-                    {STATUS_TRANSLATIONS[nextLesson.status] || nextLesson.status}
+                    <Text style={{ fontWeight: 'bold', color: getStatusColor(nextLesson.status) }}>
+                      {STATUS_TRANSLATIONS[nextLesson.status] || nextLesson.status}
+                    </Text>
                   </Text>
                 }
               />
@@ -282,35 +284,21 @@ export default function HomeScreen({ navigation }: any) {
                 <View style={styles.modalBody}>
                   <Row icon="calendar-outline" text={`${getDayName(selectedLesson.lessonDate)}, ${formatDate(selectedLesson.lessonDate)}`} />
                   <Row icon="time-outline" text={`${selectedLesson.startTime.slice(0, 5)} - ${selectedLesson.endTime.slice(0, 5)}`} />
-                  <Row icon="location-outline" text={`מיקום איסוף: ${selectedLesson.pickupLocation}`} />
-
-                  {/* <View style={styles.teacherRow}>
-                    <Text style={styles.detailText}>
-                      {`${selectedLesson.tutor?.user?.firstName || ''} ${selectedLesson.tutor?.user?.lastName || ''}`}
-                    </Text>
-                    {renderAvatar(selectedLesson.tutor?.user)}
-                  </View> */}
-
-                  {/* <Row
-                    icon="information-circle-outline"
-                    text={
-                      <Text>
-                        <Text style={{ fontWeight: 'bold' }}>סטטוס: </Text>
-                        {STATUS_TRANSLATIONS[selectedLesson.status] || selectedLesson.status}
-                      </Text>
-                    }
-                  /> */}
+                  <Row icon="location-outline" text={selectedLesson.pickupLocation} />
 
                   <View style={styles.separator} />
 
-                  <View style={{ alignItems: 'center' }}>
+                  <View style={styles.statusRowModal}>
                     <Row
                       icon="information-circle-outline"
                       text={
-                        <Text style={{ textAlignVertical: 'center' }}>
-                          <Text style={{ fontWeight: 'bold' }}>סטטוס: </Text>
-                          {STATUS_TRANSLATIONS[selectedLesson.status] || selectedLesson.status}
-                        </Text>
+                        <View style={{ justifyContent: 'center' }}>
+                          <Text style={{ fontWeight: 'bold', lineHeight: 24 }}>
+                            <Text style={{ fontWeight: 'bold' }}>סטטוס: </Text>
+                            <Text style={{ color: getStatusColor(selectedLesson.status) }}>
+                              {STATUS_TRANSLATIONS[selectedLesson.status] || selectedLesson.status}</Text>
+                          </Text>
+                        </View>
                       }
                     />
                   </View>
@@ -364,7 +352,7 @@ const styles = StyleSheet.create({
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   blueLink: { color: '#0194b1', fontWeight: '700', fontSize: 15 },
-  nextLessonDetails: { gap: 14 },
+  nextLessonDetails: { gap: 14, marginTop: 9 },
   detailRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   detailText: { textAlign: 'right', fontSize: 15, color: '#444', lineHeight: 22 },
   detailIcon: { marginLeft: 12 },
@@ -382,8 +370,9 @@ const styles = StyleSheet.create({
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderBottomWidth: 1, borderBottomColor: '#eee', paddingBottom: 10, },
   modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#018aa6', },
   modalBody: { gap: 15, },
-  separator: { height: 1, backgroundColor: '#eee', marginVertical: 5, },
-  statusRow: { justifyContent: 'center', alignItems: 'center', },
+  separator: { height: 1, backgroundColor: '#c5c5c5', marginVertical: 5, },
+  statusRowModal: { alignItems: 'flex-end' },
+  statusRow: { justifyContent: 'center', alignItems: 'center' },
   statusLabel: { fontSize: 16, fontWeight: 'bold', color: '#666' },
   priceValue: { fontSize: 18, fontWeight: 'bold', color: '#333', },
   cancelButton: { marginTop: 15, alignItems: 'center', padding: 12, backgroundColor: '#f0f0f0', borderRadius: 10 },

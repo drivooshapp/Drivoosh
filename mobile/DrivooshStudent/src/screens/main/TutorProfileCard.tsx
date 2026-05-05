@@ -51,6 +51,13 @@ export default function TutorDetails({ route, navigation }: any) {
         }
     };
 
+    const calculateAverage = () => {
+        if (!tutor?.reviews || tutor.reviews.length === 0) return "0.0";
+        const sum = tutor.reviews.reduce((acc: number, item: any) => acc + item.rating, 0);
+        return (sum / tutor.reviews.length).toFixed(1);
+    };
+    const averageRating = calculateAverage();
+
     const handleSubmitReview = async () => {
         if (!content.trim()) {
             Alert.alert("שגיאה", "נא למלא תוכן להמלצה");
@@ -196,11 +203,12 @@ export default function TutorDetails({ route, navigation }: any) {
                     </View>
 
                     <Text style={styles.name}>{tutor.user?.firstName} {tutor.user?.lastName}</Text>
-                    <Text style={styles.sub}>לימוד נהיגה • {tutor.experienceYears} שנות ניסיון</Text>
+                    {/* <Text style={styles.sub}>לימוד נהיגה • {tutor.experienceYears} שנות ניסיון</Text> */}
                 </View>
 
                 <View style={styles.stats}>
-                    <Stat icon="settings-outline" label="גיר" value={tutor.gearbox === 'automatic' ? 'אוטומט' : 'ידני'} />
+                    {/* <Stat icon="settings-outline" label="גיר" value={tutor.gearbox === 'automatic' ? 'אוטומט' : 'ידני'} /> */}
+                    <Stat icon="star-outline" label="דירוג" value={averageRating} />
                     <Divider />
                     <Stat icon="cash-outline" label="שיעור" value={`₪${tutor.pricePerLesson}`} />
                     <Divider />
@@ -255,7 +263,7 @@ export default function TutorDetails({ route, navigation }: any) {
 
                     <Text style={[styles.title, { marginTop: 30 }]}>פרטי קשר</Text>
 
-                    <View style={styles.card}>
+                    {isStudentOfTutor ? (<View style={styles.card}>
 
                         <TouchableOpacity style={styles.row} onPress={handleOpenMap}>
                             <Text style={styles.text}>{tutor.user?.street}, {tutor.user?.city}</Text>
@@ -273,8 +281,14 @@ export default function TutorDetails({ route, navigation }: any) {
                             </Text>
                             <Icon name="time-outline" />
                         </View>
-
-                    </View>
+                    </View>) : (
+                        <View style={styles.restrictedContainer}>
+                            <Ionicons name="lock-closed-outline" size={18} color="#666" />
+                            <Text style={styles.restrictedText}>
+                                פרטי הקשר זמינים לתלמידי המורה בלבד
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </ScrollView>
 
@@ -398,6 +412,8 @@ const styles = StyleSheet.create({
     text: { marginRight: 10, color: '#444' },
     icon: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' },
     footer: { position: 'absolute', bottom: 0, left: 0, right: 0, padding: 20, backgroundColor: '#fff' },
+    restrictedContainer: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#f5f5f5', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#e0e0e0', gap: 10, marginTop: 10 },
+    restrictedText: { fontSize: 14, color: '#666', fontWeight: '500', textAlign: 'right' },
     btn: { backgroundColor: '#111', height: 55, borderRadius: 18, justifyContent: 'center', alignItems: 'center', paddingTop: 0 },
     btnText: { color: '#fff', fontWeight: 'bold' },
     selectedBtn: { backgroundColor: '#F2F2F7', borderWidth: 1, borderColor: '#E6E8EB', shadowOpacity: 0 },

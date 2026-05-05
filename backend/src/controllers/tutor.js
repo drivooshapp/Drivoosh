@@ -2,43 +2,6 @@ import { Tutor, Booking, User, Review } from '../models/index.js';
 import { Op } from 'sequelize';
 
 
-export const etAllTutors = async (req, res) => {
-    try {
-        const tutors = await Tutor.findAll({
-            include: [
-                {
-                    model: User,
-                    as: 'user',
-                    attributes: ['firstName', 'lastName', 'profileImage', 'city']
-                },
-                {
-                    model: Review,
-                    as: 'reviews',
-                    attributes: ['id', 'content', 'rating', 'createdAt'],
-                    include: [{
-                        model: User,
-                        as: 'reviewer',
-                        attributes: ['firstName', 'lastName', 'profileImage']
-                    }]
-                }
-            ],
-            attributes: [
-                'id',
-                'carModel',
-                'gearbox',
-                'pricePerLesson',
-                'experienceYears',
-            ]
-        });
-
-        res.status(200).json(tutors);
-
-    } catch (error) {
-        console.error("DEBUG ERROR:", error);
-        res.status(500).json({ message: "שגיאה בשליפת רשימת המורים" });
-    }
-};
-
 
 export const getAllTutors = async (req, res) => {
     try {
@@ -63,7 +26,6 @@ export const getAllTutors = async (req, res) => {
             attributes: [
                 'id',
                 'carModel',
-                'gearbox',
                 'pricePerLesson',
                 'experienceYears',
                 'workStartHour',
@@ -107,7 +69,7 @@ export const getTutorById = async (req, res) => {
                 }
             ],
             attributes: [
-                'id', 'carModel', 'gearbox', 'pricePerLesson', 
+                'id', 'carModel', 'pricePerLesson', 
                 'experienceYears', 'workStartHour', 'workEndHour', 
                 'BufferTime', 'lessonDuration', 'bio'
             ]
@@ -164,7 +126,6 @@ export const updateTutorProfile = async (req, res) => {
 
         await tutor.update({
             carModel,
-            gearbox,
             pricePerLesson,
             experienceYears,
             bio
