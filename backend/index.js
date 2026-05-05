@@ -1,6 +1,8 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+dotenv.config();
+
 import sequelize from "./src/config/db.js";
 import "./src/models/index.js";
 import userRouter from "./src/routes/authRoutes.js"
@@ -9,7 +11,6 @@ import studentRouter from "./src/routes/studentRoutes.js";
 import bookingRouter from "./src/routes/bookingRoutes.js";
 import reviewRouter from "./src/routes/reviewRoutes.js";
 
-dotenv.config();
 
 const app = express();
 
