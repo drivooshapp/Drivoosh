@@ -14,7 +14,6 @@ const apiClient = axios.create({
     },
 });
 
-// 2. Interceptor להוספת ה-Token באופן אוטומטי לכל בקשה
 apiClient.interceptors.request.use(
     async (config) => {
         const token = await AsyncStorage.getItem('userToken');
@@ -28,14 +27,11 @@ apiClient.interceptors.request.use(
     }
 );
 
-// 3. Interceptor לטיפול בשגיאות גלובליות (למשל אם ה-Token פג תוקף)
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
         if (error.response && error.response.status === 401) {
-            // אם קיבלנו 401 (Unauthorized), כדאי לנתק את המשתמש
             await AsyncStorage.removeItem('userToken');
-            // כאן אפשר להוסיף לוגיקה של ניווט חזרה למסך הלוגין
         }
         return Promise.reject(error);
     }

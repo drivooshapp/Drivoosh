@@ -49,5 +49,11 @@ app.use("/api/student", studentRouter);
 app.use("/api/booking", bookingRouter);
 app.use("/api/review", reviewRouter);
 
-const PORT = process.env.PORT || 5000
-app.listen(PORT, () => console.log(`server is running on port ${PORT}`));
+// const PORT = process.env.PORT || 5000
+// app.listen(PORT, () => console.log(`server is running on port ${PORT}`));
+
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(`server is running on port ${PORT}`);
+});
