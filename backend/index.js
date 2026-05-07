@@ -14,8 +14,6 @@ import reviewRouter from "./src/routes/reviewRoutes.js";
 
 const app = express();
 
-app.use(express.json());
-
 // DB connection
 sequelize.sync({ alter: true })
 // sequelize.sync({ force: true })
@@ -39,8 +37,11 @@ app.get("/testDB", async (req, res) => {
 app.use(cors({
     origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-access-token"]
+    allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
+    credentials: true
 }));
+
+app.use(express.json());
 
 // routes
 app.use("/api/user", userRouter);
