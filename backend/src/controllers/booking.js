@@ -319,16 +319,20 @@ export const cancelBooking = async (req, res) => {
 
         console.log(`[CancelBooking] נמצאה הזמנה. תאריך: ${booking.lessonDate}, שעה: ${booking.startTime}`);
 
-        try {
+try {
             const now = new Date();
-            // const datePart = booking.lessonDate.split('T')[0];
+            
+            // המרה בטוחה של התאריך למחרוזת לצורך חיתוך
             const lessonDateObj = new Date(booking.lessonDate);
             const datePart = lessonDateObj.toISOString().split('T')[0];
-            const lessonDate = new Date(`${datePart}T${booking.startTime}`);
+            
+            // יצירת אובייקט תאריך ושעה משולב
+            const lessonFullDateTime = new Date(`${datePart}T${booking.startTime}`);
+            
+            // חישוב הפרש השעות
+            const hoursLeft = (lessonFullDateTime - now) / (1000 * 60 * 60);
 
-            const hoursLeft = (lessonDate - now) / (1000 * 60 * 60);
-
-            console.log(`[CancelBooking] שעות שנותרו עד לשיעור: ${hoursLeft.toFixed(2)}`);
+            console.log(`[CancelBooking] שעות שנותרו: ${hoursLeft.toFixed(2)}`);
 
             if (hoursLeft < 24) {
                 return res.status(400).json({
@@ -337,7 +341,7 @@ export const cancelBooking = async (req, res) => {
             }
         } catch (dateError) {
             console.error(`[CancelBooking] שגיאה בעיבוד התאריך:`, dateError);
-            throw new Error("שגיאה בחישוב הזמן לביטול");
+            throw new Error("שגיאה בחישוב הזמן לביטול - ודא פורמט תאריך ושעה תקינים");
         }
 
         booking.status = 'cancelled';
