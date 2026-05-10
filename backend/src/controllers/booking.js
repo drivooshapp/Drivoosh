@@ -319,7 +319,6 @@ export const cancelBooking = async (req, res) => {
 
         console.log(`[CancelBooking] נמצאה הזמנה. תאריך: ${booking.lessonDate}, שעה: ${booking.startTime}`);
 
-        // בדיקת חישוב הזמן - כאן לעיתים קרובות קורית השגיאה (למשל אם lessonDate לא בפורמט הנכון)
         try {
             const now = new Date();
             // const datePart = booking.lessonDate.split('T')[0];
@@ -327,7 +326,6 @@ export const cancelBooking = async (req, res) => {
             const datePart = lessonDateObj.toISOString().split('T')[0];
             const lessonDate = new Date(`${datePart}T${booking.startTime}`);
 
-            const lessonDate = new Date(`${datePart}T${booking.startTime}`);
             const hoursLeft = (lessonDate - now) / (1000 * 60 * 60);
 
             console.log(`[CancelBooking] שעות שנותרו עד לשיעור: ${hoursLeft.toFixed(2)}`);
