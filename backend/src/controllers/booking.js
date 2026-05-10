@@ -322,7 +322,11 @@ export const cancelBooking = async (req, res) => {
         // בדיקת חישוב הזמן - כאן לעיתים קרובות קורית השגיאה (למשל אם lessonDate לא בפורמט הנכון)
         try {
             const now = new Date();
-            const datePart = booking.lessonDate.split('T')[0];
+            // const datePart = booking.lessonDate.split('T')[0];
+            const lessonDateObj = new Date(booking.lessonDate);
+            const datePart = lessonDateObj.toISOString().split('T')[0];
+            const lessonDate = new Date(`${datePart}T${booking.startTime}`);
+
             const lessonDate = new Date(`${datePart}T${booking.startTime}`);
             const hoursLeft = (lessonDate - now) / (1000 * 60 * 60);
 
@@ -350,8 +354,8 @@ export const cancelBooking = async (req, res) => {
         console.error("Message:", error.message);
         console.error("Stack Trace:", error.stack);
         console.error("-------------------------------");
-        
-        res.status(500).json({ 
+
+        res.status(500).json({
             message: "שגיאה בביטול השיעור",
             error: error.message // אופציונלי: להחזיר את הודעת השגיאה גם לקליינט בזמן פיתוח
         });
