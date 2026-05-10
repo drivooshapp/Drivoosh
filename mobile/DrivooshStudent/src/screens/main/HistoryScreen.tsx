@@ -75,10 +75,10 @@ export default function HistoryScreen({ navigation }: any) {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back-outline" size={28} color="#333" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          שיעורים שבוצעו
-          <Text style={styles.countText}> {history.length}</Text>
-        </Text>
+        <View style={styles.headerTitleContainer}>
+          <Text style={styles.headerTitle}>שיעורים שבוצעו</Text>
+          <Text style={styles.countText}>{history.length}</Text>
+        </View>
       </View>
       {history.length > 0 ? (
         <FlatList
@@ -121,8 +121,9 @@ export default function HistoryScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   header: { flexDirection: 'row', justifyContent: 'space-between', padding: 20, borderBottomWidth: 1, borderColor: '#eee' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', textAlign: 'right' },
-  countText: { color: '#999', fontWeight: '400', marginRight: 7 },
+  headerTitleContainer: { flexDirection: 'row-reverse', alignItems: 'center'},
+  headerTitle: { fontSize: 18, fontWeight: 'bold', },
+  countText: { color: '#a9a9a9', fontWeight: '500', marginRight: 15, fontSize: 15 },
   listContent: { padding: 20 },
   historyCard: { backgroundColor: '#fff', borderRadius: 16, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: '#f0f0f0' },
   cardTopRow: { flexDirection: 'row', justifyContent: 'space-between' },
@@ -135,9 +136,9 @@ const styles = StyleSheet.create({
   timeText: { color: '#666' },
   locationText: { color: '#999' },
   avatar: { width: 45, height: 45, borderRadius: 25, marginLeft: 10 },
-  avatarPlaceholder: { backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center' },
+  avatarPlaceholder: { backgroundColor: '#0194b1', justifyContent: 'center', alignItems: 'center' },
   avatarInitial: { color: '#fff', fontWeight: 'bold' },
-  priceRow: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: 10, borderTopWidth: 1, borderColor: '#f5f5f5', paddingTop: 10 },
+  priceRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 10, borderTopWidth: 1, borderColor: '#f5f5f5', paddingTop: 10 },
   priceText: { fontWeight: '700', marginRight: 5 },
   emptyState: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   emptyText: { color: '#bbb', marginTop: 10 }

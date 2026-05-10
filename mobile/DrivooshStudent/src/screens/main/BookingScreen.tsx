@@ -20,7 +20,7 @@ export default function NewBookingScreen({ navigation }: any) {
     const [pickupLocation, setPickupLocation] = useState('');
     const [notes, setNotes] = useState('');
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
-    
+
     const getTextColor = (value: string) => (value ? '#333' : '#999');
 
     useEffect(() => {
@@ -40,23 +40,54 @@ export default function NewBookingScreen({ navigation }: any) {
         initializeData();
     }, []);
 
+    // const fetchProfile = async () => {
+    //     try {
+    //         const response = await apiClient.get('/student/myProfile');
+
+    //         const tutor = response.data?.chosenTutor?.id;
+    //         if (!tutor) {
+    //             Alert.alert("שגיאה", "לא נמצא מורה משויך למשתמש");
+    //             navigation.navigate('History');
+    //             // return;
+    //         }
+
+    //         setTutorId(tutor);
+
+    //         const street = response.data?.street || '';
+    //         const city = response.data?.city || '';
+    //         const fullAddress = `${street}, ${city}`;
+
+    //         setPickupLocation(fullAddress);
+    //     } catch (error) {
+    //         console.error("שגיאה בטעינת הפרופיל:", error);
+    //         Alert.alert("שגיאה", "בעיה בטעינת הפרופיל");
+    //     }
+    // };
     const fetchProfile = async () => {
         try {
             const response = await apiClient.get('/student/myProfile');
 
             const tutor = response.data?.chosenTutor?.id;
+
             if (!tutor) {
-                Alert.alert("שגיאה", "לא נמצא מורה משויך למשתמש");
+                Alert.alert(
+                    "אין מורה משויך",
+                    "כדי לקבוע שיעור עליך לבחור מורה תחילה.",
+                    [
+                        {
+                            text: "עבור לחיפוש",
+                            onPress: () => navigation.navigate('SearchTutorsStack') // השם מה-Drawer
+                        }
+                    ]
+                );
                 return;
             }
 
             setTutorId(tutor);
-
             const street = response.data?.street || '';
             const city = response.data?.city || '';
-            const fullAddress = `${street}, ${city}`;
+            setPickupLocation(`${street}, ${city}`);
 
-            setPickupLocation(fullAddress);
         } catch (error) {
             console.error("שגיאה בטעינת הפרופיל:", error);
             Alert.alert("שגיאה", "בעיה בטעינת הפרופיל");

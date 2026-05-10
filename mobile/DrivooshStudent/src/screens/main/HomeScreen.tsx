@@ -65,11 +65,11 @@ export default function HomeScreen({ navigation }: any) {
       setUserName(profileRes.data?.firstName);
       const tutor = profileRes.data?.chosenTutor?.id;
 
-      if (!tutor) {
-        setLoading(false);
-        Alert.alert("שגיאה", "אין מורה משויך");
-        return;
-      }
+      // if (!tutor) {
+      //   setLoading(false);
+      //   Alert.alert("שגיאה", "אין מורה משויך");
+      //   return;
+      // }
 
       setTutorId(tutor);
 
@@ -269,6 +269,7 @@ export default function HomeScreen({ navigation }: any) {
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
+        statusBarTranslucent //כיסוי מלא של המודל על המסך
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
   progressWrapper: { alignItems: 'center', paddingVertical: 10 },
   goalsProgressText: { textAlign: 'center', color: '#666', marginTop: 10 },
   nextLessonCard: { backgroundColor: '#f0f9ff', borderColor: '#b3e5fc', borderWidth: 1.5 },
-  sectionCard: { backgroundColor: '#fff', padding: 18, borderRadius: 16, marginTop: 15, borderWidth: 1, borderColor: '#edf2f4', elevation: 2 },
+  sectionCard: { backgroundColor: '#fff', padding: 18, borderRadius: 16, marginTop: 15, borderWidth: 1, borderColor: '#edf2f400' },
   sectionHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15, alignItems: 'center' },
   sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   blueLink: { color: '#0194b1', fontWeight: '700', fontSize: 15 },

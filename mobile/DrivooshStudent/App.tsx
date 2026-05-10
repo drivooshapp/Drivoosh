@@ -1,24 +1,26 @@
-import 'react-native-gesture-handler';
-import React, { useEffect, useState } from 'react';
-import { Image, Text, View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
 import { NavigationContainer, NavigationIndependentTree, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemList } from '@react-navigation/drawer';
+import React, { useEffect, useState } from 'react';
+import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { StatusBar } from 'expo-status-bar';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import 'react-native-gesture-handler';
 import LoadingScreen from './src/components/LoadingScreen';
-import HomeScreen from './src/screens/main/HomeScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
-import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import ProfileScreen from './src/screens/auth/ProfileScreen';
+import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import SignupScreen from './src/screens/auth/SignupScreen';
+import AllReviews from './src/screens/main/AllReviews';
 import NewBooking from './src/screens/main/BookingScreen';
 import HistoryScreen from './src/screens/main/HistoryScreen';
+import HomeScreen from './src/screens/main/HomeScreen';
 import MessagesScreen from './src/screens/main/MessagesScreen';
 import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import SearchTutors from './src/screens/main/SearchTutors';
 import TutorProfileCard from './src/screens/main/TutorProfileCard';
-import AllReviews from './src/screens/main/AllReviews';
 
 
 const Stack = createStackNavigator();
@@ -60,30 +62,63 @@ const HeaderAvatar = ({ userData }: any) => {
 
 function CustomDrawerContent(props: any) {
   return (
-    <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
-      <DrawerItemList {...props} />
-      <View style={{ marginTop: 'auto', borderTopWidth: 1, borderTopColor: '#eee' }}>
-        <DrawerItem
-          label="התנתקות"
-          labelStyle={{ color: '#348d9f', textAlign: 'right', fontWeight: '600', fontSize: 14 }}
-          icon={() => <Ionicons name="log-out-outline" size={22} color="#348d9f" />}
-          onPress={() => props.onLogout()}
-        />
-      </View>
-    </DrawerContentScrollView>
+    <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+      <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1 }}>
+        <DrawerItemList {...props} />
+        <View style={{ marginTop: 'auto', borderTopWidth: 1, borderTopColor: '#eee' }}>
+          <DrawerItem
+            label="התנתקות"
+            labelStyle={{ color: '#348d9f', textAlign: 'right', fontSize: 18, fontWeight: '600' }}
+            icon={() => <Ionicons name="log-out-outline" size={22} color="#348d9f" />}
+            onPress={() => props.onLogout()}
+          />
+        </View>
+      </DrawerContentScrollView>
+    </SafeAreaView>
   );
 }
 
-function DrawerNavigator({ onLogout, userData, navigation }: any) {
+function DrawerNavigator({ onLogout, userData }: any) {
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} onLogout={onLogout} />}
-      screenOptions={{
+      screenOptions={({ navigation }) => ({
+        drawerStyle: {
+          width: 300,
+          backgroundColor: '#fff',
+          borderBottomLeftRadius: 0,
+          overflow: 'visible',
+        },
+        drawerPosition: 'right',
         headerTitleAlign: 'center',
-        drawerActiveTintColor: '#42909f',
-        drawerItemStyle: { borderRadius: 15, marginVertical: 7 },
-        headerRight: () => <HeaderAvatar userData={userData} />,
-      }}
+        drawerActiveTintColor: '#019cbb',
+        drawerActiveBackgroundColor: '#47b4c91a',
+        drawerLabelStyle: {
+          fontSize: 18,
+          fontWeight: '700',
+          textAlign: 'right',
+        },
+
+        drawerItemStyle: {
+          borderRadius: 10,
+          marginVertical: 8,
+        },
+
+        headerLeft: () => (
+          <View style={{ marginLeft: 20 }}>
+            <HeaderAvatar userData={userData} />
+          </View>
+        ),
+
+        headerRight: () => (
+          <TouchableOpacity
+            onPress={() => navigation.openDrawer()}
+            style={{ marginRight: 20 }}
+          >
+            <Ionicons name="menu" size={32} color="#333" />
+          </TouchableOpacity>
+        ),
+      })}
     >
       <Drawer.Screen
         name="Home"
@@ -195,40 +230,45 @@ export default function App() {
   if (isLoading) return <LoadingScreen />;
 
   return (
-    <NavigationIndependentTree>
-      <NavigationContainer>
-        <Stack.Navigator screenOptions={{ headerShown: false }}>
-          {!userToken ? (
-            <>
-              <Stack.Screen name="Login">
-                {(props) => <LoginScreen {...props} onLoginSuccess={checkLoginStatus} />}
-              </Stack.Screen>
+    <SafeAreaProvider>
+      <StatusBar style="dark" translucent={false} backgroundColor="#fff" />
+      <NavigationIndependentTree>
+        <View style={{ flex: 1, marginBottom: 50, backgroundColor: '#f0f0f0' }}>
+          <NavigationContainer>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              {!userToken ? (
+                <>
+                  <Stack.Screen name="Login">
+                    {(props) => <LoginScreen {...props} onLoginSuccess={checkLoginStatus} />}
+                  </Stack.Screen>
 
-              <Stack.Screen name="Signup" component={SignupScreen} />
+                  <Stack.Screen name="Signup" component={SignupScreen} />
 
-              <Stack.Screen
-                name="ResetPassword"
-                component={ResetPasswordScreen}
-                options={{ headerShown: false }}
-              />
-            </>
-          ) : !isSetupComplete ? (
-            <Stack.Screen name="Profile">
-              {(props) => <ProfileScreen {...props} onSetupComplete={checkLoginStatus} />}
-            </Stack.Screen>
-          ) : (
-            <Stack.Screen name="MainApp">
-              {(props) => (
-                <DrawerNavigator
-                  {...props}
-                  onLogout={handleLogout}
-                  userData={{ name: userName, image: profileImage }}
-                />
+                  <Stack.Screen
+                    name="ResetPassword"
+                    component={ResetPasswordScreen}
+                    options={{ headerShown: false }}
+                  />
+                </>
+              ) : !isSetupComplete ? (
+                <Stack.Screen name="Profile">
+                  {(props) => <ProfileScreen {...props} onSetupComplete={checkLoginStatus} />}
+                </Stack.Screen>
+              ) : (
+                <Stack.Screen name="MainApp">
+                  {(props) => (
+                    <DrawerNavigator
+                      {...props}
+                      onLogout={handleLogout}
+                      userData={{ name: userName, image: profileImage }}
+                    />
+                  )}
+                </Stack.Screen>
               )}
-            </Stack.Screen>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </NavigationIndependentTree>
+            </Stack.Navigator>
+          </NavigationContainer>
+        </View>
+      </NavigationIndependentTree>
+    </SafeAreaProvider>
   );
 }
