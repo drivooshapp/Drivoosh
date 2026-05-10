@@ -275,35 +275,88 @@ export const updateBookingStatus = async (req, res) => {
 };
 
 
+// export const cancelBooking = async (req, res) => {
+//     try {
+//         const { bookingId } = req.params;
+//         const studentId = req.user.id;
+
+//         const booking = await Booking.findOne({ where: { id: bookingId, studentId } });
+
+//         if (!booking) return res.status(404).json({ message: "הזמנה לא נמצאה" });
+
+//         const now = new Date();
+//         const lessonDate = new Date(`${booking.lessonDate.split('T')[0]}T${booking.startTime}`);
+//         const hoursLeft = (lessonDate - now) / (1000 * 60 * 60);
+
+//         if (hoursLeft < 24) {
+//             return res.status(400).json({
+//                 message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
+//             });
+//         }
+
+//         booking.status = 'cancelled';
+
+//         await booking.save();
+
+//         res.status(200).json({ message: "השיעור בוטל בהצלחה" });
+//     } catch (error) {
+//         res.status(500).json({ message: "שגיאה בביטול השיעור" });
+//     }
+// };
 export const cancelBooking = async (req, res) => {
     try {
         const { bookingId } = req.params;
         const studentId = req.user.id;
 
+        console.log(`[CancelBooking] מנסה לבטל שיעור ID: ${bookingId} עבור סטודנט: ${studentId}`);
+
         const booking = await Booking.findOne({ where: { id: bookingId, studentId } });
 
-        if (!booking) return res.status(404).json({ message: "הזמנה לא נמצאה" });
+        if (!booking) {
+            console.log(`[CancelBooking] שגיאה: הזמנה ${bookingId} לא נמצאה בבסיס הנתונים`);
+            return res.status(404).json({ message: "הזמנה לא נמצאה" });
+        }
 
-        const now = new Date();
-        const lessonDate = new Date(`${booking.lessonDate.split('T')[0]}T${booking.startTime}`);
-        const hoursLeft = (lessonDate - now) / (1000 * 60 * 60);
+        console.log(`[CancelBooking] נמצאה הזמנה. תאריך: ${booking.lessonDate}, שעה: ${booking.startTime}`);
 
-        if (hoursLeft < 24) {
-            return res.status(400).json({
-                message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
-            });
+        // בדיקת חישוב הזמן - כאן לעיתים קרובות קורית השגיאה (למשל אם lessonDate לא בפורמט הנכון)
+        try {
+            const now = new Date();
+            const datePart = booking.lessonDate.split('T')[0];
+            const lessonDate = new Date(`${datePart}T${booking.startTime}`);
+            const hoursLeft = (lessonDate - now) / (1000 * 60 * 60);
+
+            console.log(`[CancelBooking] שעות שנותרו עד לשיעור: ${hoursLeft.toFixed(2)}`);
+
+            if (hoursLeft < 24) {
+                return res.status(400).json({
+                    message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
+                });
+            }
+        } catch (dateError) {
+            console.error(`[CancelBooking] שגיאה בעיבוד התאריך:`, dateError);
+            throw new Error("שגיאה בחישוב הזמן לביטול");
         }
 
         booking.status = 'cancelled';
-
         await booking.save();
 
+        console.log(`[CancelBooking] השיעור בוטל בהצלחה ב-DB`);
         res.status(200).json({ message: "השיעור בוטל בהצלחה" });
+
     } catch (error) {
-        res.status(500).json({ message: "שגיאה בביטול השיעור" });
+        // הלוג החשוב ביותר - מדפיס את השגיאה המלאה לטרמינל של השרת
+        console.error("--- ERROR IN CANCEL_BOOKING ---");
+        console.error("Message:", error.message);
+        console.error("Stack Trace:", error.stack);
+        console.error("-------------------------------");
+        
+        res.status(500).json({ 
+            message: "שגיאה בביטול השיעור",
+            error: error.message // אופציונלי: להחזיר את הודעת השגיאה גם לקליינט בזמן פיתוח
+        });
     }
 };
-
 
 export const completeBooking = async (req, res) => {
     try {
