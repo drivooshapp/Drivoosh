@@ -2,21 +2,32 @@ import { Booking, Tutor, User } from '../models/index.js';
 import { Op } from 'sequelize';
 
 
+const calculateEndTime = (startTime, durationMinutes) => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + durationMinutes;
+    const endH = Math.floor(totalMinutes / 60).toString().padStart(2, '0');
+    const endM = (totalMinutes % 60).toString().padStart(2, '0');
+    return `${endH}:${endM}`;
+};
+
 export const createBooking = async (req, res) => {
     try {
         const { lessonDate, startTime, tutorId, pickupLocation, notes } = req.body;
         const studentId = req.user?.id;
+
+        console.log(`[New Booking Attempt] Student: ${studentId}, Tutor: ${tutorId}, Date: ${lessonDate}, Time: ${startTime}`);
 
         const tutor = await Tutor.findByPk(tutorId);
         if (!tutor) {
             return res.status(404).json({ message: "המורה לא נמצא" });
         }
 
-        const BUFFER_TIME = tutor.BufferTime || 15;
-        const lessonDuration = tutor.lessonDuration || 45;
+        const BUFFER_TIME = Number(tutor.BufferTime || 15);
+        const lessonDuration = Number(tutor.lessonDuration || 45);
         const timeParts = startTime.split(':');
 
         if (timeParts.length !== 2) {
+            console.log(`[Error] Invalid time format received: ${startTime}`);
             return res.status(400).json({ message: "פורמט שעה לא תקין" });
         }
 
@@ -24,12 +35,8 @@ export const createBooking = async (req, res) => {
         const startTotalMinutes = hours * 60 + minutes;
         const endTotalMinutes = startTotalMinutes + lessonDuration;
 
-        const endH = Math.floor(endTotalMinutes / 60);
-        const endM = endTotalMinutes % 60;
-        const endTime = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
-
-        const startOfDay = new Date(`${lessonDate}T00:00:00.000Z`);
-        const endOfDay = new Date(`${lessonDate}T23:59:59.999Z`);
+        const startOfDay = new Date(`${lessonDate}T00:00:00`);
+        const endOfDay = new Date(`${lessonDate}T23:59:59`);
 
         const overlappingBookings = await Booking.findAll({
             where: {
@@ -39,40 +46,57 @@ export const createBooking = async (req, res) => {
             }
         });
 
+        console.log(`[Debug] Checking against ${overlappingBookings.length} existing bookings on ${lessonDate}`);
+
         const isTaken = overlappingBookings.some(b => {
             const [bStartH, bStartM] = b.startTime.split(':').map(Number);
             const [bEndH, bEndM] = b.endTime.split(':').map(Number);
 
             const bStartMinutes = bStartH * 60 + bStartM;
-            const bEndWithBuffer = (bEndH * 60 + bEndM) + BUFFER_TIME;
-
-            return startTotalMinutes < bEndWithBuffer && (startTotalMinutes + lessonDuration) > bStartMinutes;
+            const bEndMinutes = bEndH * 60 + bEndM;
+            
+            const bEndWithBuffer = bEndMinutes + BUFFER_TIME;
+            
+            const overlap = startTotalMinutes < bEndWithBuffer && endTotalMinutes > bStartMinutes;
+            
+            if (overlap) {
+                console.log(`[Conflict Found] Request: ${startTime}, Conflict with: ${b.startTime}-${b.endTime} (Buffer ends at ${bEndWithBuffer}min)`);
+            }
+            return overlap;
         });
 
         if (isTaken) {
-            return res.status(400).json({ message: "השעה שנבחרה אינה פנויה" });
+            console.log(`[Blocked] Booking rejected: Time slot ${startTime} is occupied or within buffer.`);
+            return res.status(400).json({ message: "השעה שנבחרה אינה פנויה (חופפת לשיעור קיים או לזמן הפסקה)" });
         }
 
+        const finalEndTime = calculateEndTime(startTime, lessonDuration);
+        
         const newBooking = await Booking.create({
             studentId,
             tutorId,
             lessonDate,
             pickupLocation,
             startTime,
-            endTime,
+            endTime: finalEndTime,
             notes: notes || "",
             priceAtBooking: tutor.pricePerLesson || 0,
             status: 'pending'
         });
 
+        console.log(`[Success] Booking created ID: ${newBooking.id}`);
+
         return res.status(201).json({
             message: "בקשת השיעור נשלחה למורה בהצלחה",
-            booking: newBooking
+            booking: newBooking 
         });
 
     } catch (error) {
-        console.error("SERVER ERROR:", error);
-        return res.status(500).json({ message: "שגיאה ביצירת ההזמנה", details: error.message });
+        console.error("SERVER ERROR IN createBooking:", error);
+        return res.status(500).json({ 
+            message: "שגיאה פנימית בשרת בעת יצירת ההזמנה", 
+            details: error.message 
+        });
     }
 };
 
@@ -275,64 +299,26 @@ export const updateBookingStatus = async (req, res) => {
 };
 
 
-// export const cancelBooking = async (req, res) => {
-//     try {
-//         const { bookingId } = req.params;
-//         const studentId = req.user.id;
-
-//         const booking = await Booking.findOne({ where: { id: bookingId, studentId } });
-
-//         if (!booking) return res.status(404).json({ message: "הזמנה לא נמצאה" });
-
-//         const now = new Date();
-//         const lessonDate = new Date(`${booking.lessonDate.split('T')[0]}T${booking.startTime}`);
-//         const hoursLeft = (lessonDate - now) / (1000 * 60 * 60);
-
-//         if (hoursLeft < 24) {
-//             return res.status(400).json({
-//                 message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
-//             });
-//         }
-
-//         booking.status = 'cancelled';
-
-//         await booking.save();
-
-//         res.status(200).json({ message: "השיעור בוטל בהצלחה" });
-//     } catch (error) {
-//         res.status(500).json({ message: "שגיאה בביטול השיעור" });
-//     }
-// };
 export const cancelBooking = async (req, res) => {
     try {
         const { bookingId } = req.params;
         const studentId = req.user.id;
 
-        console.log(`[CancelBooking] מנסה לבטל שיעור ID: ${bookingId} עבור סטודנט: ${studentId}`);
-
         const booking = await Booking.findOne({ where: { id: bookingId, studentId } });
 
         if (!booking) {
-            console.log(`[CancelBooking] שגיאה: הזמנה ${bookingId} לא נמצאה בבסיס הנתונים`);
             return res.status(404).json({ message: "הזמנה לא נמצאה" });
         }
 
-        console.log(`[CancelBooking] נמצאה הזמנה. תאריך: ${booking.lessonDate}, שעה: ${booking.startTime}`);
-
-try {
+        try {
             const now = new Date();
-            
-            // המרה בטוחה של התאריך למחרוזת לצורך חיתוך
+
             const lessonDateObj = new Date(booking.lessonDate);
             const datePart = lessonDateObj.toISOString().split('T')[0];
-            
-            // יצירת אובייקט תאריך ושעה משולב
-            const lessonFullDateTime = new Date(`${datePart}T${booking.startTime}`);
-            
-            // חישוב הפרש השעות
-            const hoursLeft = (lessonFullDateTime - now) / (1000 * 60 * 60);
 
-            console.log(`[CancelBooking] שעות שנותרו: ${hoursLeft.toFixed(2)}`);
+            const lessonFullDateTime = new Date(`${datePart}T${booking.startTime}`);
+
+            const hoursLeft = (lessonFullDateTime - now) / (1000 * 60 * 60);
 
             if (hoursLeft < 24) {
                 return res.status(400).json({
@@ -340,29 +326,19 @@ try {
                 });
             }
         } catch (dateError) {
-            console.error(`[CancelBooking] שגיאה בעיבוד התאריך:`, dateError);
             throw new Error("שגיאה בחישוב הזמן לביטול - ודא פורמט תאריך ושעה תקינים");
         }
 
         booking.status = 'cancelled';
         await booking.save();
 
-        console.log(`[CancelBooking] השיעור בוטל בהצלחה ב-DB`);
         res.status(200).json({ message: "השיעור בוטל בהצלחה" });
 
     } catch (error) {
-        // הלוג החשוב ביותר - מדפיס את השגיאה המלאה לטרמינל של השרת
-        console.error("--- ERROR IN CANCEL_BOOKING ---");
-        console.error("Message:", error.message);
-        console.error("Stack Trace:", error.stack);
-        console.error("-------------------------------");
-
-        res.status(500).json({
-            message: "שגיאה בביטול השיעור",
-            error: error.message // אופציונלי: להחזיר את הודעת השגיאה גם לקליינט בזמן פיתוח
-        });
+        res.status(500).json({ message: "שגיאה בביטול השיעור", error: error.message });
     }
 };
+
 
 export const completeBooking = async (req, res) => {
     try {

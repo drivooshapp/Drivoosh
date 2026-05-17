@@ -6,7 +6,6 @@ import React, { useCallback, useState } from 'react';
 import { Alert, FlatList, Image, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
 
-
 type UserType = {
   firstName?: string;
   lastName?: string;
@@ -65,12 +64,6 @@ export default function HomeScreen({ navigation }: any) {
       setUserName(profileRes.data?.firstName);
       const tutor = profileRes.data?.chosenTutor?.id;
 
-      // if (!tutor) {
-      //   setLoading(false);
-      //   Alert.alert("שגיאה", "אין מורה משויך");
-      //   return;
-      // }
-
       setTutorId(tutor);
 
       const lessonsRes = await apiClient.get(`/booking/myHistory/${tutor}`);
@@ -122,7 +115,6 @@ export default function HomeScreen({ navigation }: any) {
   const getStatusColor = (status: string) => {
     return status === 'confirmed' ? '#18875b' : '#000000';
   };
-  // 00A693
 
   const handleLessonCancel = async (bookingId: string) => {
     Alert.alert('ביטול שיעור', 'האם אתה בטוח שברצונך לבטל את השיעור', [
@@ -172,7 +164,11 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.welcomeContainer}>
           <Text style={styles.headerTitle}>
             {getGreetingByTime()}
-            {userName && <Text style={styles.userNameText}>{`, ${userName}`}</Text>}
+            {userName && (<><Text>, </Text>
+              <Text style={styles.userNameText}>{userName}</Text></>)}
+          </Text>
+          <Text style={styles.headerSubtitle}>
+            מה היעד הבא שלנו?
           </Text>
         </View>
 
@@ -343,9 +339,10 @@ const Row = ({ icon, text }: { icon: any; text: any }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f7f8' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
-  welcomeContainer: { marginTop: 15, marginBottom: 18, paddingHorizontal: 5 },
-  headerTitle: { textAlign: 'right', fontSize: 17, fontWeight: '400', color: '#018aa6' },
-  userNameText: { fontWeight: 'bold', fontSize: 17, color: '#018aa6' },
+  welcomeContainer: { paddingHorizontal: 24, paddingTop: 25, paddingBottom: 20, alignItems: 'flex-end', },
+  headerTitle: { fontSize: 20, fontWeight: '700', color: '#1e293b', textAlign: 'right', },
+  userNameText: { color: '#0194b1', },
+  headerSubtitle: { fontSize: 14, fontWeight: '600', color: '#aaafb0', marginTop: 4, textAlign: 'right', },
   progressWrapper: { alignItems: 'center', paddingVertical: 10 },
   goalsProgressText: { textAlign: 'center', color: '#666', marginTop: 10 },
   nextLessonCard: { backgroundColor: '#f0f9ff', borderColor: '#b3e5fc', borderWidth: 1.5 },
@@ -361,7 +358,7 @@ const styles = StyleSheet.create({
   teacherAvatar: { width: 22, height: 22, borderRadius: 14, marginLeft: 10 },
   avatarPlaceholder: { backgroundColor: '#017f98', width: 22, height: 22, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
   avatarInitial: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
-  upcomingLessonRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f9f9f9' },
+  upcomingLessonRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f9f9f9', alignItems: 'center' },
   upcomingLessonText: { alignItems: 'flex-end' },
   upcomingTime: { fontWeight: '700', color: '#333' },
   upcomingDayDate: { color: '#777', fontSize: 13 },

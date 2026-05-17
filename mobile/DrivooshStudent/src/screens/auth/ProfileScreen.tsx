@@ -1,7 +1,8 @@
 import LoadingScreen from '@/src/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, KeyboardTypeOptions, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
 
@@ -41,9 +42,14 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     const [fetching, setFetching] = useState(true);
     const [loading, setLoading] = useState(false);
 
-    useEffect(() => {
-        fetchProfile();
-    }, []);
+    // useEffect(() => {
+    //     fetchProfile();
+    // }, []);
+    useFocusEffect(
+        useCallback(() => {
+            fetchProfile();
+        }, [])
+    );
 
     const fetchProfile = async () => {
         try {
@@ -199,7 +205,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
             style={styles.container}
         >
             <ScrollView contentContainerStyle={styles.scrollContent} >
-                <Modal visible={isModalVisible} animationType="fade" transparent={true}>
+                <Modal visible={isModalVisible} animationType="fade" transparent={true} statusBarTranslucent>
                     <View style={styles.modalOverlay}>
                         <View style={styles.modalContent}>
                             <Text style={styles.modalHeader}>עדכון פרטים</Text>
@@ -384,7 +390,7 @@ const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     modalContent: { backgroundColor: '#fff', width: '85%', borderRadius: 15, padding: 25, elevation: 10 },
     modalHeader: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-    modalInputWrapper: { flexDirection: 'row', alignItems: 'center', borderBottomColor: '#ccc', borderBottomWidth: 1.5, marginBottom: 15, paddingHorizontal: 5 },
+    modalInputWrapper: { flexDirection: 'row', alignItems: 'center', borderBottomColor: '#d7d7d7', borderBottomWidth: 1.5, marginBottom: 15, paddingHorizontal: 5 },
     modalInput: { flex: 1, paddingVertical: 8, textAlign: 'right', fontSize: 15, color: '#333' },
     errorText: { color: '#D32F2F', fontSize: 12, fontWeight: '500', textAlign: 'right', marginTop: 4, paddingRight: 5, },
     saveBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },

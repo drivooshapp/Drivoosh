@@ -12,18 +12,15 @@ export default function SearchTutors({ navigation }: any) {
   const [tutors, setTutors] = useState<any[]>([]);
   const [filteredTutors, setFilteredTutors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
   const [isFilterVisible, setFilterVisible] = useState(false);
-
   const [searchCity, setSearchCity] = useState('');
   const [searchName, setSearchName] = useState('');
-
   const [dynamicPlaceholder, setDynamicPlaceholder] = useState('ישראל ישראלי');
-
   const [isNameFocused, setIsNameFocused] = useState(false);
-
   const [maxPrice, setMaxPrice] = useState(300);
   const [absoluteMaxPrice, setAbsoluteMaxPrice] = useState(300);
+  const [minPrice, setMinPrice] = useState(100);
+  const [absoluteMinPrice, setAbsoluteMinPrice] = useState(100);
 
   const lastIndexRef = useRef<number>(-1);
 
@@ -77,11 +74,14 @@ export default function SearchTutors({ navigation }: any) {
           .map((t: any) => Number(t.pricePerLesson))
           .filter((p: any) => Number.isFinite(p));
 
-        const highestPrice =
-          validPrices.length > 0 ? Math.max(...validPrices) : 300;
+        const highestPrice = validPrices.length > 0 ? Math.max(...validPrices) : 300;
+        const lowestPrice = validPrices.length > 0 ? Math.min(...validPrices) : 100;
 
         setAbsoluteMaxPrice(highestPrice);
         setMaxPrice(highestPrice);
+
+        setAbsoluteMinPrice(lowestPrice);
+        setMinPrice(lowestPrice);
       }
     } catch (error) {
       console.error(error);
@@ -104,7 +104,7 @@ export default function SearchTutors({ navigation }: any) {
       const price = Number(t.pricePerLesson);
 
       const matchesPrice =
-        Number.isFinite(price) && price <= maxPrice;
+        Number.isFinite(price) && price >= minPrice && price <= maxPrice;
 
       return matchesName && matchesCity && matchesPrice;
     });
@@ -117,6 +117,7 @@ export default function SearchTutors({ navigation }: any) {
     setSearchName('');
     setSearchCity('');
     setMaxPrice(absoluteMaxPrice);
+    setMinPrice(absoluteMinPrice);
     setFilteredTutors(tutors);
     setFilterVisible(false);
   };
@@ -264,7 +265,7 @@ export default function SearchTutors({ navigation }: any) {
 
               <Slider
                 style={{ width: '100%', height: 40 }}
-                minimumValue={100}
+                minimumValue={absoluteMinPrice}
                 maximumValue={absoluteMaxPrice}
                 step={5}
                 minimumTrackTintColor={THEME_COLOR}
@@ -292,14 +293,14 @@ const styles = StyleSheet.create({
   listContent: { padding: 16 },
   tutorCard: { flexDirection: 'row-reverse', backgroundColor: '#fff', padding: 15, borderRadius: 16, marginBottom: 12, alignItems: 'center' },
   avatarContainer: { marginLeft: 16 },
-  avatarImage: { width: 64, height: 64, borderRadius: 32 },
+  avatarImage: { width: 64, height: 64, borderRadius: 17 },
   initialsContainer: { backgroundColor: THEME_COLOR, justifyContent: 'center', alignItems: 'center' },
   initialsText: { color: '#fff', fontSize: 20, fontWeight: 'bold' },
   tutorInfo: { flex: 1, alignItems: 'flex-end' },
-  tutorName: { fontSize: 16, fontWeight: 'bold' },
+  tutorName: { fontSize: 16, fontWeight: 'bold', marginBottom: 7 },
   infoRow: { flexDirection: 'row', alignItems: 'center' },
   detailText: { marginRight: 6 },
-  priceTag: { flexDirection: 'row-reverse' },
+  priceTag: { flexDirection: 'row-reverse', marginTop: 7 },
   priceValue: { color: THEME_COLOR, fontWeight: 'bold' },
   priceLabel: { fontSize: 12 },
   emptyState: { alignItems: 'center', marginTop: 50 },

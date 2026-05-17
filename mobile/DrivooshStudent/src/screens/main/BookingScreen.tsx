@@ -1,10 +1,11 @@
 import apiClient from '@/src/api/apiClient';
+import LoadingScreen from '@/src/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useEffect, useState, useRef } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Calendar } from 'react-native-calendars';
-import LoadingScreen from '@/src/components/LoadingScreen';
 // import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
 
 
@@ -12,7 +13,7 @@ export default function NewBookingScreen({ navigation }: any) {
     const [token, setToken] = useState('');
     const [currentUserId, setCurrentUserId] = useState('');
     const [tutorId, setTutorId] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [fetchingSlots, setFetchingSlots] = useState(false);
     const [showCalendar, setShowCalendar] = useState(false);
     const [lessonDate, setLessonDate] = useState('');
@@ -23,50 +24,45 @@ export default function NewBookingScreen({ navigation }: any) {
 
     const getTextColor = (value: string) => (value ? '#333' : '#999');
 
-    useEffect(() => {
-        const initializeData = async () => {
-            const savedToken = await AsyncStorage.getItem('userToken');
-            const savedId = await AsyncStorage.getItem('currentUserId');
+    useFocusEffect(
+        useCallback(() => {
+            const initializeData = async () => {
+                setLoading(true);
+                try {
+                    const savedToken = await AsyncStorage.getItem('userToken');
+                    const savedId = await AsyncStorage.getItem('currentUserId');
 
-            if (savedToken && savedId) {
-                setToken(savedToken!);
-                setCurrentUserId(savedId!);
-                fetchProfile();
-            } else {
-                Alert.alert("שגיאה", "שגיאה בטעינת הנתונים. נסה להתחבר שוב");
-            }
-        };
+                    if (savedToken && savedId) {
+                        setToken(savedToken);
+                        setCurrentUserId(savedId);
 
-        initializeData();
-    }, []);
+                        const success = await fetchProfile();
 
-    // const fetchProfile = async () => {
-    //     try {
-    //         const response = await apiClient.get('/student/myProfile');
+                        if (!success) {
+                            setLoading(false);
+                            return;
+                        }
+                    } else {
+                        Alert.alert("שגיאה", "שגיאה בטעינת הנתונים. נסה להתחבר שוב");
+                        setLoading(false);
+                        return;
+                    }
 
-    //         const tutor = response.data?.chosenTutor?.id;
-    //         if (!tutor) {
-    //             Alert.alert("שגיאה", "לא נמצא מורה משויך למשתמש");
-    //             navigation.navigate('History');
-    //             // return;
-    //         }
+                    setLoading(false);
+                } catch (err) {
+                    console.error(err);
+                    setLoading(false);
+                }
+            };
+            initializeData();
 
-    //         setTutorId(tutor);
+            return () => { };
+        }, [])
+    );
 
-    //         const street = response.data?.street || '';
-    //         const city = response.data?.city || '';
-    //         const fullAddress = `${street}, ${city}`;
-
-    //         setPickupLocation(fullAddress);
-    //     } catch (error) {
-    //         console.error("שגיאה בטעינת הפרופיל:", error);
-    //         Alert.alert("שגיאה", "בעיה בטעינת הפרופיל");
-    //     }
-    // };
     const fetchProfile = async () => {
         try {
             const response = await apiClient.get('/student/myProfile');
-
             const tutor = response.data?.chosenTutor?.id;
 
             if (!tutor) {
@@ -76,21 +72,25 @@ export default function NewBookingScreen({ navigation }: any) {
                     [
                         {
                             text: "עבור לחיפוש",
-                            onPress: () => navigation.navigate('SearchTutorsStack') // השם מה-Drawer
+                            onPress: () => navigation.navigate('SearchTutorsStack')
                         }
-                    ]
+                    ],
+                    { cancelable: false }
                 );
-                return;
+                return false;
             }
 
             setTutorId(tutor);
             const street = response.data?.street || '';
             const city = response.data?.city || '';
             setPickupLocation(`${street}, ${city}`);
+            return true;
 
         } catch (error) {
             console.error("שגיאה בטעינת הפרופיל:", error);
             Alert.alert("שגיאה", "בעיה בטעינת הפרופיל");
+            navigation.navigate('History');
+            return false;
         }
     };
 
@@ -228,34 +228,42 @@ export default function NewBookingScreen({ navigation }: any) {
             return;
         }
 
-        if (availableSlots.length > 0 && !availableSlots.includes(startTime)) {
-            Alert.alert("שעה לא חוקית", "השעה אינה פנויה");
-            return;
+        const normalizeTime = (time: string) => time.padStart(5, '0');
+
+        if (availableSlots.length > 0) {
+            const normalizedStart = normalizeTime(startTime);
+            const normalizedAvailable = availableSlots.map(s => normalizeTime(s));
+
+            if (!normalizedAvailable.includes(normalizedStart)) {
+                Alert.alert("שעה לא חוקית", "השעה אינה פנויה ברשימה המעודכנת");
+                return;
+            }
         }
 
         const [d, m, y] = lessonDate.split('/');
-        const selectedDate = new Date(`${y}-${m}-${d}`);
+        const formattedDateForServer = `${y}-${m}-${d}`;
+        const selectedDate = new Date(formattedDateForServer);
         const now = new Date();
 
         if (selectedDate.toDateString() === now.toDateString()) {
             const [h, min] = startTime.split(':').map(Number);
             if (h < now.getHours() || (h === now.getHours() && min <= now.getMinutes())) {
-                Alert.alert("שגיאה", "לא ניתן לקבוע שעה שכבר עברה");
+                Alert.alert("שגיאה", "לא ניתן לקבוע שעה שכבר עברה היום");
                 return;
             }
         }
 
         setLoading(true);
 
-        try {
-            const bookingData = {
-                lessonDate: `${y}-${m}-${d}`,
-                startTime,
-                tutorId,
-                pickupLocation,
-                notes
-            };
+        const bookingData = {
+            lessonDate: formattedDateForServer,
+            startTime: normalizeTime(startTime),
+            tutorId,
+            pickupLocation,
+            notes
+        };
 
+        try {
             const response = await apiClient.post(
                 `/booking/${currentUserId}/newBooking`,
                 bookingData,
@@ -274,7 +282,16 @@ export default function NewBookingScreen({ navigation }: any) {
                 navigation.goBack();
             }
         } catch (error: any) {
-            Alert.alert("שגיאה", error.response?.data?.message || "שגיאה ביצירת הזמנה");
+            if (error.response) {
+                const serverMessage = error.response.data?.message || "שגיאה בלוגיקת השרת";
+                const serverDetails = error.response.data?.details || "";
+
+                Alert.alert("שגיאה מהשרת", `${serverMessage} ${serverDetails}`);
+            } else if (error.request) {
+                Alert.alert("שגיאת תקשורת", "השרת לא מגיב. בדוק את החיבור לאינטרנט.");
+            } else {
+                Alert.alert("שגיאה", "תקלה לא צפויה בשליחת הבקשה");
+            }
         } finally {
             setLoading(false);
         }
@@ -412,58 +429,31 @@ export default function NewBookingScreen({ navigation }: any) {
                 {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>הזמן שיעור</Text>}
             </TouchableOpacity>
 
-            {/* <Modal visible={showCalendar} transparent animationType="fade">
-                <View style={styles.modalOverlay}>
-                    <View style={styles.calendarContainer}>
-                        <Calendar
-                            onDayPress={(day: any) => {
-                                setLessonDate(day.dateString.split('-').reverse().join('/'));
-                                setShowCalendar(false);
-                            }}
-                            markedDates={{
-                                [lessonDate.split('/').reverse().join('-')]: {
-                                    selected: true,
-                                    selectedColor: '#00C2E8'
-                                }
-                            }}
-                            minDate={new Date().toISOString().split('T')[0]}
-                        />
-                        <TouchableOpacity style={styles.closeButton} onPress={() => setShowCalendar(false)}>
-                            <Text style={styles.closeButtonText}>ביטול</Text>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </Modal> */}
             <Modal visible={showCalendar} transparent animationType="fade">
                 <View style={styles.modalOverlay}>
                     <View style={styles.calendarContainer}>
                         <Calendar
-                            // הגבלת טווח הבחירה
                             minDate={minDateStr}
                             maxDate={maxDateStr}
 
-                            // טיפול בבחירת תאריך
                             onDayPress={(day: any) => {
-                                // הופך מ-YYYY-MM-DD ל-DD/MM/YYYY
                                 const formattedDate = day.dateString.split('-').reverse().join('/');
                                 setLessonDate(formattedDate);
                                 setShowCalendar(false);
                             }}
 
-                            // סימון התאריך הנבחר
                             markedDates={{
                                 [selectedDateFormatted]: {
                                     selected: true,
                                     selectedColor: '#00C2E8',
-                                    disableTouchEvent: false, // מאפשר ללחוץ על היום הנבחר שוב
+                                    disableTouchEvent: false,
                                 }
                             }}
 
-                            // עיצוב הלוח
                             theme={{
                                 todayTextColor: '#00C2E8',
                                 arrowColor: '#00C2E8',
-                                textDisabledColor: '#d9e1e8', // צבע אפור לימים שמחוץ לטווח (לפני היום ואחרי 7 ימים)
+                                textDisabledColor: '#d9e1e8',
                                 selectedDayBackgroundColor: '#00C2E8',
                                 selectedDayTextColor: '#ffffff',
                             }}

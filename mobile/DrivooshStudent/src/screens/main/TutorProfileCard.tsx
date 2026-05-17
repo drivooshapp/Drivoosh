@@ -18,7 +18,7 @@ export default function TutorDetails({ route, navigation }: any) {
     useEffect(() => {
         fetchTutorDetails();
         checkStudentStatus();
-    }, [tutorId]);
+    }, [tutorId, isStudentOfTutor]);
 
     const fetchTutorDetails = async () => {
         try {
@@ -27,7 +27,7 @@ export default function TutorDetails({ route, navigation }: any) {
             setTutor(response.data);
         } catch (e) {
             console.error(e);
-            Alert.alert('שגיאה', 'לא הצלחנו לטעון את פרטי המורה. נסי שוב.');
+            Alert.alert('שגיאה', 'שגיאה בטעינת פרטי המורה. נסה שוב.');
         } finally {
             setLoading(false);
         }
@@ -83,7 +83,7 @@ export default function TutorDetails({ route, navigation }: any) {
                 setLoading(true);
                 const response = await apiClient.put(`/student/selectTutor/${tutor.id}`);
                 if (response.status === 200) {
-                    Alert.alert('בהצלחה!', `בחרת ב${tutor.user?.firstName} כמורה שלך.`);
+                    Alert.alert('בוצע', `בחרת ב${tutor.user?.firstName} כמורה שלך.`);
                     await checkStudentStatus();
                 }
             } catch (e) {
@@ -95,19 +95,19 @@ export default function TutorDetails({ route, navigation }: any) {
         };
 
         if (tutorOfUser) {
-            // Alert.alert(
-            //     'החלפת מורה',
-            //     `שים לב שאתה כבר משויך למורה אחר. האם ברצונך להחליף אותו ב${tutor.user?.firstName}?`,
-            //     [
-            //         { text: 'ביטול', style: 'cancel' },
-            //         {
-            //             text: 'כן, החלף מורה',
-            //             style: 'destructive',
-            //             onPress: executeSelection
-            //         }
-            //     ]
-            // );
-            executeSelection();
+            Alert.alert(
+                'החלפת מורה',
+                `שים לב שאתה כבר משויך למורה אחר. האם ברצונך להחליף אותו ב${tutor.user?.firstName}?`,
+                [
+                    { text: 'ביטול', style: 'cancel' },
+                    {
+                        text: 'כן, החלף מורה',
+                        style: 'destructive',
+                        onPress: executeSelection
+                    }
+                ]
+            );
+            // executeSelection();
         }
         else {
             executeSelection();
@@ -115,34 +115,34 @@ export default function TutorDetails({ route, navigation }: any) {
     };
 
     const handleUnselectTutor = async () => {
-        // Alert.alert(
-        //     "ביטול בחירת מורה",
-        //     "האם אתה בטוח שברצונך לבטל את השיוך למורה? פעולה זו עשויה להשפיע על תיאום השיעורים שלך.",
-        //     [
-        //         { text: "ביטול", style: "cancel" },
-        //         {
-        //             text: "כן, בטל שיוך",
-        //             style: "destructive",
-        //             onPress: async () => {
-        //                 try {
-        //                     await apiClient.put(`/student/unselectTutor`);
-        //                     setIsStudentOfTutor(false);
-        //                     Alert.alert("השיוך בוטל", "כעת ניתן לבחור מורה חדש.");
-        //                 } catch (e) {
-        //                     Alert.alert("שגיאה", "הסרת מורה נכשלה");
-        //                 }
-        //             }
-        //         }
-        //     ]
-        // );
-        try {
-            await apiClient.put(`/student/unselectTutor`);
-            setIsStudentOfTutor(false);
-            setTutorOfUser(null);
-            Alert.alert("השיוך בוטל", "כעת ניתן לבחור מורה חדש.");
-        } catch (e) {
-            Alert.alert("שגיאה", "הסרת מורה נכשלה");
-        }
+        Alert.alert(
+            "ביטול בחירת מורה",
+            "האם אתה בטוח שברצונך לבטל את השיוך למורה? פעולה זו עשויה להשפיע על תיאום השיעורים שלך.",
+            [
+                { text: "ביטול", style: "cancel" },
+                {
+                    text: "כן, בטל שיוך",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            await apiClient.put(`/student/unselectTutor`);
+                            setIsStudentOfTutor(false);
+                            Alert.alert("השיוך בוטל", "כעת ניתן לבחור מורה חדש.");
+                        } catch (e) {
+                            Alert.alert("שגיאה", "הסרת מורה נכשלה");
+                        }
+                    }
+                }
+            ]
+        );
+        // try {
+        //     await apiClient.put(`/student/unselectTutor`);
+        //     setIsStudentOfTutor(false);
+        //     setTutorOfUser(null);
+        //     Alert.alert("השיוך בוטל", "כעת ניתן לבחור מורה חדש.");
+        // } catch (e) {
+        //     Alert.alert("שגיאה", "הסרת מורה נכשלה");
+        // }
     };
 
     const handleCall = async () => {
@@ -207,7 +207,6 @@ export default function TutorDetails({ route, navigation }: any) {
                 </View>
 
                 <View style={styles.stats}>
-                    {/* <Stat icon="settings-outline" label="גיר" value={tutor.gearbox === 'automatic' ? 'אוטומט' : 'ידני'} /> */}
                     <Stat icon="star-outline" label="דירוג" value={averageRating} />
                     <Divider />
                     <Stat icon="cash-outline" label="שיעור" value={`₪${tutor.pricePerLesson}`} />
