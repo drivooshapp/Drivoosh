@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import Slider from '@react-native-community/slider';
 import React, { useEffect, useRef, useState } from 'react';
-import { FlatList, Image, Modal, SafeAreaView, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
+import { FlatList, Image, Modal, ScrollView, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View, } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '../../components/LoadingScreen';
 

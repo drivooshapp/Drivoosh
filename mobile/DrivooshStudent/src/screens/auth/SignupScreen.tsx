@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Alert, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '@/src/components/LoadingScreen';
 
@@ -37,7 +38,7 @@ export default function SignupScreen({ navigation }: any) {
         }
     };
 
-  if (loading) return <LoadingScreen />;
+    if (loading) return <LoadingScreen />;
 
     return (
         <SafeAreaView style={styles.container}>

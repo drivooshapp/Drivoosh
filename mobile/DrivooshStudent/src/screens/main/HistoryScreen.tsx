@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { FlatList, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { FlatList, StatusBar, StyleSheet, Text, TouchableOpacity, View, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '@/src/components/LoadingScreen';
 
