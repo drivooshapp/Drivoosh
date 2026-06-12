@@ -340,10 +340,10 @@ const Row = ({ icon, text }: { icon: any; text: any }) => (
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f7f8' },
   scrollContent: { paddingHorizontal: 20, paddingBottom: 30 },
-  welcomeContainer: { paddingHorizontal: 24, paddingTop: 25, paddingBottom: 20, alignItems: 'flex-end', },
+  welcomeContainer: { paddingHorizontal: 24, paddingBottom: 20, alignItems: 'flex-end', },
   headerTitle: { fontSize: 20, fontWeight: '700', color: '#1e293b', textAlign: 'right', },
   userNameText: { color: '#0194b1', },
-  headerSubtitle: { fontSize: 14, fontWeight: '600', color: '#aaafb0', marginTop: 4, textAlign: 'right', },
+  headerSubtitle: { fontSize: 14, fontWeight: '600', color: '#919596', marginTop: 4, textAlign: 'right', },
   progressWrapper: { alignItems: 'center', paddingVertical: 10 },
   goalsProgressText: { textAlign: 'center', color: '#666', marginTop: 10 },
   nextLessonCard: { backgroundColor: '#f0f9ff', borderColor: '#b3e5fc', borderWidth: 1.5 },

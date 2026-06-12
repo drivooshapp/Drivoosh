@@ -4,8 +4,7 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemL
 import { NavigationContainer, NavigationIndependentTree, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import React, { useEffect, useState } from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
-import { StatusBar } from 'expo-status-bar';
+import { Image, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import 'react-native-gesture-handler';
 import LoadingScreen from './src/components/LoadingScreen';
@@ -231,7 +230,7 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <StatusBar style="dark" translucent={false} backgroundColor="#fff" />
+      <StatusBar barStyle="dark-content" translucent={false} backgroundColor="#fff" />
       <NavigationIndependentTree>
         <View style={{ flex: 1, marginBottom: 50, backgroundColor: '#f0f0f0' }}>
           <NavigationContainer>

@@ -29,22 +29,17 @@ interface UserProfile {
 interface InputFieldProps {
     label: string;
     value: string;
-    onChangeText?: (text: string) => void;
-    keyboardType?: KeyboardTypeOptions;
     editable?: boolean;
 }
 
 const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isModalVisible, setModalVisible] = useState(false);
-    const [phoneError, setPhoneError] = useState('');
+    const [errors, setErrors] = useState<Record<string, string>>({});
     const [tempProfile, setTempProfile] = useState<any>({});
     const [fetching, setFetching] = useState(true);
     const [loading, setLoading] = useState(false);
 
-    // useEffect(() => {
-    //     fetchProfile();
-    // }, []);
     useFocusEffect(
         useCallback(() => {
             fetchProfile();
@@ -78,7 +73,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                             setLoading(true);
                             await apiClient.delete('/user/deleteAccount');
                             await AsyncStorage.multiRemove(['userToken', 'userName', 'isSetupComplete', 'profileImage']);
-                            console.log("החשבון נמחק", "חשבונך הוסר בהצלחה.")
+                            // console.log("החשבון נמחק", "חשבונך הוסר בהצלחה.")
                             Alert.alert("החשבון נמחק", "חשבונך הוסר בהצלחה.");
 
                             if (onLogout) onLogout();
@@ -101,14 +96,14 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
 
         const cleanNumber = phone.replace(/\D/g, '');
 
-        const isRepeated = /^(\d)\1+$/.test(cleanNumber);
-        if (isRepeated) {
-            return { isValid: false, error: 'מספר לא תקין (רצף ספרות זהות)' };
-        }
-
         const isValidLength = cleanNumber.length >= 9 && cleanNumber.length <= 12;
         if (!isValidLength) {
             return { isValid: false, error: 'מספר טלפון חייב להכיל 9 עד 12 ספרות' };
+        }
+
+        const isRepeated = /^(\d)\1+$/.test(cleanNumber);
+        if (isRepeated) {
+            return { isValid: false, error: 'מספר לא תקין (רצף ספרות זהות)' };
         }
 
         let prefixCheck = '';
@@ -139,20 +134,42 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
 
     const handleSave = async () => {
         try {
-            setPhoneError('');
-            setLoading(true);
+            setErrors({});
 
-            const result = validateAndFormatPhone(tempProfile.phoneNumber);
+            const newErrors: Record<string, string> = {};
 
-            if (!result.isValid) {
-                setPhoneError(result.error || '');
-                setLoading(false);
+            if (!tempProfile.firstName || !tempProfile.firstName.trim()) {
+                newErrors.firstName = 'שם פרטי הוא שדה חובה';
+            }
+            if (!tempProfile.lastName || !tempProfile.lastName.trim()) {
+                newErrors.lastName = 'שם משפחה הוא שדה חובה';
+            }
+            if (!tempProfile.city || !tempProfile.city.trim()) {
+                newErrors.city = 'עיר היא שדה חובה';
+            }
+            if (!tempProfile.street || !tempProfile.street.trim()) {
+                newErrors.street = 'רחוב הוא שדה חובה';
+            }
+
+            const phoneResult = validateAndFormatPhone(tempProfile.phoneNumber);
+            if (!phoneResult.isValid) {
+                newErrors.phoneNumber = phoneResult.error || 'מספר טלפון לא תקין';
+            }
+
+            if (Object.keys(newErrors).length > 0) {
+                setErrors(newErrors);
                 return;
             }
 
+            setLoading(true);
+
             const sanitizedProfile = {
                 ...tempProfile,
-                phoneNumber: result.formatted
+                firstName: tempProfile.firstName.trim(),
+                lastName: tempProfile.lastName.trim(),
+                city: tempProfile.city.trim(),
+                street: tempProfile.street.trim(),
+                phoneNumber: phoneResult.formatted
             };
 
             const response = await apiClient.put('/student/updateProfile', sanitizedProfile);
@@ -181,7 +198,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
             const serverMessage = error.response?.data?.message;
 
             if (serverMessage && serverMessage.includes('טלפון')) {
-                setPhoneError(serverMessage);
+                setErrors(prev => ({ ...prev, phoneNumber: serverMessage }));
             } else {
                 Alert.alert("שגיאה", serverMessage || "תקלה בעדכון הנתונים");
             }
@@ -191,7 +208,6 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     };
 
     const closeModal = () => {
-        setPhoneError('');
         setModalVisible(false);
     };
 
@@ -211,34 +227,42 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                             <Text style={styles.modalHeader}>עדכון פרטים</Text>
 
                             {[
-                                { key: 'firstName', placeholder: 'שם פרטי', keyboard: 'default' },
-                                { key: 'lastName', placeholder: 'שם משפחה', keyboard: 'default' },
-                                { key: 'phoneNumber', placeholder: 'טלפון', keyboard: 'phone-pad' },
-                                { key: 'city', placeholder: 'עיר', keyboard: 'default' },
-                                { key: 'street', placeholder: 'רחוב', keyboard: 'default' },
+                                { key: 'firstName', placeholder: 'שם פרטי', keyboard: 'default', isRtl: true },
+                                { key: 'lastName', placeholder: 'שם משפחה', keyboard: 'default', isRtl: true },
+                                { key: 'phoneNumber', placeholder: 'טלפון', keyboard: 'phone-pad', isRtl: false },
+                                { key: 'city', placeholder: 'עיר', keyboard: 'default', isRtl: true },
+                                { key: 'street', placeholder: 'רחוב', keyboard: 'default', isRtl: true },
                             ].map((field) => (
-
                                 <View key={field.key} style={{ width: '100%', marginBottom: 15 }}>
-                                    <View style={styles.modalInputWrapper}>
+                                    <View style={[styles.modalInputWrapper, errors[field.key] && { borderBottomColor: '#D32F2F' }]}>
                                         <Ionicons name="pencil-sharp" size={14} color="#cccccc" />
                                         <TextInput
                                             style={[
                                                 styles.modalInput,
-                                                { color: tempProfile[field.key]?.trim() ? '#333' : '#BDBDBD' }
+                                                {
+                                                    color: (tempProfile[field.key] || '').trim() ? '#333' : '#BDBDBD',
+                                                    textAlign: field.isRtl ? 'right' : 'left'
+                                                }
                                             ]}
                                             placeholder={field.placeholder}
                                             placeholderTextColor="#b3b3b3"
-                                            value={tempProfile[field.key]}
+                                            value={tempProfile[field.key] || ''}
                                             keyboardType={field.keyboard as KeyboardTypeOptions}
                                             onChangeText={(val) => {
-                                                if (field.key === 'phoneNumber') setPhoneError('');
+                                                if (errors[field.key]) {
+                                                    setErrors(prev => {
+                                                        const copy = { ...prev };
+                                                        delete copy[field.key];
+                                                        return copy;
+                                                    });
+                                                }
                                                 setTempProfile({ ...tempProfile, [field.key]: val });
                                             }}
                                         />
                                     </View>
 
-                                    {field.key === 'phoneNumber' && phoneError ? (
-                                        <Text style={styles.errorText}>{phoneError}</Text>
+                                    {errors[field.key] ? (
+                                        <Text style={styles.errorText}>{errors[field.key]}</Text>
                                     ) : null}
                                 </View>
                             ))}
@@ -349,18 +373,10 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     );
 };
 
-const InputField: React.FC<InputFieldProps> = ({ label, value, editable = true }) => (
+const InputField: React.FC<InputFieldProps> = ({ label, value, editable }) => (
     <View style={styles.rowContainer}>
         <Text style={styles.labelText}>{label}</Text>
-        {editable ? (
-            <TextInput
-                style={styles.valueInput}
-                value={value}
-                textAlign="left"
-            />
-        ) : (
-            <Text style={styles.valueInput}>{value}</Text>
-        )}
+        <Text style={styles.valueInput}>{value}</Text>
     </View>
 );
 
@@ -369,13 +385,13 @@ const styles = StyleSheet.create({
     scrollContent: { paddingBottom: 40 },
     header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', paddingTop: 50, paddingBottom: 20, paddingHorizontal: 20 },
     headerTitle: { fontSize: 20, fontWeight: 'bold' },
-    imageSection: { alignItems: 'center', marginVertical: 20 },
+    imageSection: { alignItems: 'center', marginVertical: 20, marginTop: 60 },
     imageContainer: { position: 'relative' },
     profileImage: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#00C2E8' },
     initialsContainer: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#fff', overflow: 'hidden' },
     initialsText: { color: '#fff', fontSize: 45, fontWeight: 'bold', textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center', paddingBottom: 5, lineHeight: 55 },
     cameraIconBadge: { position: 'absolute', right: 0, bottom: 5, backgroundColor: '#fff', borderRadius: 15, padding: 6, elevation: 3 },
-    actionButtonsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 15 },
+    actionButtonsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 10 },
     outlineButton: { borderWidth: 1, borderColor: '#00C2E8', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 25 },
     outlineButtonText: { color: '#0194b1', fontSize: 14, fontWeight: '600' },
     formSection: { paddingHorizontal: 25 },
@@ -392,7 +408,7 @@ const styles = StyleSheet.create({
     modalHeader: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
     modalInputWrapper: { flexDirection: 'row', alignItems: 'center', borderBottomColor: '#d7d7d7', borderBottomWidth: 1.5, marginBottom: 15, paddingHorizontal: 5 },
     modalInput: { flex: 1, paddingVertical: 8, textAlign: 'right', fontSize: 15, color: '#333' },
-    errorText: { color: '#D32F2F', fontSize: 12, fontWeight: '500', textAlign: 'right', marginTop: 4, paddingRight: 5, },
+    errorText: { color: '#D32F2F', fontSize: 12, fontWeight: '500', textAlign: 'right', marginTop: 0.5, paddingRight: 5, },
     saveBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
     cancelText: { color: '#01829b', fontWeight: '600', textAlign: 'center', marginTop: 15 },

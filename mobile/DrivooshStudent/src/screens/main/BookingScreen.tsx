@@ -20,6 +20,7 @@ export default function NewBookingScreen({ navigation }: any) {
     const [startTime, setStartTime] = useState('');
     const [pickupLocation, setPickupLocation] = useState('');
     const [notes, setNotes] = useState('');
+    const [lessonDuration, setLessonDuration] = useState('');
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
     const getTextColor = (value: string) => (value ? '#333' : '#999');
@@ -64,6 +65,7 @@ export default function NewBookingScreen({ navigation }: any) {
         try {
             const response = await apiClient.get('/student/myProfile');
             const tutor = response.data?.chosenTutor?.id;
+            setLessonDuration(response.data?.chosenTutor?.lessonDuration);
 
             if (!tutor) {
                 Alert.alert(
@@ -103,7 +105,6 @@ export default function NewBookingScreen({ navigation }: any) {
 
         return () => clearTimeout(timeout);
     }, [tutorId, lessonDate]);
-
 
     const requestIdRef = useRef(0);
 
@@ -306,7 +307,7 @@ export default function NewBookingScreen({ navigation }: any) {
             <Text style={styles.label}>תאריך השיעור</Text>
             <View style={styles.inputWrapper}>
                 <TextInput
-                    style={[styles.input, { color: getTextColor(lessonDate), outline: 'none' }]}
+                    style={[styles.input, { color: getTextColor(lessonDate) }]}
                     value={lessonDate}
                     onChangeText={handleDateTyping}
                     placeholder="DD/MM/YYYY"
@@ -355,7 +356,7 @@ export default function NewBookingScreen({ navigation }: any) {
 
             <View style={[styles.inputWrapper, { marginTop: 10 }]}>
                 <TextInput
-                    style={[styles.input, { color: getTextColor(startTime), outline: 'none' }]}
+                    style={[styles.input, { color: getTextColor(startTime) }]}
                     value={startTime}
                     onChangeText={handleTimeTyping}
                     placeholder="HH:MM"
@@ -366,9 +367,11 @@ export default function NewBookingScreen({ navigation }: any) {
             </View>
 
             <Text style={styles.label}>מיקום איסוף</Text>
+            <Text style={styles.label}>{lessonDuration}</Text>
+
             <View style={styles.inputWrapper}>
                 <TextInput
-                    style={[styles.input, { color: getTextColor(pickupLocation), outline: 'none' }]}
+                    style={[styles.input, { color: getTextColor(pickupLocation) }]}
                     value={pickupLocation}
                     onChangeText={setPickupLocation}
                     placeholder="(עיר, רחוב)"
@@ -411,7 +414,7 @@ export default function NewBookingScreen({ navigation }: any) {
             <Text style={styles.label}>הערות למורה (אופציונלי)</Text>
             <View style={[styles.inputWrapper, styles.textAreaWrapper]}>
                 <TextInput
-                    style={[styles.input, styles.textArea, { color: getTextColor(notes), outline: 'none' }]}
+                    style={[styles.input, styles.textArea, { color: getTextColor(notes) }]}
                     value={notes}
                     onChangeText={setNotes}
                     placeholder="דגשים מיוחדים לשיעור..."

@@ -11,7 +11,7 @@ export const getMyProfile = async (req, res) => {
             include: [{
                 model: Tutor,
                 as: 'chosenTutor',
-                attributes: ['id', 'pricePerLesson'],
+                attributes: ['id', 'pricePerLesson', 'lessonDuration'],
                 include: [{
                     model: User,
                     as: 'user',
