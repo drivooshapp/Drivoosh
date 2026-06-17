@@ -6,7 +6,7 @@ import { createBooking, getMyBookings, getBookingById, getAvailableSlots, update
 const router = express.Router();
 
 router.post("/:studentId/newBooking", authenticate, createBooking);
-router.get("/myHistory/:tutorId", authenticate, getMyBookings);
+router.get("/myHistory", authenticate, getMyBookings);
 router.get("/booking/:bookingId", authenticate, getBookingById);
 router.get("/tutor/:tutorId/availableSlots", authenticate, getAvailableSlots);
 router.put("/status", authenticate, updateBookingStatus);

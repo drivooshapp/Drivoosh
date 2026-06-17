@@ -133,6 +133,7 @@ export const selectTutor = async (req, res) => {
 //         res.status(500).json({ message: 'שגיאת שרת בהסרת המורה' });
 //     }
 // }
+
 export const unselectTutor = async (req, res) => {
     const studentId = req.user.id;
 
@@ -160,6 +161,7 @@ export const unselectTutor = async (req, res) => {
         res.status(500).json({ message: 'שגיאת שרת בהסרת המורה' });
     }
 };
+
 
 export const deleteStudentAccount = async (req, res) => {
     try {
