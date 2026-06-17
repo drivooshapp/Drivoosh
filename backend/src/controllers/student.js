@@ -1,5 +1,5 @@
 import { model } from "mongoose";
-import { User, Tutor } from "../models/index.js";
+import { User, Tutor, Booking } from "../models/index.js";
 
 
 
@@ -113,12 +113,31 @@ export const selectTutor = async (req, res) => {
 };
 
 
+// export const unselectTutor = async (req, res) => {
+//     const studentId = req.user.id;
+
+//     try {
+//         const student = await User.findByPk(studentId);
+
+//         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
+
+//         student.myTutor = null;
+
+        
+
+//         await student.save();
+
+//         res.status(200).json({ message: 'המורה הוסר בהצלחה', user: student });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'שגיאת שרת בהסרת המורה' });
+//     }
+// }
 export const unselectTutor = async (req, res) => {
     const studentId = req.user.id;
 
     try {
         const student = await User.findByPk(studentId);
-
         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
 
         student.myTutor = null;
@@ -140,8 +159,7 @@ export const unselectTutor = async (req, res) => {
         console.error(error);
         res.status(500).json({ message: 'שגיאת שרת בהסרת המורה' });
     }
-}
-
+};
 
 export const deleteStudentAccount = async (req, res) => {
     try {
