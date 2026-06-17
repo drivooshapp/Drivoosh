@@ -93,12 +93,22 @@ export const selectTutor = async (req, res) => {
 
         student.myTutor = tutorId;
 
+        await Booking.update(
+            { status: 'cancelled' },
+            {
+                where: {
+                    studentId: studentId,
+                    status: ['pending', 'confirmed']
+                }
+            }
+        );
+
         await student.save();
 
         res.status(200).json({ message: 'המורה נבחר בהצלחה', user: student });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'שגיאת שרת בעדכון המורה' });
+        res.status(500).json({ message: 'שגיאת שרת בבחירת המורה' });
     }
 };
 
@@ -113,14 +123,25 @@ export const unselectTutor = async (req, res) => {
 
         student.myTutor = null;
 
+        await Booking.update(
+            { status: 'cancelled' },
+            {
+                where: {
+                    studentId: studentId,
+                    status: ['pending', 'confirmed']
+                }
+            }
+        );
+
         await student.save();
 
         res.status(200).json({ message: 'המורה הוסר בהצלחה', user: student });
     } catch (error) {
         console.error(error);
-        res.status(500).json({ message: 'שגיאת שרת בעדכון המורה' });
+        res.status(500).json({ message: 'שגיאת שרת בהסרת המורה' });
     }
 }
+
 
 export const deleteStudentAccount = async (req, res) => {
     try {
