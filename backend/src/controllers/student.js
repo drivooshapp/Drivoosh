@@ -15,7 +15,7 @@ export const getMyProfile = async (req, res) => {
                 include: [{
                     model: User,
                     as: 'user',
-                    attributes: ['id', 'firstName', 'lastName', 'profileImage']
+                    attributes: ['id', 'firstName', 'lastName', 'profileImage', 'phoneNumber']
                 }]
             }]
         });
