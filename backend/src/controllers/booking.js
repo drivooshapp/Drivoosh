@@ -54,11 +54,11 @@ export const createBooking = async (req, res) => {
 
             const bStartMinutes = bStartH * 60 + bStartM;
             const bEndMinutes = bEndH * 60 + bEndM;
-            
+
             const bEndWithBuffer = bEndMinutes + BUFFER_TIME;
-            
+
             const overlap = startTotalMinutes < bEndWithBuffer && endTotalMinutes > bStartMinutes;
-            
+
             if (overlap) {
                 console.log(`[Conflict Found] Request: ${startTime}, Conflict with: ${b.startTime}-${b.endTime} (Buffer ends at ${bEndWithBuffer}min)`);
             }
@@ -71,7 +71,7 @@ export const createBooking = async (req, res) => {
         }
 
         const finalEndTime = calculateEndTime(startTime, lessonDuration);
-        
+
         const newBooking = await Booking.create({
             studentId,
             tutorId,
@@ -88,14 +88,14 @@ export const createBooking = async (req, res) => {
 
         return res.status(201).json({
             message: "בקשת השיעור נשלחה למורה בהצלחה",
-            booking: newBooking 
+            booking: newBooking
         });
 
     } catch (error) {
         console.error("SERVER ERROR IN createBooking:", error);
-        return res.status(500).json({ 
-            message: "שגיאה פנימית בשרת בעת יצירת ההזמנה", 
-            details: error.message 
+        return res.status(500).json({
+            message: "שגיאה פנימית בשרת בעת יצירת ההזמנה",
+            details: error.message
         });
     }
 };
@@ -320,8 +320,14 @@ export const cancelBooking = async (req, res) => {
 
             const hoursLeft = (lessonFullDateTime - now) / (1000 * 60 * 60);
 
+            // if (hoursLeft < 24) {
+            //     return res.status(400).json({
+            //         message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
+            //     });
+            // }
             if (hoursLeft < 24) {
-                return res.status(400).json({
+                return res.status(200).json({
+                    success: false,
                     message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
                 });
             }
