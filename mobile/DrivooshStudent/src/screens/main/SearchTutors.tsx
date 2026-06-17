@@ -140,7 +140,7 @@ export default function SearchTutors({ navigation }: any) {
           <Ionicons name="options-outline" size={20} color={THEME_COLOR} />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>חיפוש מורה נהיגה</Text>
+        <Text style={styles.headerTitle}>סינון מורים</Text>
       </View>
 
       <FlatList
@@ -214,11 +214,10 @@ export default function SearchTutors({ navigation }: any) {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <TouchableOpacity onPress={() => setFilterVisible(false)}>
-                <Ionicons name="close" size={24} color="#333" />
+              <TouchableOpacity style={styles.closeModal} onPress={() => setFilterVisible(false)}>
+                <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
-
-              <Text style={styles.modalTitle}>סינון חיפוש</Text>
+              <Text style={styles.modalTitle}>סינון</Text>
 
               <TouchableOpacity onPress={resetFilters}>
                 <Text style={styles.resetTextSmall}>איפוס</Text>
@@ -288,8 +287,8 @@ export default function SearchTutors({ navigation }: any) {
 }
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG_COLOR },
-  header: { flexDirection: 'row', justifyContent: 'space-between', padding: 15, backgroundColor: '#fff' },
-  headerTitle: { fontSize: 18, fontWeight: 'bold' },
+  header: { flexDirection: 'row', alignItems:'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#fff' },
+  headerTitle: { color: '#5f5f5f',fontSize: 18, fontWeight: 'bold' },
   filterBtn: { padding: 8, backgroundColor: '#f0f9ff', borderRadius: 12 },
   listContent: { padding: 16 },
   tutorCard: { flexDirection: 'row-reverse', backgroundColor: '#fff', padding: 15, borderRadius: 16, marginBottom: 12, alignItems: 'center' },
@@ -307,10 +306,11 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: 'center', marginTop: 50 },
   emptyText: { color: '#999' },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20 },
+  closeModal: { backgroundColor: '#f5f5f5', padding: 8, borderRadius: 20 },
+  modalContent: { backgroundColor: '#fff', borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, fontSize: 18, },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20 },
   modalTitle: { fontSize: 18, fontWeight: 'bold' },
-  resetTextSmall: { color: THEME_COLOR },
+  resetTextSmall: { color: THEME_COLOR,paddingTop: 2 },
   sectionLabel: { marginBottom: 6, fontWeight: '600', textAlign: 'right' },
   fakeInputWrapper: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#F8FAFC', borderRadius: 12, paddingHorizontal: 15, marginBottom: 20, height: 52, borderWidth: 1, borderColor: '#F1F5F9', justifyContent: 'center' },
   fakePlaceholder: { position: 'absolute', right: 15, color: '#9CA3AF', fontSize: 15 },
@@ -318,6 +318,6 @@ const styles = StyleSheet.create({
   input: { flex: 1 },
   labelRow: { flexDirection: 'row', justifyContent: 'space-between' },
   priceDisplay: { color: THEME_COLOR, fontWeight: 'bold' },
-  applyBtn: { backgroundColor: '#1A1A1A', padding: 16, borderRadius: 16, alignItems: 'center', marginTop: 20 },
+  applyBtn: { backgroundColor: '#1A1A1A', padding: 16, borderRadius: 16, alignItems: 'center', marginBottom: 40 },
   applyBtnText: { color: '#fff', fontWeight: 'bold' },
 });

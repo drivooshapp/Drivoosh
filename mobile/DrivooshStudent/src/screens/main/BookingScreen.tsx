@@ -20,7 +20,7 @@ export default function NewBookingScreen({ navigation }: any) {
     const [startTime, setStartTime] = useState('');
     const [pickupLocation, setPickupLocation] = useState('');
     const [notes, setNotes] = useState('');
-    const [lessonDuration, setLessonDuration] = useState('');
+    const [lessonDuration, setLessonDuration] = useState<number | null>(null);
     const [availableSlots, setAvailableSlots] = useState<string[]>([]);
 
     const getTextColor = (value: string) => (value ? '#333' : '#999');
@@ -302,7 +302,7 @@ export default function NewBookingScreen({ navigation }: any) {
 
     return (
         <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-            <Text style={styles.title}>קביעת שיעור נהיגה</Text>
+            <Text style={styles.title}>שנתאם שיעור חדש?</Text>
 
             <Text style={styles.label}>תאריך השיעור</Text>
             <View style={styles.inputWrapper}>
@@ -366,8 +366,14 @@ export default function NewBookingScreen({ navigation }: any) {
                 <Ionicons name="time-outline" style={styles.inputIcon} />
             </View>
 
+            {lessonDuration && (
+                <View style={styles.durationRow}>
+                    <Text style={styles.durationValue}>{lessonDuration} דקות</Text>
+                    <Text style={styles.durationHint}>  •  משך השיעור</Text>
+                </View>
+            )}
+
             <Text style={styles.label}>מיקום איסוף</Text>
-            <Text style={styles.label}>{lessonDuration}</Text>
 
             <View style={styles.inputWrapper}>
                 <TextInput
@@ -491,6 +497,9 @@ const styles = StyleSheet.create({
     timeTagSelected: { backgroundColor: '#00C2E8', borderColor: '#00C2E8' },
     timeTagText: { color: '#555', fontWeight: '600' },
     timeTagTextSelected: { color: '#fff' },
+    durationRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 5, marginTop: 6, marginBottom: 2, },
+    durationHint: { fontSize: 13, color: '#aaaaaa', textAlign: 'right', includeFontPadding: false, lineHeight: 16, },
+    durationValue: { fontSize: 13, fontWeight: '700', color: '#00C2E8', includeFontPadding: false, lineHeight: 16, },
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     calendarContainer: { backgroundColor: '#fff', borderRadius: 20, padding: 15, width: '90%' },
     closeButton: { marginTop: 15, alignItems: 'center', padding: 12, backgroundColor: '#f0f0f0', borderRadius: 10 },

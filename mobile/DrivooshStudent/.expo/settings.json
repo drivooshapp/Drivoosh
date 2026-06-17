@@ -1,10 +1,10 @@
 {
-  "urlRandomness": "DyJQAsg",
+  "urlRandomness": "G9ApgFU",
   "dev": true,
   "minify": false,
   "https": false,
-  "scheme": null,
   "hostType": "tunnel",
   "lanType": "ip",
+  "scheme": null,
   "devClient": false
 }

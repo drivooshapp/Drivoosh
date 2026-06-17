@@ -3,7 +3,7 @@ import ProgressCircle from '@/src/components/ProgressCircle';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { Alert, FlatList, Image, Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, Linking, Modal, ScrollView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/apiClient';
 
@@ -11,6 +11,16 @@ type UserType = {
   firstName?: string;
   lastName?: string;
   profileImage?: string;
+  chosenTutor?: {
+    id: string;
+    pricePerLesson: number;
+    user: {
+      firstName: string;
+      lastName: string;
+      profileImage: string;
+      phoneNumber: string;
+    };
+  };
 };
 
 interface Lesson {
@@ -21,6 +31,7 @@ interface Lesson {
   status: string;
   pickupLocation: string;
   priceAtBooking: number;
+  tutorId: string;
   tutor?: {
     user: UserType;
   };
@@ -33,8 +44,11 @@ const getGreetingByTime = () => {
   return 'ערב טוב';
 };
 
-const getLessonDateTime = (l: Lesson) =>
-  new Date(`${l.lessonDate.split('T')[0]}T${l.startTime}`);
+const getLessonDateTime = (l: Lesson) => {
+  const datePart = l.lessonDate.split('T')[0];
+  const timePart = l.startTime.length === 5 ? `${l.startTime}:00` : l.startTime;
+  return new Date(`${datePart}T${timePart}`);
+};
 
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('he-IL');
@@ -45,10 +59,12 @@ const getDayName = (d: string) =>
 export default function HomeScreen({ navigation }: any) {
   const [userName, setUserName] = useState<string | null>('');
   const [tutorId, setTutorId] = useState('');
+  const [chosenTutorData, setChosenTutorData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [nextLesson, setNextLesson] = useState<Lesson | null>(null);
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
+  const [allCompletedCount, setAllCompletedCount] = useState(0);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -58,40 +74,65 @@ export default function HomeScreen({ navigation }: any) {
   };
 
   const fetchData = async () => {
+    const now = new Date();
+
     try {
       setLoading(true);
 
       const profileRes = await apiClient.get('/student/myProfile');
       setUserName(profileRes.data?.firstName);
+
+      if (profileRes.data?.chosenTutor) {
+        setChosenTutorData(profileRes.data.chosenTutor);
+        setTutorId(profileRes.data.chosenTutor.id);
+      } else {
+        setChosenTutorData(null);
+        setTutorId('');
+      }
+
       const tutor = profileRes.data?.chosenTutor?.id;
-
-      setTutorId(tutor);
-
-      const lessonsRes = await apiClient.get(`/booking/myHistory/${tutor}`);
-
+      const lessonsRes = await apiClient.get('/booking/myHistory');
       const bookings: Lesson[] = lessonsRes.data || [];
 
-      const now = new Date();
+      const totalCompleted = bookings.filter(b =>
+        b.status === 'completed' ||
+        new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now
+      ).length;
+      setAllCompletedCount(totalCompleted);
 
-      const future = bookings
-        .filter(b =>
-          getLessonDateTime(b) > now &&
-          (b.status === 'confirmed' || b.status === 'pending')
-        )
-        .sort((a, b) =>
-          getLessonDateTime(a).getTime() - getLessonDateTime(b).getTime()
-        );
+      if (tutor) {
 
-      setNextLesson(future[0] || null);
-      setUpcomingLessons(future.slice(1));
+        const future = bookings
+          .filter(b =>
+            getLessonDateTime(b) > now &&
+            (b.status === 'confirmed' || b.status === 'pending')
+          )
+          .sort((a, b) =>
+            getLessonDateTime(a).getTime() - getLessonDateTime(b).getTime()
+          );
 
-      setCompletedCount(
-        bookings.filter(b =>
-          b.status === 'completed' ||
-          new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now
-        ).length
-      );
+        setNextLesson(future[0] || null);
 
+        const upcoming = future.slice(1);
+        setUpcomingLessons(upcoming);
+
+        const completedWithCurrentTutor = bookings.filter(b => {
+          const isMyCurrentTutor = b.tutorId === tutor;
+          const isCompleted = b.status === 'completed' ||
+            new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now;
+
+          return isMyCurrentTutor && isCompleted;
+        }).length;
+
+        setCompletedCount(completedWithCurrentTutor);
+
+      } else {
+        setChosenTutorData(null);
+        setTutorId('');
+        setNextLesson(null);
+        setUpcomingLessons([]);
+        setCompletedCount(0);
+      }
     } catch (e) {
       console.error(e);
       Alert.alert("שגיאה", "בעיה בטעינת נתונים");
@@ -117,9 +158,21 @@ export default function HomeScreen({ navigation }: any) {
     return status === 'confirmed' ? '#18875b' : '#000000';
   };
 
-  const handleLessonCancel = async (bookingId: string) => {
-    Alert.alert('ביטול שיעור', 'האם אתה בטוח שברצונך לבטל את השיעור', [
+  const handleLessonCancel = async (lesson: Lesson) => {
+    const handleCallTutor = async () => {
+      const phoneNumber = chosenTutorData?.user?.phoneNumber;
+      if (!phoneNumber) {
+        Alert.alert('שגיאה', 'מספר הטלפון של המורה לא זמין');
+        return;
+      }
+      try {
+        await Linking.openURL(`tel:${phoneNumber}`);
+      } catch (err) {
+        Alert.alert('שגיאה', 'אירעה תקלה בניסיון לבצע שיחה');
+      }
+    };
 
+    Alert.alert('ביטול שיעור', 'האם אתה בטוח שברצונך לבטל את השיעור?', [
       { text: 'חזור', style: 'cancel' },
       {
         text: 'בטל שיעור',
@@ -127,33 +180,36 @@ export default function HomeScreen({ navigation }: any) {
         onPress: async () => {
           try {
             setLoading(true);
-            await apiClient.put(`/booking/cancel/${bookingId}`);
+
+            await apiClient.put(`/booking/cancel/${lesson.id}`);
+
             Alert.alert('בוצע', 'השיעור בוטל בהצלחה');
             fetchData();
 
           } catch (e: any) {
             console.error(e);
-            const errorMessage = e.response?.data?.message || 'נסה שוב מאוחר יותר';
-            Alert.alert('שגיאה', errorMessage);
 
+            const errorMessage = e.response?.data?.message || 'נסה שוב מאוחר יותר';
+
+            if (e.response?.status === 400) {
+              Alert.alert(
+                'ביטול חסום',
+                errorMessage,
+                [
+                  { text: 'סגור', style: 'cancel' },
+                  { text: 'התקשר למורה עכשיו', onPress: handleCallTutor }
+                ]
+              );
+            } else {
+              Alert.alert('שגיאה', errorMessage);
+            }
           } finally {
             setLoading(false);
           }
         }
       }
-    ])
-  }
-
-  const renderAvatar = (u?: UserType) =>
-    u?.profileImage
-      ? <Image source={{ uri: u.profileImage }} style={styles.teacherAvatar} />
-      : (
-        <View style={[styles.teacherAvatar, styles.avatarPlaceholder]}>
-          <Text style={styles.avatarInitial}>
-            {u?.firstName?.[0]?.toUpperCase() || '?'}
-          </Text>
-        </View>
-      );
+    ]);
+  };
 
   if (loading) return <LoadingScreen />;
 
@@ -168,50 +224,38 @@ export default function HomeScreen({ navigation }: any) {
             {userName && (<><Text>, </Text>
               <Text style={styles.userNameText}>{userName}</Text></>)}
           </Text>
-          <Text style={styles.headerSubtitle}>
-            מה היעד הבא שלנו?
-          </Text>
         </View>
 
-        <Section
-          title="לוח יעדים"
-          action={
-            <TouchableOpacity >
-              <Ionicons name="eye-outline" size={22} color="#0194b1" />
-            </TouchableOpacity>
-          }
-        >
-          <View style={styles.progressWrapper}>
-            <ProgressCircle
-              progress={(completedCount / 52) * 100}
-              size={135}
-              strokeWidth={8}
-            />
-
-            <Text style={styles.goalsProgressText}>
-              {`${completedCount} מתוך 52 הושלמו`}
-            </Text>
-          </View>
+        <Section title="שיעורי הנהיגה שלי">
+          <TouchableOpacity>
+            <View style={styles.progressWrapper}>
+              <ProgressCircle
+                progress={(allCompletedCount / 52) * 100}
+                size={135}
+                strokeWidth={8}
+              />
+              <Text style={styles.goalsProgressText}>
+                {`${allCompletedCount} מתוך 52 הושלמו`}
+              </Text>
+            </View>
+          </TouchableOpacity>
         </Section>
 
         {nextLesson && (
           <Section
             title="השיעור הקרוב"
             action={
-              <TouchableOpacity onPress={() => handleLessonCancel(nextLesson.id)}>
+              <TouchableOpacity onPress={() => handleLessonCancel(nextLesson)}>
                 <Text style={styles.blueLink}>ביטול</Text>
               </TouchableOpacity>
             }
           >
             <View style={styles.nextLessonDetails}>
-
               <Row
                 icon="time-outline"
                 text={`${getDayName(nextLesson.lessonDate)}, ${formatDate(nextLesson.lessonDate)}\n${nextLesson.startTime.slice(0, 5)} - ${nextLesson.endTime.slice(0, 5)}`}
               />
-
               <Row icon="location-outline" text={nextLesson.pickupLocation} />
-
               <Row
                 icon="information-circle-outline"
                 text={
@@ -229,26 +273,71 @@ export default function HomeScreen({ navigation }: any) {
 
         {upcomingLessons.length > 0 && (
           <Section title="שיעורים הבאים">
-            <FlatList
-              data={upcomingLessons}
-              keyExtractor={i => i.id}
-              scrollEnabled={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity style={styles.upcomingLessonRow} onPress={() => openLessonDetails(item)}>
-                  <Ionicons name="chevron-back" size={18} color="#ccc" />
-                  <View style={styles.upcomingLessonText}>
-                    <Text style={styles.upcomingTime}>
-                      {`${item.startTime.slice(0, 5)} - ${item.endTime.slice(0, 5)}`}
-                    </Text>
-                    <Text style={styles.upcomingDayDate}>
-                      {formatDate(item.lessonDate)}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-            />
+            {upcomingLessons.map((item) => (
+              <TouchableOpacity key={item.id} style={styles.upcomingLessonRow} onPress={() => openLessonDetails(item)}>
+                <Ionicons name="chevron-back" size={18} color="#ccc" />
+                <View style={styles.upcomingLessonText}>
+                  <Text style={styles.upcomingTime}>
+                    {`${item.startTime.slice(0, 5)} - ${item.endTime.slice(0, 5)}`}
+                  </Text>
+                  <Text style={styles.upcomingDayDate}>
+                    {formatDate(item.lessonDate)}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
           </Section>
         )}
+
+        <TouchableOpacity
+          onPress={() => {
+            if (chosenTutorData) {
+              navigation.navigate('SearchTutorsStack', {
+                screen: 'TutorDetails',
+                params: { tutorId: chosenTutorData.id },
+              });
+            } else {
+              navigation.navigate('SearchTutorsStack', {
+                screen: 'SearchMain',
+              });
+            }
+          }}
+        >
+          <Section title="המורה שלי">
+            <View style={styles.teacherRow}>
+              {chosenTutorData && (
+                chosenTutorData.user.profileImage ? (
+                  <Image
+                    source={{ uri: chosenTutorData.user.profileImage }}
+                    style={styles.teacherAvatar}
+                  />
+                ) : (
+                  <View style={[styles.teacherAvatar, styles.avatarPlaceholder]}>
+                    <Text style={styles.avatarInitial}>
+                      {chosenTutorData.user.firstName?.[0]?.toUpperCase() || '?'}
+                    </Text>
+                  </View>
+                )
+              )}
+              <View style={styles.teacherInfo}>
+                <Text style={[styles.teacherName, !chosenTutorData && { color: '#999' }]}>
+                  {chosenTutorData
+                    ? `${chosenTutorData.user.firstName} ${chosenTutorData.user.lastName}`
+                    : 'טרם נבחר מורה'}
+                </Text>
+                {chosenTutorData && (
+                  <Text style={styles.teacherSubtext}>
+                    {completedCount === 0
+                      ? 'טרם בוצעו שיעורים'
+                      : completedCount === 1
+                        ? 'שיעור אחד בוצע'
+                        : `בוצעו ${completedCount} שיעורים`}
+                  </Text>
+                )}
+              </View>
+            </View>
+          </Section>
+        </TouchableOpacity>
 
         <Section title="שיעורים שבוצעו">
           <TouchableOpacity
@@ -261,12 +350,13 @@ export default function HomeScreen({ navigation }: any) {
         </Section>
 
       </ScrollView>
+
       <Modal
         animationType="fade"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
-        statusBarTranslucent //כיסוי מלא של המודל על המסך
+        statusBarTranslucent
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -305,7 +395,8 @@ export default function HomeScreen({ navigation }: any) {
                     style={styles.cancelButton}
                     onPress={() => {
                       setModalVisible(false);
-                      handleLessonCancel(selectedLesson.id);
+                      // handleLessonCancel(selectedLesson.id);
+                      handleLessonCancel(selectedLesson);
                     }}
                   >
                     <Text style={styles.cancelButtonText}>ביטול שיעור</Text>
@@ -355,10 +446,14 @@ const styles = StyleSheet.create({
   detailRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' },
   detailText: { textAlign: 'right', fontSize: 15, color: '#444', lineHeight: 22 },
   detailIcon: { marginLeft: 12 },
-  teacherRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', marginTop: 5 },
-  teacherAvatar: { width: 22, height: 22, borderRadius: 14, marginLeft: 10 },
-  avatarPlaceholder: { backgroundColor: '#017f98', width: 22, height: 22, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
-  avatarInitial: { color: '#fff', fontSize: 12, fontWeight: 'bold' },
+  valueInput: { fontSize: 16, color: '#333', marginRight: 10, textAlign: 'right' },
+  teacherRow: { flexDirection: 'row-reverse', alignItems: 'center', paddingVertical: 4 },
+  teacherAvatar: { width: 44, height: 44, borderRadius: 22, marginLeft: 12 },
+  avatarPlaceholder: { backgroundColor: '#0194b1', width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' },
+  avatarInitial: { color: '#fff', fontSize: 16, fontWeight: 'bold' },
+  teacherInfo: { alignItems: 'flex-end', justifyContent: 'center' },
+  teacherName: { fontSize: 16, fontWeight: '600', color: '#333' },
+  teacherSubtext: { fontSize: 13, color: '#777', marginTop: 2 },
   upcomingLessonRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#f9f9f9', alignItems: 'center' },
   upcomingLessonText: { alignItems: 'flex-end' },
   upcomingTime: { fontWeight: '700', color: '#333' },

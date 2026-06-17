@@ -64,7 +64,6 @@ export default function TutorDetails({ route, navigation }: any) {
             Alert.alert("שגיאה", "נא למלא תוכן להמלצה");
             return;
         }
-
         try {
             await apiClient.post('/review/addReview', { tutorId: tutor.id, content, rating });
             setReviewModalVisible(false);

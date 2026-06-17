@@ -329,7 +329,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                     <InputField label="עיר" value={profile.city || ''} editable={false} />
                     <InputField label="רחוב" value={profile.street || ''} editable={false} />
 
-                    <Text style={[styles.sectionTitle]}>מורה</Text>
+                    {/* <Text style={[styles.sectionTitle]}>מורה</Text>
                     <View style={styles.teacherRow}>
                         <Text style={styles.valueInput}>
                             {profile.chosenTutor
@@ -358,7 +358,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                             value={`₪ ${profile.chosenTutor.pricePerLesson}`}
                             editable={false}
                         />
-                    )}
+                    )} */}
                 </View>
 
                 <View style={styles.footerSection}>

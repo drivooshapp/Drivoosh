@@ -232,7 +232,7 @@ export default function App() {
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" translucent={false} backgroundColor="#fff" />
       <NavigationIndependentTree>
-        <View style={{ flex: 1, marginBottom: 50, backgroundColor: '#f0f0f0' }}>
+        <View style={{ flex: 1, backgroundColor: '#f0f0f0' }}>
           <NavigationContainer>
             <Stack.Navigator screenOptions={{ headerShown: false }}>
               {!userToken ? (
