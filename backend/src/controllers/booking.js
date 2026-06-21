@@ -2,6 +2,7 @@ import { Booking, Tutor, User } from '../models/index.js';
 import { Op } from 'sequelize';
 
 
+
 const calculateEndTime = (startTime, durationMinutes) => {
     const [hours, minutes] = startTime.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes + durationMinutes;
@@ -9,6 +10,7 @@ const calculateEndTime = (startTime, durationMinutes) => {
     const endM = (totalMinutes % 60).toString().padStart(2, '0');
     return `${endH}:${endM}`;
 };
+
 
 export const createBooking = async (req, res) => {
     try {
@@ -320,11 +322,6 @@ export const cancelBooking = async (req, res) => {
 
             const hoursLeft = (lessonFullDateTime - now) / (1000 * 60 * 60);
 
-            // if (hoursLeft < 24) {
-            //     return res.status(400).json({
-            //         message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
-            //     });
-            // }
             if (hoursLeft < 24) {
                 return res.status(200).json({
                     success: false,

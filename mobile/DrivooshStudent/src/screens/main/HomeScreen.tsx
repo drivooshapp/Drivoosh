@@ -177,21 +177,45 @@ export default function HomeScreen({ navigation }: any) {
       {
         text: 'בטל שיעור',
         style: 'destructive',
+        // onPress: async () => {
+        //   try {
+        //     setLoading(true);
+
+        //     await apiClient.put(`/booking/cancel/${lesson.id}`);
+
+        //     Alert.alert('בוצע', 'השיעור בוטל בהצלחה');
+        //     fetchData();
+
+        //   } catch (e: any) {
+        //     console.error(e);
+
+        //     const errorMessage = e.response?.data?.message || 'נסה שוב מאוחר יותר';
+
+        //     if (e.response?.status === 400) {
+        //       Alert.alert(
+        //         'ביטול נכשל',
+        //         errorMessage,
+        //         [
+        //           { text: 'התקשר למורה עכשיו', onPress: handleCallTutor },
+        //           { text: 'סגור', style: 'cancel' }
+        //         ]
+        //       );
+        //     } else {
+        //       Alert.alert('שגיאה', errorMessage);
+        //     }
+        //   } finally {
+        //     setLoading(false);
+        //   }
+        // }
         onPress: async () => {
           try {
             setLoading(true);
 
-            await apiClient.put(`/booking/cancel/${lesson.id}`);
+            const response = await apiClient.put(`/booking/cancel/${lesson.id}`);
 
-            Alert.alert('בוצע', 'השיעור בוטל בהצלחה');
-            fetchData();
+            if (response.data?.success === false) {
+              const errorMessage = response.data?.message || 'ביטול חסום';
 
-          } catch (e: any) {
-            console.error(e);
-
-            const errorMessage = e.response?.data?.message || 'נסה שוב מאוחר יותר';
-
-            if (e.response?.status === 400) {
               Alert.alert(
                 'ביטול חסום',
                 errorMessage,
@@ -200,9 +224,16 @@ export default function HomeScreen({ navigation }: any) {
                   { text: 'התקשר למורה עכשיו', onPress: handleCallTutor }
                 ]
               );
-            } else {
-              Alert.alert('שגיאה', errorMessage);
+              return;
             }
+
+            Alert.alert('בוצע', 'השיעור בוטל בהצלחה');
+            fetchData();
+
+          } catch (e: any) {
+            console.error(e);
+            const errorMessage = e.response?.data?.message || 'נסה שוב מאוחר יותר';
+            Alert.alert('שגיאה', errorMessage);
           } finally {
             setLoading(false);
           }
@@ -395,7 +426,6 @@ export default function HomeScreen({ navigation }: any) {
                     style={styles.cancelButton}
                     onPress={() => {
                       setModalVisible(false);
-                      // handleLessonCancel(selectedLesson.id);
                       handleLessonCancel(selectedLesson);
                     }}
                   >

@@ -107,9 +107,7 @@ export default function TutorDetails({ route, navigation }: any) {
                     }
                 ]
             );
-            // executeSelection();
-        }
-        else {
+        } else {
             executeSelection();
         }
     };
@@ -135,14 +133,6 @@ export default function TutorDetails({ route, navigation }: any) {
                 }
             ]
         );
-        // try {
-        //     await apiClient.put(`/student/unselectTutor`);
-        //     setIsStudentOfTutor(false);
-        //     setTutorOfUser(null);
-        //     Alert.alert("השיוך בוטל", "כעת ניתן לבחור מורה חדש.");
-        // } catch (e) {
-        //     Alert.alert("שגיאה", "הסרת מורה נכשלה");
-        // }
     };
 
     const handleCall = async () => {
@@ -156,7 +146,7 @@ export default function TutorDetails({ route, navigation }: any) {
 
     const handleOpenMap = async () => {
         try {
-            const address = `${tutor.User?.street}, ${tutor.User?.city}`;
+            const address = `${tutor.user?.street}, ${tutor.user?.city}`;
             const url =
                 Platform.select({
                     ios: `maps:0,0?q=${address}`,

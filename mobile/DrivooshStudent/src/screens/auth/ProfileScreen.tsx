@@ -1,8 +1,8 @@
 import LoadingScreen from '@/src/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, KeyboardTypeOptions, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
 
@@ -73,7 +73,6 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                             setLoading(true);
                             await apiClient.delete('/user/deleteAccount');
                             await AsyncStorage.multiRemove(['userToken', 'userName', 'isSetupComplete', 'profileImage']);
-                            // console.log("החשבון נמחק", "חשבונך הוסר בהצלחה.")
                             Alert.alert("החשבון נמחק", "חשבונך הוסר בהצלחה.");
 
                             if (onLogout) onLogout();
