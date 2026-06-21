@@ -285,6 +285,7 @@ export default function SearchTutors({ navigation }: any) {
     </SafeAreaView>
   );
 }
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: BG_COLOR },
   header: { flexDirection: 'row', alignItems:'center', justifyContent: 'space-between', padding: 20, backgroundColor: '#fff' },

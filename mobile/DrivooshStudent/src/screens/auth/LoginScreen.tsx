@@ -76,6 +76,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
       // ]);
       navigation.navigate('ResetPassword', { email })
     } catch (error: any) {
+      console.log(error.response?.data?.message)
       Alert.alert('שגיאה', error.response?.data?.message || 'שגיאה בשליחת המייל');
     } finally {
       setLoading(false);

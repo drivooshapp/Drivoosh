@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function MessagesScreen() {
+  
   return (
     <View style={styles.container}>
       <MaterialCommunityIcons name="traffic-cone" size={80} color="#88c0cc" />

@@ -27,9 +27,10 @@ export default function SignupScreen({ navigation }: any) {
                 password,
                 role: 'student'
             });
-            // console.log("נרשמת בהצלחה!");
+            
             Alert.alert('הצלחה', 'נרשמת בהצלחה, כעת התחבר');
             navigation.navigate('Login');
+
         } catch (error: any) {
             console.log("Error details:", error.response?.data || error.message);
             Alert.alert('שגיאה', 'הרישום נכשל. ודא שהפרטים תקינים.');

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '../../components/LoadingScreen';
 
+
 export default function AllReviews({ route, navigation }: any) {
     const { tutorId } = route.params;
     const [reviews, setReviews] = useState<any[]>([]);

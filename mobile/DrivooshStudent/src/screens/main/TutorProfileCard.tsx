@@ -57,6 +57,7 @@ export default function TutorDetails({ route, navigation }: any) {
         const sum = tutor.reviews.reduce((acc: number, item: any) => acc + item.rating, 0);
         return (sum / tutor.reviews.length).toFixed(1);
     };
+
     const averageRating = calculateAverage();
 
     const handleSubmitReview = async () => {
@@ -167,6 +168,7 @@ export default function TutorDetails({ route, navigation }: any) {
     };
 
     if (loading) return <LoadingScreen />;
+
     if (!tutor) return <View style={styles.center}><Text>המורה לא נמצא</Text></View>;
 
     return (
@@ -193,7 +195,6 @@ export default function TutorDetails({ route, navigation }: any) {
                     </View>
 
                     <Text style={styles.name}>{tutor.user?.firstName} {tutor.user?.lastName}</Text>
-                    {/* <Text style={styles.sub}>לימוד נהיגה • {tutor.experienceYears} שנות ניסיון</Text> */}
                 </View>
 
                 <View style={styles.stats}>

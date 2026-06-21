@@ -177,36 +177,7 @@ export default function HomeScreen({ navigation }: any) {
       {
         text: 'בטל שיעור',
         style: 'destructive',
-        // onPress: async () => {
-        //   try {
-        //     setLoading(true);
 
-        //     await apiClient.put(`/booking/cancel/${lesson.id}`);
-
-        //     Alert.alert('בוצע', 'השיעור בוטל בהצלחה');
-        //     fetchData();
-
-        //   } catch (e: any) {
-        //     console.error(e);
-
-        //     const errorMessage = e.response?.data?.message || 'נסה שוב מאוחר יותר';
-
-        //     if (e.response?.status === 400) {
-        //       Alert.alert(
-        //         'ביטול נכשל',
-        //         errorMessage,
-        //         [
-        //           { text: 'התקשר למורה עכשיו', onPress: handleCallTutor },
-        //           { text: 'סגור', style: 'cancel' }
-        //         ]
-        //       );
-        //     } else {
-        //       Alert.alert('שגיאה', errorMessage);
-        //     }
-        //   } finally {
-        //     setLoading(false);
-        //   }
-        // }
         onPress: async () => {
           try {
             setLoading(true);
@@ -221,7 +192,7 @@ export default function HomeScreen({ navigation }: any) {
                 errorMessage,
                 [
                   { text: 'סגור', style: 'cancel' },
-                  { text: 'התקשר למורה עכשיו', onPress: handleCallTutor }
+                  { text: 'התקשר', onPress: handleCallTutor }
                 ]
               );
               return;
@@ -257,7 +228,7 @@ export default function HomeScreen({ navigation }: any) {
           </Text>
         </View>
 
-        <Section title="שיעורי הנהיגה שלי">
+        <Section title="כמה התקדמנו בדרך לרישיון">
           <TouchableOpacity>
             <View style={styles.progressWrapper}>
               <ProgressCircle
