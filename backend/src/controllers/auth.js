@@ -137,8 +137,29 @@ export const forgotPassword = async (req, res) => {
         });
 
         res.status(200).json({ message: "הקוד נשלח בהצלחה" });
-    } catch (e) {
-        res.status(500).json({ message: "שגיאה בשליחת המייל" });
+    } 
+//     catch (e) {
+//         console.log("error ", error.response?.data?.message || error.response)
+//         res.status(500).json({ message: "שגיאה בשליחת המייל" });
+//     }
+// };
+catch (error) { // שינינו ל-error כדי שיתאים לכל הקוד למטה
+        console.error("--- שגיאה בתהליך שחזור סיסמה ---");
+        
+        // בדיקה מיוחדת עבור שגיאות של SendGrid
+        if (error.response && error.response.body) {
+            console.error("SendGrid Errors:", JSON.stringify(error.response.body.errors, null, 2));
+        } else {
+            console.error("General Error:", error.message || error);
+        }
+
+        console.error("--------------------------------");
+        
+        // מחזירים את הודעת השגיאה האמיתית ללקוח כדי שתוכל לראות אותה באפליקציה
+        res.status(500).json({ 
+            message: "שגיאה בשליחת המייל", 
+            error: error.message 
+        });
     }
 };
 
