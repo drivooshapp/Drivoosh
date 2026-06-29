@@ -1,7 +1,7 @@
 import LoadingScreen from '@/src/components/LoadingScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import apiClient from '../../api/apiClient';
@@ -93,17 +93,22 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
         style={styles.inner}
       >
         <View style={styles.content}>
-
-          <Text style={styles.brandName}>DRIVOOSH</Text>
-          <Text style={styles.title}>התחברות</Text>
+          <View style={styles.headerContainer}>
+            <Image
+              source={require('../../../assets/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+            />
+            <Text style={styles.title}>התחברות</Text>
+            <Text style={styles.subtitle}>התחבר לחשבון שלך כדי להמשיך</Text>
+          </View>
 
           <View style={styles.form}>
-
             <View style={styles.inputContainer}>
               <Text style={styles.label}>אימייל</Text>
               <TextInput
                 style={styles.input}
-                placeholder="example@mail.com"
+                placeholder="example@gmail.com"
                 placeholderTextColor="#9CA3AF"
                 value={email}
                 onChangeText={setEmail}
@@ -116,7 +121,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
               <Text style={styles.label}>סיסמה</Text>
               <TextInput
                 style={styles.input}
-                placeholder="••••••••"
+                placeholder="•••••••••"
                 placeholderTextColor="#9CA3AF"
                 value={password}
                 onChangeText={setPassword}
@@ -165,9 +170,12 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFFFF' }, inner: { flex: 1 }, content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
-  brandName: { fontSize: 25, textAlign: 'center', fontWeight: '700', color: '#0197b5', marginBottom: 6 },
-  title: { fontSize: 20, fontWeight: '500', marginBottom: 10, marginTop: 40, alignItems: 'flex-end', color: '#111' },
+  container: { flex: 1, backgroundColor: '#FFFFFF' }, inner: { flex: 1 },
+  content: { flex: 1, paddingHorizontal: 24, justifyContent: 'center' },
+  headerContainer: { alignItems: 'center', marginBottom: 32, },
+  logo: { width: 80, height: 80, marginBottom: 16, borderRadius: 20, },
+  title: { fontSize: 26, fontWeight: '700', color: '#111827', textAlign: 'center', letterSpacing: -0.5 },
+  subtitle: { fontSize: 14, color: '#6B7280', marginTop: 4, textAlign: 'center' },
   form: { width: '100%' },
   inputContainer: { marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginBottom: 6, textAlign: 'right' },

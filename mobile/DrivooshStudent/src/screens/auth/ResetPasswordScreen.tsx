@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
     inputContainer: { marginBottom: 20 },
     label: { fontSize: 13, color: '#666', marginBottom: 8, textAlign: 'right' },
     codeFieldRoot: { flexDirection: 'row', justifyContent: 'space-between' },
-    cell: { width: 35, height: 45, gap: 2, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', },
+    cell: { width: 45, height: 45, borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center', },
     cellText: { fontSize: 20, color: '#111', fontWeight: '600' },
     passwordWrapper: { flexDirection: 'row-reverse', alignItems: 'center', height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, },
     passwordInput: { flex: 1, textAlign: 'right', fontSize: 16, color: '#5c5c5c' },
