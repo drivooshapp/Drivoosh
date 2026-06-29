@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../../api/apiClient';
 
 
@@ -19,6 +20,7 @@ const GoogleLogo = () => (
 export default function LoginScreen({ navigation, onLoginSuccess }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -71,9 +73,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
     try {
       setLoading(true);
       await apiClient.post('/user/forgotPassword', { email });
-      // Alert.alert('קוד נשלח', 'בדוק את תיבת המייל שלך', [
-      //   { text: 'המשך', onPress: () => navigation.navigate('ResetPassword', { email }) }
-      // ]);
+
       navigation.navigate('ResetPassword', { email })
     } catch (error: any) {
       Alert.alert('שגיאה', error.response?.data?.message || 'שגיאה בשליחת המייל');
@@ -119,14 +119,26 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
 
             <View style={styles.inputContainer}>
               <Text style={styles.label}>סיסמה</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="•••••••••"
-                placeholderTextColor="#9CA3AF"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
+
+              <View style={styles.passwordWrapper}>
+                <TextInput
+                  style={[styles.input, { flex: 1 }]}
+                  placeholder="•••••••••"
+                  placeholderTextColor="#9CA3AF"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  textAlign="right"
+                />
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                  style={styles.eyeIcon}
+                  activeOpacity={0.7}
+                >
+                  <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={22} color="#888" />
+                </TouchableOpacity>
+              </View>
+
               <TouchableOpacity onPress={handleForgotPassword} style={styles.forgotBtn}>
                 <Text style={styles.forgotText}>שכחת סיסמה?</Text>
               </TouchableOpacity>
@@ -179,7 +191,9 @@ const styles = StyleSheet.create({
   form: { width: '100%' },
   inputContainer: { marginBottom: 16 },
   label: { fontSize: 13, color: '#666', marginBottom: 6, textAlign: 'right' },
-  input: { height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
+  input: { paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right', alignItems: 'center', backgroundColor: '#F3F4F6', height: 52, borderRadius: 12, paddingLeft: 14, },
+  passwordWrapper: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#F3F4F6', height: 52, borderRadius: 12, paddingLeft: 14, },
+  eyeIcon: { padding: 4, },
   forgotBtn: { alignSelf: 'flex-start', marginTop: 8 },
   forgotText: { color: '#00C2E8', fontSize: 13, fontWeight: '500' },
   button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },

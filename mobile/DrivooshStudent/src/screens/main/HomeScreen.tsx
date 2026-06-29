@@ -188,7 +188,7 @@ export default function HomeScreen({ navigation }: any) {
               const errorMessage = response.data?.message || 'ביטול חסום';
 
               Alert.alert(
-                'ביטול חסום',
+                'שגיאה',
                 errorMessage,
                 [
                   { text: 'סגור', style: 'cancel' },

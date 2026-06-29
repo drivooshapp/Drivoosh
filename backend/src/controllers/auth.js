@@ -6,59 +6,6 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
 
-
-// export const register = async (req, res) => {
-//     try {
-//         const {
-//             firstName, lastName, email, password,
-//             role,
-//             // phoneNumber, city, street, carModel, gearbox, pricePerLesson, lessonDuration, experienceYears, bio
-//         } = req.body;
-
-//         const existingUser = await User.findOne({ where: { email } });
-//         if (existingUser) {
-//             return res.status(400).json({ message: "כתובת המייל כבר קיימת במערכת" });
-//         }
-
-//         const hashedPassword = await bcrypt.hash(password, 10);
-
-//         const newUser = await User.create({
-//             firstName,
-//             lastName,
-//             email,
-//             password: hashedPassword,
-//             role,
-//             // city,
-//             // street,
-//             // phoneNumber, city, street, carModel, gearbox, pricePerLesson, lessonDuration, experienceYears, bio
-//         });
-
-//         if (role === 'tutor') {
-//             await Tutor.create({
-//                 userId: newUser.id,
-//                 carModel,
-//                 gearbox,
-//                 pricePerLesson,
-//                 lessonDuration,
-//                 experienceYears,
-//                 bio
-//             });
-//         }
-
-//         res.status(201).json({
-//             message: "משתמש נוצר בהצלחה",
-//             user: {
-//                 id: newUser.id,
-//                 email: newUser.email,
-//                 role: newUser.role,
-//             }
-//         });
-
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: "שגיאת שרת ביצירת משתמש" });
-//     }
-// };
 export const register = async (req, res) => {
     try {
         const {

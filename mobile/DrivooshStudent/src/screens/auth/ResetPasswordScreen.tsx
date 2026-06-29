@@ -27,9 +27,7 @@ export default function ResetPasswordScreen({ route, navigation }: any) {
         try {
             setLoading(true);
             await apiClient.post('/user/resetPassword', { email, otp, newPassword });
-            //   Alert.alert('הצלחה', 'הסיסמה שונתה בהצלחה!', [
-            //     { text: 'חזרה להתחברות', onPress: () => navigation.navigate('Login') }
-            //   ]);
+           
             navigation.navigate('Login')
         } catch (error: any) {
             Alert.alert('שגיאה', error.response?.data?.message || 'האימות נכשל');

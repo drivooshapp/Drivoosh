@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '@/src/components/LoadingScreen';
 
@@ -10,6 +11,7 @@ export default function SignupScreen({ navigation }: any) {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const validateEmail = (text: string) => {
@@ -17,32 +19,6 @@ export default function SignupScreen({ navigation }: any) {
         return emailRegex.test(text);
     };
 
-    // const handleSignup = async () => {
-    //     if (!firstName || !lastName || !email || !password) {
-    //         Alert.alert('שגיאה', 'אנא מלא את כל השדות');
-    //         return;
-    //     }
-
-    //     try {
-    //         setLoading(true);
-    //         await apiClient.post('/user/register', {
-    //             firstName,
-    //             lastName,
-    //             email,
-    //             password,
-    //             role: 'student'
-    //         });
-
-    //         Alert.alert('הצלחה', 'נרשמת בהצלחה, כעת התחבר');
-    //         navigation.navigate('Login');
-
-    //     } catch (error: any) {
-    //         console.log("Error details:", error.response?.data || error.message);
-    //         Alert.alert('שגיאה', 'הרישום נכשל. ודא שהפרטים תקינים.');
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
     const handleSignup = async () => {
         if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
             Alert.alert('שגיאה', 'אנא מלא את כל השדות כדי להמשיך.');
@@ -93,7 +69,6 @@ export default function SignupScreen({ navigation }: any) {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* <ScrollView contentContainerStyle={styles.inner} showsVerticalScrollIndicator={false}> */}
             <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
                 <View style={styles.content}>
 
@@ -104,7 +79,6 @@ export default function SignupScreen({ navigation }: any) {
                             resizeMode="contain"
                         />
                         <Text style={styles.title}>הרשמה</Text>
-                        {/* <Text style={styles.subtitle}></Text> */}
                     </View>
 
                     <View style={styles.form}>
@@ -149,15 +123,26 @@ export default function SignupScreen({ navigation }: any) {
 
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>סיסמה</Text>
-                            <TextInput
-                                style={styles.input}
-                                placeholder="•••••••••"
-                                placeholderTextColor="#9CA3AF"
-                                value={password}
-                                onChangeText={setPassword}
-                                secureTextEntry
-                                textAlign="right"
-                            />
+
+                            {/* המיכל המשותף החדש שיחזיק את שניהם בפנים */}
+                            <View style={styles.passwordContainer}>
+                                <TextInput
+                                    style={[styles.input, { flex: 1 }]} // flex: 1 גורם לו לתפוס את כל הרוחב עד האייקון
+                                    placeholder="•••••••••"
+                                    placeholderTextColor="#9CA3AF"
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={!showPassword}
+                                    textAlign="right"
+                                />
+                                <TouchableOpacity
+                                    onPress={() => setShowPassword(!showPassword)}
+                                    style={styles.eyeIcon}
+                                    activeOpacity={0.7}
+                                >
+                                    <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={22} color="#888" />
+                                </TouchableOpacity>
+                            </View>
                         </View>
 
                         <TouchableOpacity
@@ -196,7 +181,9 @@ const styles = StyleSheet.create({
     title: { fontSize: 28, fontWeight: '800', color: '#002E47', textAlign: 'center', },
     inputContainer: { marginBottom: 16 },
     label: { fontSize: 13, color: '#666', marginBottom: 6, textAlign: 'right' },
-    input: { height: 52, borderRadius: 12, backgroundColor: '#F3F4F6', paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right' },
+    input: { paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right', alignItems: 'center', backgroundColor: '#F3F4F6', height: 52, borderRadius: 12, paddingLeft: 14, },
+    passwordContainer: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#F3F4F6', height: 52, borderRadius: 12, paddingLeft: 14, },
+    eyeIcon: { justifyContent: 'center', alignItems: 'center', height: '100%', paddingRight: 10, },
     button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
     linkContainer: { marginTop: 30, alignItems: 'center' },
