@@ -9,6 +9,7 @@ import apiClient from '../../api/apiClient';
 interface UserProfile {
     firstName: string;
     lastName: string;
+    identityNumber: string;
     phoneNumber: string;
     email: string;
     city: string;
@@ -143,6 +144,9 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
             if (!tempProfile.lastName || !tempProfile.lastName.trim()) {
                 newErrors.lastName = 'שם משפחה הוא שדה חובה';
             }
+            if (!tempProfile.identityNumber || !tempProfile.identityNumber.trim()) {
+                newErrors.identityNumber = 'מספר זהות הוא שדה חובה';
+            }
             if (!tempProfile.city || !tempProfile.city.trim()) {
                 newErrors.city = 'עיר היא שדה חובה';
             }
@@ -166,6 +170,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                 ...tempProfile,
                 firstName: tempProfile.firstName.trim(),
                 lastName: tempProfile.lastName.trim(),
+                identityNumber: tempProfile.identityNumber.trim(),
                 city: tempProfile.city.trim(),
                 street: tempProfile.street.trim(),
                 phoneNumber: phoneResult.formatted
@@ -228,7 +233,8 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                             {[
                                 { key: 'firstName', placeholder: 'שם פרטי', keyboard: 'default', isRtl: true },
                                 { key: 'lastName', placeholder: 'שם משפחה', keyboard: 'default', isRtl: true },
-                                { key: 'phoneNumber', placeholder: 'טלפון', keyboard: 'phone-pad', isRtl: false },
+                                { key: 'identityNumber', placeholder: 'מספר זהות', keyboard: 'phone-pad', isRtl: true },
+                                { key: 'phoneNumber', placeholder: 'טלפון', keyboard: 'phone-pad', isRtl: true },
                                 { key: 'city', placeholder: 'עיר', keyboard: 'default', isRtl: true },
                                 { key: 'street', placeholder: 'רחוב', keyboard: 'default', isRtl: true },
                             ].map((field) => (
@@ -320,6 +326,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
 
                     <InputField label="שם פרטי" value={profile.firstName} editable={false} />
                     <InputField label="שם משפחה" value={profile.lastName} editable={false} />
+                    <InputField label="מספר זהות" value={profile.identityNumber || ''} editable={false} />
                     <InputField label="טלפון" value={profile.phoneNumber || ''} editable={false} />
                     <InputField label="מייל" value={profile.email} editable={false} />
 

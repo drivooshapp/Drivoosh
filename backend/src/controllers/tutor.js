@@ -39,9 +39,9 @@ export const getAllTutors = async (req, res) => {
 
     } catch (error) {
         console.error("שגיאה בשליפת מורים:", error.message);
-        res.status(500).json({ 
+        res.status(500).json({
             message: "שגיאה בשליפת רשימת המורים",
-            error: process.env.NODE_ENV === 'development' ? error.message : undefined 
+            error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
     }
 };
@@ -69,8 +69,8 @@ export const getTutorById = async (req, res) => {
                 }
             ],
             attributes: [
-                'id', 'carModel', 'pricePerLesson', 
-                'experienceYears', 'workStartHour', 'workEndHour', 
+                'id', 'carModel', 'pricePerLesson',
+                'experienceYears', 'workStartHour', 'workEndHour',
                 'BufferTime', 'lessonDuration', 'bio'
             ]
         });
@@ -94,7 +94,7 @@ export const getMyProfile = async (req, res) => {
             where: { userId: req.user.id },
             include: [{
                 model: User,
-                attributes: ['firstName', 'lastName', 'email', 'street', 'city', 'phoneNumber', 'profileImage', 'role']
+                attributes: ['firstName', 'lastName', 'identityNumber', 'email', 'street', 'city', 'phoneNumber', 'profileImage', 'role']
             }]
         });
 
@@ -116,14 +116,14 @@ export const updateTutorProfile = async (req, res) => {
             return res.status(403).json({ message: "גישה נדחתה: רק מורים יכולים לעדכן פרטים אלו" });
         }
 
-        const { firstName, lastName, phoneNumber, city, street, carModel, gearbox, pricePerLesson, lessonDuration, workStartHour, workEndHour, BufferTime, experienceYears, bio } = req.body;
+        const { firstName, lastName, identityNumber, phoneNumber, city, street, carModel, gearbox, pricePerLesson, lessonDuration, workStartHour, workEndHour, BufferTime, experienceYears, bio } = req.body;
 
         const tutor = await Tutor.findOne({ where: { userId: req.user.id } });
 
         if (!tutor) {
             return res.status(404).json({ message: "פרופיל מורה לא נמצא במערכת" });
         }
-
+        // צריך לעדכן פה את הפרטים הבסיסיים של המורה כמו שם טלפון וכו
         await tutor.update({
             carModel,
             pricePerLesson,

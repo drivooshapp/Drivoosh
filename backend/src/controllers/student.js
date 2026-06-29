@@ -7,7 +7,7 @@ export const getMyProfile = async (req, res) => {
     try {
         const student = await User.findByPk(req.user.id, {
             attributes:
-                ['id', 'firstName', 'lastName', 'email', 'phoneNumber', 'street', 'city', 'profileImage', 'role', 'createdAt'],
+                ['id', 'firstName', 'lastName', 'identityNumber', 'email', 'phoneNumber', 'street', 'city', 'profileImage', 'role', 'createdAt'],
             include: [{
                 model: Tutor,
                 as: 'chosenTutor',
@@ -34,7 +34,7 @@ export const getMyProfile = async (req, res) => {
 
 export const updateStudentProfile = async (req, res) => {
     try {
-        const { firstName, lastName, phoneNumber, city, street, profileImage } = req.body;
+        const { firstName, lastName, identityNumber, phoneNumber, city, street, profileImage } = req.body;
         const userId = req.user.id;
 
         const user = await User.findByPk(userId);
@@ -45,6 +45,7 @@ export const updateStudentProfile = async (req, res) => {
 
         if (firstName !== undefined) user.firstName = firstName;
         if (lastName !== undefined) user.lastName = lastName;
+        if (identityNumber !== undefined) user.identityNumber = identityNumber;
         if (phoneNumber !== undefined) user.phoneNumber = phoneNumber || user.phoneNumber;
         if (city !== undefined) user.city = city;
         if (street !== undefined) user.street = street;
@@ -53,6 +54,7 @@ export const updateStudentProfile = async (req, res) => {
         const isAllFieldsFull =
             user.firstName?.trim() &&
             user.lastName?.trim() &&
+            user.identityNumber?.trim() &&
             user.phoneNumber?.trim() &&
             user.city?.trim() &&
             user.street?.trim();
@@ -65,7 +67,7 @@ export const updateStudentProfile = async (req, res) => {
             include: [{
                 model: Tutor,
                 as: 'chosenTutor',
-                include: [{ model: User, as: 'user', attributes: ['firstName', 'lastName', 'phoneNumber', 'profileImage'] }]
+                include: [{ model: User, as: 'user', attributes: ['firstName', 'lastName', 'identityNumber', 'phoneNumber', 'profileImage'] }]
             }]
         });
 

@@ -10,7 +10,7 @@ export const register = async (req, res) => {
     try {
         const {
             firstName, lastName, email, password, role,
-            carModel, gearbox, pricePerLesson, lessonDuration, experienceYears, bio // שים לב ששחררתי מהערה את מה שאתה משתמש בו למטה
+            // carModel, gearbox, pricePerLesson, lessonDuration, experienceYears, bio
         } = req.body;
 
         if (!password || password.length < 6 || password.length > 12) {
