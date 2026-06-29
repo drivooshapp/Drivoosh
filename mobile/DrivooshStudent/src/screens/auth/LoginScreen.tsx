@@ -1,10 +1,10 @@
+import LoadingScreen from '@/src/components/LoadingScreen';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState } from 'react';
 import { Alert, KeyboardAvoidingView, Platform, StatusBar, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import apiClient from '../../api/apiClient';
-import LoadingScreen from '@/src/components/LoadingScreen';
 
 
 const GoogleLogo = () => (
@@ -76,7 +76,6 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
       // ]);
       navigation.navigate('ResetPassword', { email })
     } catch (error: any) {
-      console.log(error.response?.data?.message)
       Alert.alert('שגיאה', error.response?.data?.message || 'שגיאה בשליחת המייל');
     } finally {
       setLoading(false);
