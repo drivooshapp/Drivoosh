@@ -418,8 +418,8 @@ const styles = StyleSheet.create({
     saveBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
     cancelText: { color: '#01829b', fontWeight: '600', textAlign: 'center', marginTop: 15 },
-    footerSection: { marginTop: 50, alignItems: 'center', paddingHorizontal: 25 },
-    deleteAccountBtn: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
+    footerSection: { margin: 40, alignItems: 'center', paddingHorizontal: 30 },
+    deleteAccountBtn: { flexDirection: 'row', alignItems: 'center' },
     deleteAccountText: { color: '#FF4A4A', fontSize: 14, fontWeight: '500', marginRight: 8 }
 });
 
