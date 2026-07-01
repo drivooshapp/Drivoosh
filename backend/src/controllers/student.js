@@ -77,7 +77,7 @@ export const updateStudentProfile = async (req, res) => {
         });
     } catch (error) {
         console.error("Error updating profile:", error);
-        res.status(500).json({ message: "שגיאה בעדכון פרטי התלמיד" });
+        res.status(500).json({ message: "שגיאה בעדכון הפרטים" });
     }
 };
 
