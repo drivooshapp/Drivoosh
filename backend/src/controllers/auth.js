@@ -36,9 +36,12 @@ export const register = async (req, res) => {
             await Tutor.create({
                 userId: newUser.id,
                 carModel,
-                gearbox,
+                // gearbox,
                 pricePerLesson,
                 lessonDuration,
+                workStartHour,
+                workEndHour,
+                BufferTime,
                 experienceYears,
                 bio
             });
@@ -136,7 +139,7 @@ export const forgotPassword = async (req, res) => {
         });
 
         res.status(200).json({ message: "הקוד נשלח בהצלחה" });
-    } 
+    }
     catch (e) {
         console.log("error ", error.response?.data?.message || error.response)
         res.status(500).json({ message: "שגיאה בשליחת המייל" });

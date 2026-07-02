@@ -10,14 +10,13 @@ const Tutor = sequelize.define('Tutor', {
     carModel: { type: DataTypes.STRING },
     // gearbox: { type: DataTypes.ENUM('manual', 'automatic') },
     pricePerLesson: { type: DataTypes.INTEGER },
-    // lessonDuration: { type: DataTypes.INTEGER || 45 },
     lessonDuration: { type: DataTypes.INTEGER, defaultValue: 45 },
     workStartHour: { type: DataTypes.STRING, defaultValue: "08:00" },
     workEndHour: { type: DataTypes.STRING, defaultValue: "20:00" },
     BufferTime: {
         type: DataTypes.ENUM(...BUFFER_OPTIONS),
         defaultValue: '15',
-        allowNull: false,
+        allowNull: true,
         validate: { isIn: [BUFFER_OPTIONS] }
     },
     experienceYears: { type: DataTypes.INTEGER },
