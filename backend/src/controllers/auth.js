@@ -10,7 +10,7 @@ export const register = async (req, res) => {
     try {
         const {
             firstName, lastName, email, password, role,
-            // carModel, gearbox, pricePerLesson, lessonDuration, experienceYears, bio
+            carModel, pricePerLesson, lessonDuration, experienceYears, bio
         } = req.body;
 
         if (!password || password.length < 6 || password.length > 12) {
@@ -35,13 +35,18 @@ export const register = async (req, res) => {
         if (role === 'tutor') {
             await Tutor.create({
                 userId: newUser.id,
+                // carModel,
+                // // gearbox,
+                // pricePerLesson,
+                // lessonDuration,
+                // workStartHour,
+                // workEndHour,
+                // BufferTime,
+                // experienceYears,
+                // bio
                 carModel,
-                // gearbox,
                 pricePerLesson,
                 lessonDuration,
-                workStartHour,
-                workEndHour,
-                BufferTime,
                 experienceYears,
                 bio
             });
@@ -56,9 +61,32 @@ export const register = async (req, res) => {
             }
         });
 
+    // } catch (error) {
+    //     console.error(error);
+    //     res.status(500).json({ message: "שגיאת שרת ביצירת משתמש" });
+    // }
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "שגיאת שרת ביצירת משתמש" });
+        // הדפסה מובלטת וברורה לקונסול של הסרבר
+        console.error("=================== SERVER ERROR IN REGISTER ===================");
+        console.error("Error Message:", error.message);
+        
+        // אם השגיאה מגיעה מ-Sequelize/Database (למשל ולידציה או שדות חסרים)
+        if (error.name) {
+            console.error("Error Type/Name:", error.name);
+        }
+        if (error.errors) {
+            console.error("Validation Errors:", error.errors.map(e => e.message));
+        }
+        
+        // הדפסת ה-Stack Trace המלא כדי לראות בדיוק באיזו שורה זה קרס
+        console.error("Stack Trace:\n", error.stack);
+        console.error("================================================================");
+
+        // החזרת השגיאה המקורית או הפירוט שלה גם לפרונט (רק לסביבת פיתוח!)
+        res.status(500).json({ 
+            message: "שגיאת שרת ביצירת משתמש",
+            developerMessage: error.message // יעזור לך לראות ישר בפרונט מה קרה
+        });
     }
 };
 

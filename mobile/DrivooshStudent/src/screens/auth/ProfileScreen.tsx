@@ -334,37 +334,6 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
 
                     <InputField label="עיר" value={profile.city || ''} editable={false} />
                     <InputField label="רחוב" value={profile.street || ''} editable={false} />
-
-                    {/* <Text style={[styles.sectionTitle]}>מורה</Text>
-                    <View style={styles.teacherRow}>
-                        <Text style={styles.valueInput}>
-                            {profile.chosenTutor
-                                ? `${profile.chosenTutor.user.firstName} ${profile.chosenTutor.user.lastName}`
-                                : 'טרם נבחר מורה'}
-                        </Text>
-                        {profile.chosenTutor && (
-                            profile.chosenTutor.user.profileImage ? (
-                                <Image
-                                    source={{ uri: profile.chosenTutor.user.profileImage }}
-                                    style={styles.teacherAvatar}
-                                />
-                            ) : (
-                                <View style={[styles.teacherAvatar, styles.avatarPlaceholder]}>
-                                    <Text style={styles.avatarInitial}>
-                                        {profile.chosenTutor.user.firstName?.[0]?.toUpperCase() || '?'}
-                                    </Text>
-                                </View>
-                            )
-                        )}
-                    </View>
-
-                    {profile.chosenTutor && (
-                        <InputField
-                            label="עלות שיעור"
-                            value={`₪ ${profile.chosenTutor.pricePerLesson}`}
-                            editable={false}
-                        />
-                    )} */}
                 </View>
 
                 <View style={styles.footerSection}>

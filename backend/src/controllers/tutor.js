@@ -94,6 +94,7 @@ export const getMyProfile = async (req, res) => {
             where: { userId: req.user.id },
             include: [{
                 model: User,
+                as: 'user',
                 attributes: ['firstName', 'lastName', 'identityNumber', 'email', 'street', 'city', 'phoneNumber', 'profileImage', 'role']
             }]
         });
@@ -110,35 +111,69 @@ export const getMyProfile = async (req, res) => {
 };
 
 
+// export const updateTutorProfile = async (req, res) => {
+//     try {
+//         if (req.user.role !== 'tutor') {
+//             return res.status(403).json({ message: "גישה נדחתה: רק מורים יכולים לעדכן פרטים אלו" });
+//         }
+
+//         const { firstName, lastName, identityNumber, phoneNumber, city, street, carModel, gearbox, pricePerLesson, lessonDuration, workStartHour, workEndHour, BufferTime, experienceYears, bio } = req.body;
+
+//         const tutor = await Tutor.findOne({ where: { userId: req.user.id } });
+
+//         if (!tutor) {
+//             return res.status(404).json({ message: "פרופיל מורה לא נמצא במערכת" });
+//         }
+//         // צריך לעדכן פה את הפרטים הבסיסיים של המורה כמו שם טלפון וכו
+//         await tutor.update({
+//             carModel,
+//             pricePerLesson,
+//             experienceYears,
+//             bio
+//         });
+
+//         res.status(200).json({
+//             message: "פרופיל המורה עודכן בהצלחה!",
+//             tutor
+//         });
+
+//     } catch (error) {
+//         console.error("Update Tutor Error:", error);
+//         res.status(500).json({ message: "שגיאה בעדכון נתוני המורה" });
+//     }
+// };
 export const updateTutorProfile = async (req, res) => {
     try {
-        if (req.user.role !== 'tutor') {
-            return res.status(403).json({ message: "גישה נדחתה: רק מורים יכולים לעדכן פרטים אלו" });
-        }
+        const userId = req.user.id;
 
-        const { firstName, lastName, identityNumber, phoneNumber, city, street, carModel, gearbox, pricePerLesson, lessonDuration, workStartHour, workEndHour, BufferTime, experienceYears, bio } = req.body;
+        const {
+            firstName, lastName, identityNumber, phoneNumber, city, street, profileImage, // שדות של User
+            carModel, pricePerLesson, lessonDuration, experienceYears, bio, BufferTime, workStartHour, workEndHour // שדות של Tutor
+        } = req.body;
 
-        const tutor = await Tutor.findOne({ where: { userId: req.user.id } });
+        await User.update(
+            { firstName, lastName, identityNumber, phoneNumber, city, street, profileImage },
+            { where: { id: userId } }
+        );
 
-        if (!tutor) {
-            return res.status(404).json({ message: "פרופיל מורה לא נמצא במערכת" });
-        }
-        // צריך לעדכן פה את הפרטים הבסיסיים של המורה כמו שם טלפון וכו
-        await tutor.update({
-            carModel,
-            pricePerLesson,
-            experienceYears,
-            bio
+        await Tutor.update(
+            { carModel, pricePerLesson, lessonDuration, experienceYears, bio, BufferTime, workStartHour, workEndHour },
+            { where: { userId: userId } }
+        );
+
+        const updatedProfile = await Tutor.findOne({
+            where: { userId },
+            include: [{ model: User, as: 'user' }]
         });
 
         res.status(200).json({
             message: "פרופיל המורה עודכן בהצלחה!",
-            tutor
+            tutor: updatedProfile
         });
 
     } catch (error) {
-        console.error("Update Tutor Error:", error);
-        res.status(500).json({ message: "שגיאה בעדכון נתוני המורה" });
+        console.error("=================================", error);
+        res.status(500).json({ message: "שגיאה בעדכון הפרופיל" });
     }
 };
 

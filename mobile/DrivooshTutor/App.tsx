@@ -410,6 +410,19 @@ export default function App() {
     const [userName, setUserName] = useState<string | null>(null);
     const [profileImage, setProfileImage] = useState<string | null>(null);
 
+
+    // useEffect(() => {
+    //     const clearStorageForDebug = async () => {
+    //         try {
+    //             await AsyncStorage.clear();
+    //             console.log('--- AsyncStorage הירקון בהצלחה! ---');
+    //         } catch (e) {
+    //             console.error('Failed to clear storage:', e);
+    //         }
+    //     };
+    //     clearStorageForDebug()
+    // }, []);
+
     const checkLoginStatus = async () => {
         try {
             const [token, setup, name, image] = await Promise.all([
