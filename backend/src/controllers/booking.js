@@ -17,8 +17,6 @@ export const createBooking = async (req, res) => {
         const { lessonDate, startTime, tutorId, pickupLocation, notes } = req.body;
         const studentId = req.user?.id;
 
-        console.log(`[New Booking Attempt] Student: ${studentId}, Tutor: ${tutorId}, Date: ${lessonDate}, Time: ${startTime}`);
-
         const tutor = await Tutor.findByPk(tutorId);
         if (!tutor) {
             return res.status(404).json({ message: "המורה לא נמצא" });
@@ -47,8 +45,6 @@ export const createBooking = async (req, res) => {
                 status: { [Op.ne]: 'cancelled' }
             }
         });
-
-        console.log(`[Debug] Checking against ${overlappingBookings.length} existing bookings on ${lessonDate}`);
 
         const isTaken = overlappingBookings.some(b => {
             const [bStartH, bStartM] = b.startTime.split(':').map(Number);
@@ -85,8 +81,6 @@ export const createBooking = async (req, res) => {
             priceAtBooking: tutor.pricePerLesson || 0,
             status: 'pending'
         });
-
-        console.log(`[Success] Booking created ID: ${newBooking.id}`);
 
         return res.status(201).json({
             message: "בקשת השיעור נשלחה למורה בהצלחה",

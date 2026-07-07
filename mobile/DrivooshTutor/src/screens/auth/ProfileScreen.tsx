@@ -4,7 +4,7 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFocusEffect } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, KeyboardTypeOptions, ActionSheetIOS, Modal, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, ActionSheetIOS, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
 import { EditProfileModal } from '../../components/EditProfileModal';
 import { BufferTimeModal } from '../../components/BufferTimeModal';
@@ -158,7 +158,6 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                 }
             );
         } else {
-            // באנדרואיד - נפתח את חלונית הבחירה המותאמת אישית
             setIsBufferModalVisible(true);
         }
     };
@@ -174,6 +173,18 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${hours}:${minutes}`;
+    };
+
+    const handleConfirmStartHour = (date: Date) => {
+        const formattedTime = formatRequiredTime(date);
+        setTempProfile({ ...tempProfile, workStartHour: formattedTime });
+        setShowStartPicker(false);
+    };
+
+    const handleConfirmEndHour = (date: Date) => {
+        const formattedTime = formatRequiredTime(date);
+        setTempProfile({ ...tempProfile, workEndHour: formattedTime });
+        setShowEndPicker(false);
     };
 
     const handleSave = async () => {

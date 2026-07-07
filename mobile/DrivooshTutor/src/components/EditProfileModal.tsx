@@ -38,7 +38,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
     setShowEndPicker,
     parseTimeToDate,
     formatRequiredTime,
-    DateTimePickerModalComponent: DateTimePickerModal
+    DateTimePickerModalComponent: DateTimePickerModal,
 }) => {
     return (
         <Modal visible={isVisible} animationType="fade" transparent={true} statusBarTranslucent>
@@ -160,31 +160,32 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                                 mode="time"
                                 is24Hour={true}
                                 date={parseTimeToDate(tempProfile.workStartHour)}
-                                onValueChange={(selectedDate: Date) => {
+                                onConfirm={(selectedDate: Date) => {
                                     if (selectedDate) {
-                                        setTempProfile({ ...tempProfile, workStartHour: formatRequiredTime(selectedDate) });
+                                        const formattedTime = formatRequiredTime(selectedDate);
+                                        setTempProfile({ ...tempProfile, workStartHour: formattedTime });
                                     }
+                                    setShowStartPicker(false);
                                 }}
-                                onDismiss={() => setShowStartPicker(false)}
                                 onCancel={() => setShowStartPicker(false)}
                                 confirmTextIOS="אישור"
                                 cancelTextIOS="ביטול"
                                 buttonTextColorIOS="#00C2E8"
                             />
                         )}
-
                         {showEndPicker && (
                             <DateTimePickerModal
                                 isVisible={showEndPicker}
                                 mode="time"
                                 is24Hour={true}
                                 date={parseTimeToDate(tempProfile.workEndHour)}
-                                onValueChange={(selectedDate: Date) => {
+                                onConfirm={(selectedDate: Date) => {
                                     if (selectedDate) {
-                                        setTempProfile({ ...tempProfile, workStartHour: formatRequiredTime(selectedDate) });
+                                        const formattedTime = formatRequiredTime(selectedDate);
+                                        setTempProfile({ ...tempProfile, workEndHour: formattedTime });
                                     }
+                                    setShowEndPicker(false);
                                 }}
-                                onDismiss={() => setShowStartPicker(false)}
                                 onCancel={() => setShowEndPicker(false)}
                                 confirmTextIOS="אישור"
                                 cancelTextIOS="ביטול"

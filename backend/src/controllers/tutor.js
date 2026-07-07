@@ -1,4 +1,4 @@
-import { Tutor, Booking, User, Review } from '../models/index.js';
+import { User, Tutor, Booking, Review } from '../models/index.js';
 import { Op } from 'sequelize';
 
 
@@ -43,6 +43,42 @@ export const getAllTutors = async (req, res) => {
             message: "שגיאה בשליפת רשימת המורים",
             error: process.env.NODE_ENV === 'development' ? error.message : undefined
         });
+    }
+};
+
+
+export const getAllMyStudents = async (req, res) => {
+    try {
+        const userId = req.user?.id;
+
+        if (!userId) {
+            return res.status(401).json({ message: 'משתמש לא נמצא' });
+        }
+
+        const tutor = await Tutor.findOne({ where: { userId } });
+
+        if (!tutor) {
+            return res.status(44, 404).json({ message: 'פרופיל מורה לא נמצא עבור משתמש זה' });
+        }
+
+        const students = await User.findAll({
+            where: {
+                myTutor: tutor.id,
+                role: 'student'
+            },
+            attributes: { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] },
+            order: [['firstName', 'ASC']]
+        });
+
+        return res.status(200).json({
+            success: true,
+            count: students.length,
+            students
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        return res.status(500).json({ message: 'שגיאת שרת פנימית בעת שליפת התלמידים' });
     }
 };
 
@@ -111,37 +147,6 @@ export const getMyProfile = async (req, res) => {
 };
 
 
-// export const updateTutorProfile = async (req, res) => {
-//     try {
-//         if (req.user.role !== 'tutor') {
-//             return res.status(403).json({ message: "גישה נדחתה: רק מורים יכולים לעדכן פרטים אלו" });
-//         }
-
-//         const { firstName, lastName, identityNumber, phoneNumber, city, street, carModel, gearbox, pricePerLesson, lessonDuration, workStartHour, workEndHour, BufferTime, experienceYears, bio } = req.body;
-
-//         const tutor = await Tutor.findOne({ where: { userId: req.user.id } });
-
-//         if (!tutor) {
-//             return res.status(404).json({ message: "פרופיל מורה לא נמצא במערכת" });
-//         }
-//         // צריך לעדכן פה את הפרטים הבסיסיים של המורה כמו שם טלפון וכו
-//         await tutor.update({
-//             carModel,
-//             pricePerLesson,
-//             experienceYears,
-//             bio
-//         });
-
-//         res.status(200).json({
-//             message: "פרופיל המורה עודכן בהצלחה!",
-//             tutor
-//         });
-
-//     } catch (error) {
-//         console.error("Update Tutor Error:", error);
-//         res.status(500).json({ message: "שגיאה בעדכון נתוני המורה" });
-//     }
-// };
 export const updateTutorProfile = async (req, res) => {
     try {
         const userId = req.user.id;
@@ -171,8 +176,10 @@ export const updateTutorProfile = async (req, res) => {
             tutor: updatedProfile
         });
 
+        console.log("updatedProfile: ", updatedProfile)
+
     } catch (error) {
-        console.error("=================================", error);
+        console.error(error);
         res.status(500).json({ message: "שגיאה בעדכון הפרופיל" });
     }
 };
@@ -220,5 +227,45 @@ export const getTutorDashboardData = async (req, res) => {
     } catch (error) {
         console.error("Error fetching dashboard data:", error);
         res.status(500).json({ message: "שגיאה בשליפת נתוני לוח הבקרה" });
+    }
+};
+
+
+export const getAllMyHistory = async (req, res) => {
+    try {
+        const tutorId = req.user.tutorId;
+
+        const historyBookings = await Booking.findAll({
+            where: {
+                tutorId: tutorId,
+                status: {
+                    [Op.in]: ['completed', 'cancelled']
+                }
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'student',
+                    attributes: ['id', 'firstName', 'lastName', 'profileImage', 'phoneNumber']
+                }
+            ],
+            order: [
+                ['lessonDate', 'DESC'],
+                ['startTime', 'DESC']
+            ]
+        });
+
+        return res.status(200).json({
+            success: true,
+            count: historyBookings.length,
+            history: historyBookings
+        });
+
+    } catch (error) {
+        console.error('Error fetching tutor history:', error);
+        return res.status(500).json({
+            success: false,
+            message: 'שגיאת שרת בהבאת היסטוריית השיעורים'
+        });
     }
 };
