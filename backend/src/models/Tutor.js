@@ -12,7 +12,6 @@ const Tutor = sequelize.define('Tutor', {
     workStartHour: { type: DataTypes.STRING, defaultValue: "08:00", allowNull: true },
     workEndHour: { type: DataTypes.STRING, defaultValue: "20:00", allowNull: true },
     BufferTime: { type: DataTypes.INTEGER, defaultValue: 15, allowNull: true },
-
     experienceYears: { type: DataTypes.INTEGER, allowNull: true },
     bio: { type: DataTypes.TEXT, allowNull: true }
 });

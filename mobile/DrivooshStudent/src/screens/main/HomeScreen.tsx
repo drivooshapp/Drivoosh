@@ -153,7 +153,7 @@ export default function HomeScreen({ navigation }: any) {
     completed: 'בוצע',
     cancelled: 'בוטל',
   };
-
+  
   const getStatusColor = (status: string) => {
     return status === 'confirmed' ? '#18875b' : '#000000';
   };

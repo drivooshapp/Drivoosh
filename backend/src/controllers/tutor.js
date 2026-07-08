@@ -231,6 +231,73 @@ export const getTutorDashboardData = async (req, res) => {
 };
 
 
+export const getTutorWeeklySchedule = async (req, res) => {
+    try {
+        const tutorId = req.user.tutorId;
+
+        if (!tutorId) {
+            return res.status(400).json({ message: 'Tutor ID is missing' });
+        }
+
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const endOfSeventhDay = new Date();
+        endOfSeventhDay.setDate(startOfToday.getDate() + 6);
+        endOfSeventhDay.setHours(23, 59, 59, 999);
+
+        const rawBookingsCount = await Booking.count({
+            where: {
+                tutorId: tutorId,
+                lessonDate: { [Op.between]: [startOfToday, endOfSeventhDay] },
+                status: { [Op.in]: ['pending', 'confirmed', 'completed'] }
+            }
+        });
+
+        const bookings = await Booking.findAll({
+            where: {
+                tutorId: tutorId,
+                lessonDate: {
+                    [Op.between]: [startOfToday, endOfSeventhDay]
+                },
+                status: {
+                    [Op.in]: ['pending', 'confirmed', 'completed']
+                }
+            },
+            include: [
+                {
+                    model: User,
+                    as: 'student',
+                    attributes: ['id', 'firstName', 'lastName', 'phoneNumber', 'profileImage', 'city']
+                }
+            ],
+            order: [
+                ['lessonDate', 'ASC'],
+                ['startTime', 'ASC']
+            ]
+        });
+
+        const tutorSettings = await Tutor.findByPk(tutorId, {
+            attributes: ['workStartHour', 'workEndHour', 'lessonDuration', 'BufferTime']
+        });
+
+        return res.status(200).json({
+            success: true,
+            timeRange: {
+                from: startOfToday,
+                to: endOfSeventhDay
+            },
+            tutorSettings,
+            bookings
+        });
+
+    } catch (error) {
+        console.error('error:', error);
+        return res.status(500).json({ success: false, message: 'Internal server error' });
+    }
+};
+
+
 export const getAllMyHistory = async (req, res) => {
     try {
         const tutorId = req.user.tutorId;
