@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticate } from "../middleware/authMiddleware.js";
-import { createBooking, getMyBookings, getBookingById, getAvailableSlots, updateBookingStatus, cancelBooking, completeBooking } from '../controllers/booking.js';
+import { createBooking, getMyBookings, getBookingById, getAvailableSlots, updateBookingStatus, cancelBooking, confirmBooking, completeBooking } from '../controllers/booking.js';
 
 
 const router = express.Router();
@@ -11,6 +11,7 @@ router.get("/booking/:bookingId", authenticate, getBookingById);
 router.get("/tutor/:tutorId/availableSlots", authenticate, getAvailableSlots);
 router.put("/status", authenticate, updateBookingStatus);
 router.put("/cancel/:bookingId", authenticate, cancelBooking);
-router.put("/:bookingId/complete", authenticate, completeBooking);
+router.put("/confirm/:bookingId", authenticate, confirmBooking);
+router.put("/complete/:bookingId", authenticate, completeBooking);
 
 export default router;

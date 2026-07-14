@@ -56,9 +56,9 @@ export default function SignupScreen({ navigation }: any) {
             navigation.navigate('Login');
 
         } catch (error: any) {
-            console.log("Error details:", error.response?.data || error.message);
+            console.log("=========================Error details:", error.response?.data.developerMessage || error.message);
 
-            const serverMessage = error.response?.data?.message || 'הרישום נכשל. ודא שהפרטים תקינים.';
+            const serverMessage = error.response.data.developerMessage || 'הרישום נכשל. ודא שהפרטים תקינים.';
             Alert.alert('שגיאה', serverMessage);
         } finally {
             setLoading(false);

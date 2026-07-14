@@ -19,7 +19,7 @@ export const addReview = async (req, res) => {
 
         const existingReview = await Review.findOne({ where: { studentId, tutorId } });
         if (existingReview) {
-            return res.status(400).json({ message: "כבר הוספת המלצה למורה זה" });
+            return res.status(409).json({ message: "כבר הוספת המלצה למורה זה" });
         }
 
         const newReview = await Review.create({
@@ -42,6 +42,33 @@ export const addReview = async (req, res) => {
     } catch (error) {
         console.error("Error adding review:", error);
         res.status(500).json({ message: "שגיאה בהוספת ההמלצה" });
+    }
+};
+
+
+export const deleteReviewContent = async (req, res) => {
+    try {
+        const { reviewId } = req.params;
+        const tutorId = req.user.tutorId;
+
+        const review = await Review.findByPk(reviewId, {
+            include: [{
+                model: Tutor,
+                as: 'tutor'
+            }]
+        });
+
+        if (!review) {
+            return res.status(404).json({ message: "ההמלצה לא נמצאה" });
+        }
+
+        review.content = "";
+        await review.save();
+
+        res.status(200).json({ message: "תוכן ההמלצה נמחק בהצלחה", review });
+    } catch (error) {
+        console.log("error", error);
+        res.status(500).json({ message: "שגיאה במחיקת ההמלצה" });
     }
 };
 

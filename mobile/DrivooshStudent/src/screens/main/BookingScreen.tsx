@@ -153,7 +153,7 @@ export default function NewBookingScreen({ navigation }: any) {
     const minDateStr = today.toISOString().split('T')[0];
 
     const maxDateObj = new Date();
-    maxDateObj.setDate(today.getDate() + 7);
+    maxDateObj.setDate(today.getDate() + 6);
     const maxDateStr = maxDateObj.toISOString().split('T')[0];
 
     const selectedDateFormatted = lessonDate.split('/').reverse().join('-');
@@ -171,7 +171,7 @@ export default function NewBookingScreen({ navigation }: any) {
         now.setHours(0, 0, 0, 0);
 
         const maxLimit = new Date();
-        maxLimit.setDate(now.getDate() + 7);
+        maxLimit.setDate(now.getDate() + 6);
         maxLimit.setHours(23, 59, 59, 999);
 
         const isValidDate = inputDate.getFullYear() === year &&
@@ -179,7 +179,7 @@ export default function NewBookingScreen({ navigation }: any) {
             inputDate.getDate() === day;
 
         if (!isValidDate) {
-            Alert.alert('שגיאה', 'נא להזין תאריך אמיתי בלוח השנה');
+            Alert.alert('שגיאה', 'נא להזין תאריך תקין בלוח השנה');
             setLessonDate('');
             setAvailableSlots([]);
             return;

@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, RefreshControl, TouchableOpacity, ScrollView, Platform, Modal, Linking, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Animated } from 'react-native';
 import apiClient from '../../api/apiClient';
 import moovitLogo from "../../../assets/navigateLogos/moovitLogo.png";
 import googleMapsLogo from "../../../assets/navigateLogos/googleMapsLogo.png";
@@ -42,18 +43,16 @@ export default function UpcomingLessons({ navigation }: any) {
   const [refreshing, setRefreshing] = useState(false);
   const [days, setDays] = useState<DayItem[]>([]);
   const [selectedDay, setSelectedDay] = useState<DayItem | null>(null);
-
-  // נתונים וסינונים
   const [allBookings, setAllBookings] = useState<Booking[]>([]);
   const [dayBookings, setDayBookings] = useState<Booking[]>([]);
   const [activeFilter, setActiveFilter] = useState<FilterStatus>('all');
-
-  // סטייט לחלון הפרטים הקופץ
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
+  const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // 1. יצירת רשימת 7 הימים הקרובים
+  const checkScale = useRef(new Animated.Value(0)).current;
+
   const generateWeekDays = () => {
     const weekDays: DayItem[] = [];
     const daysOfWeek = ['א', 'ב', 'ג', 'ד', 'ה', 'ו', 'ש'];
@@ -83,7 +82,6 @@ export default function UpcomingLessons({ navigation }: any) {
     setSelectedDay(weekDays[0]);
   };
 
-  // 2. שליפת הנתונים מהשרת
   const fetchSchedule = async () => {
     try {
       const response = await apiClient.get('tutor/weeklySchedule');
@@ -103,7 +101,6 @@ export default function UpcomingLessons({ navigation }: any) {
     fetchSchedule();
   }, []);
 
-  // 3. סינון שיעורים (יום + סטטוס פילטר) מויין לפי שעה
   useEffect(() => {
     if (!selectedDay) return;
 
@@ -122,25 +119,38 @@ export default function UpcomingLessons({ navigation }: any) {
     fetchSchedule();
   };
 
-  // פונקציה לאישור שיעור ישירות מהמודל
+  useEffect(() => {
+    if (!bookingConfirmed) return;
+
+    checkScale.setValue(0);
+
+    Animated.spring(checkScale, {
+      toValue: 1,
+      friction: 5,
+      tension: 90,
+      useNativeDriver: true,
+    }).start();
+
+  }, [bookingConfirmed]);
+
   const handleApproveLesson = async (bookingId: string) => {
     setActionLoading(true);
     try {
-      const response = await apiClient.put(`booking/approve/${bookingId}`);
+      const response = await apiClient.put(`booking/confirm/${bookingId}`);
+
       if (response.data.success) {
-        Alert.alert('הצלחה', 'השיעור אושר בהצלחה ומחכה לתלמיד');
-        setModalVisible(false);
-        fetchSchedule();
+        setBookingConfirmed(true);
+        setSelectedBooking(prev => prev ? { ...prev, status: 'confirmed' } : prev);
+        await fetchSchedule();
       }
     } catch (error) {
-      console.error('Error approving lesson:', error);
+      console.log('Error approving lesson:', error);
       Alert.alert('שגיאה', 'לא ניתן לאשר את השיעור כעת');
     } finally {
       setActionLoading(false);
     }
   };
 
-  // ניווט ממוקד לפי האפליקציה שנבחרה
   const handleNavigateToApp = (address: string, app: 'waze' | 'google' | 'moovit') => {
     if (!address) return;
     const encodedAddress = encodeURIComponent(address);
@@ -179,7 +189,6 @@ export default function UpcomingLessons({ navigation }: any) {
       .catch((err) => console.error('An error occurred', err));
   };
 
-  // יצירת מחרוזת תאריך דינמית להצגה
   const getDynamicDayTitle = () => {
     if (!selectedDay) return '';
     if (selectedDay.isToday) return 'היום';
@@ -196,6 +205,7 @@ export default function UpcomingLessons({ navigation }: any) {
   };
 
   const renderBookingItem = ({ item }: { item: Booking }) => {
+
     const studentName = `${item.student?.firstName || ''} ${item.student?.lastName || ''}`;
     const startTimeClean = item.startTime.substring(0, 5);
     const endTimeClean = item.endTime ? item.endTime.substring(0, 5) : '';
@@ -214,8 +224,13 @@ export default function UpcomingLessons({ navigation }: any) {
       <TouchableOpacity
         style={styles.compactCard}
         activeOpacity={0.7}
+        // onPress={() => {
+        //   setSelectedBooking(item);
+        //   setModalVisible(true);
+        // }}
         onPress={() => {
           setSelectedBooking(item);
+          setBookingConfirmed(false);
           setModalVisible(true);
         }}
       >
@@ -261,13 +276,11 @@ export default function UpcomingLessons({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-      {/* הדר עליון */}
       <View style={styles.headerBar}>
         <Text style={styles.headerTitle}>יומן שיעורים</Text>
         <Text style={styles.headerSubtitle}>ניהול הלו"ז השבועי שלך</Text>
       </View>
 
-      {/* רצועת ימים אופקית */}
       <View style={styles.calendarStripContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarStrip}>
           {days.map((day) => {
@@ -291,7 +304,6 @@ export default function UpcomingLessons({ navigation }: any) {
         </ScrollView>
       </View>
 
-      {/* פילטרים וסטטיסטיקה דינמית */}
       <View style={styles.filterSection}>
         <View style={styles.summaryBadge}>
           <Text style={styles.summaryText}>
@@ -315,7 +327,6 @@ export default function UpcomingLessons({ navigation }: any) {
         </ScrollView>
       </View>
 
-      {/* רשימת השיעורים */}
       <FlatList
         data={dayBookings}
         keyExtractor={(item) => item.id}
@@ -331,19 +342,18 @@ export default function UpcomingLessons({ navigation }: any) {
         }
       />
 
-      {/* חלון קופץ לפרטי שיעור - Premium Redesign */}
       <Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalDragHandle} />
 
-            <TouchableOpacity style={styles.modalCloseButton} onPress={() => setModalVisible(false)}>
+            {/* <TouchableOpacity style={styles.modalCloseButton} onPress={() => setModalVisible(false)}> */}
+            <TouchableOpacity style={styles.modalCloseButton} onPress={() => { setModalVisible(false); setBookingConfirmed(false) }}>
               <Ionicons name="close" size={18} color="#0F172A" />
             </TouchableOpacity>
 
             {selectedBooking && (
               <ScrollView style={styles.modalInnerBody} showsVerticalScrollIndicator={false}>
-                {/* פרופיל תלמיד וזמנים */}
                 <View style={styles.modalUserHeader}>
                   {selectedBooking.student?.profileImage ? (
                     <Image source={{ uri: selectedBooking.student.profileImage }} style={styles.largeAvatar} />
@@ -362,8 +372,8 @@ export default function UpcomingLessons({ navigation }: any) {
                   </View>
                 </View>
 
-                {/* 🌟 כפתור אישור שיעור דחוף - Filled #019cbb ייחודי ומלא נוכחות */}
-                {selectedBooking.status === 'pending' && (
+                {/* {selectedBooking.status === 'pending' && ( */}
+                {selectedBooking.status === 'pending' && !bookingConfirmed && (
                   <TouchableOpacity
                     style={[styles.urgentApproveButton, actionLoading && { opacity: 0.6 }]}
                     onPress={() => handleApproveLesson(selectedBooking.id)}
@@ -374,11 +384,20 @@ export default function UpcomingLessons({ navigation }: any) {
                       <ActivityIndicator size="small" color="#FFFFFF" />
                     ) : (
                       <View style={styles.urgentButtonContent}>
-                        <Ionicons name="shield-checkmark-outline" size={18} color="#FFFFFF" style={styles.pulsingIcon} />
+                        <Ionicons name="checkmark-done-outline" style={styles.pulsingIcon} />
                         <Text style={styles.urgentButtonText}>אשר שיעור זה כעת</Text>
                       </View>
                     )}
                   </TouchableOpacity>
+                )}
+
+                {bookingConfirmed && (
+                  <View style={styles.successContainer}>
+                    <Animated.View style={{ marginLeft: 8, transform: [{ scale: checkScale }] }}   >
+                      <Ionicons name="checkmark-circle" size={22} color="#16A34A" />
+                    </Animated.View>
+                    <Text style={styles.successText}>השיעור מאושר</Text>
+                  </View>
                 )}
 
                 <View style={styles.premiumCard}>
@@ -406,7 +425,6 @@ export default function UpcomingLessons({ navigation }: any) {
                   </View>
                 </View>
 
-                {/* 📦 בלוק מאוחד 3: הערות לשיעור */}
                 <View style={styles.premiumCard}>
                   <View style={styles.cardHeaderRow}>
                     <Ionicons name="document-text-outline" size={16} color="#0F172A" />
@@ -437,7 +455,6 @@ export default function UpcomingLessons({ navigation }: any) {
                   </View>
                 </TouchableOpacity>
 
-                {/* כפתור התקשרות תחתון - נקי ומשולב */}
                 <View style={styles.modalActionButtonsContainer}>
                   <TouchableOpacity
                     style={styles.actionSecondaryCallButton}
@@ -504,6 +521,8 @@ const styles = StyleSheet.create({
   modalDragHandle: { width: 40, height: 1, borderRadius: 2, alignSelf: 'center', marginBottom: 20 },
   modalCloseButton: { position: 'absolute', top: 16, left: 20, backgroundColor: '#F1F5F9', borderRadius: 20, padding: 6 },
   modalInnerBody: { width: '100%' },
+  successContainer: { width: '100%', backgroundColor: '#ECFDF5', borderWidth: 1, borderColor: '#BBF7D0', borderRadius: 16, paddingVertical: 15, marginBottom: 20, flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center', },
+  successText: { fontSize: 15, fontWeight: '700', color: '#15803D', },
 
   modalUserHeader: { flexDirection: 'row-reverse', alignItems: 'center', paddingBottom: 16, marginBottom: 16 },
   largeAvatar: { width: 52, height: 52, borderRadius: 26 },
@@ -514,93 +533,31 @@ const styles = StyleSheet.create({
   modalStudentName: { fontSize: 19, fontWeight: '800', color: '#0F172A' },
   modalTimeSub: { fontSize: 13, color: '#64748B', marginTop: 3, fontWeight: '600' },
 
-  // 🌟 כפתור אישור דחוף בעיצוב פרימיום מעוגל ונקי
-  urgentApproveButton: {
-    width: '100%',
-    backgroundColor: '#019cbb',
-    borderRadius: 16,
-    paddingVertical: 15,
-    marginBottom: 20,
-    shadowColor: '#019cbb',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
-    elevation: 3
-  },
+  urgentApproveButton: { width: '100%', backgroundColor: '#019cbb', borderRadius: 16, paddingVertical: 15, marginBottom: 20, shadowColor: '#019cbb', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3 },
   urgentButtonContent: { flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center' },
   urgentButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', letterSpacing: 0.2 },
-  pulsingIcon: { marginLeft: 8 },
+  pulsingIcon: { fontSize: 18, color: "#FFFFFF", marginLeft: 8,alignItems: 'center' },
 
-  // 📦 מבנה כרטיס פרימיום מאוחד ומאורגן
-  premiumCard: {
-    width: '100%',
-    backgroundColor: '#F8FAFC', // רקע אפור רך ומאחד
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: '#E2E8F0'
-  },
-  cardHeaderRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: 8,
-    borderBottomWidth: 1,
-    borderColor: '#E2E8F0',
-    paddingBottom: 8,
-    marginBottom: 10
-  },
-  premiumCardTitle: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#0F172A',
-    letterSpacing: 0.3
-  },
-  cardContentInner: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between'
-  },
-  cardContentInnerVertical: {
-    width: '100%',
-    alignItems: 'flex-end'
-  },
-  premiumCardSub: {
-    fontSize: 13,
-    color: '#64748B',
-    textAlign: 'right',
-    flex: 1,
-    lineHeight: 18,
-    paddingLeft: 16
-  },
-  cardLeftArrow: {
-    alignSelf: 'center'
-  },
+  premiumCard: { width: '100%', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0' },
+  cardHeaderRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderColor: '#E2E8F0', paddingBottom: 8, marginBottom: 10 },
+  premiumCardTitle: { fontSize: 13, fontWeight: '700', color: '#0F172A', letterSpacing: 0.3 },
+  cardContentInner: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
+  cardContentInnerVertical: { width: '100%', alignItems: 'flex-end' },
+  premiumCardSub: { fontSize: 13, color: '#64748B', textAlign: 'right', flex: 1, lineHeight: 18, paddingLeft: 16 },
+  cardLeftArrow: { alignSelf: 'center' },
 
   cleanAddressText: { fontSize: 15, fontWeight: '600', color: '#1E293B', textAlign: 'right', marginBottom: 12 },
   premiumNavigationRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginTop: 4 },
   premiumNavLabel: { fontSize: 12, color: '#64748B', fontWeight: '600' },
   premiumIconsGroup: { flexDirection: 'row-reverse', gap: 10 },
 
-  appIconWrapper: {
-    width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', padding: 6, borderWidth: 1, borderColor: '#E2E8F0'
-  },
+  appIconWrapper: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FFFFFF', justifyContent: 'center', alignItems: 'center', padding: 6, borderWidth: 1, borderColor: '#E2E8F0' },
   appIconImage: { width: '100%', height: '100%', resizeMode: 'contain' },
 
   cleanNotesText: { fontSize: 14, color: '#334155', lineHeight: 20, textAlign: 'right', fontWeight: '500' },
 
   modalActionButtonsContainer: { width: '100%', marginTop: 10 },
-  actionSecondaryCallButton: {
-    width: '100%',
-    backgroundColor: '#00d5ff',
-    paddingVertical: 14,
-    borderRadius: 16,
-    flexDirection: 'row-reverse',
-    justifyContent: 'center',
-    alignItems: 'center',
-    // borderWidth: 1,
-    // borderColor: '#00d5ff'
-  },
+  actionSecondaryCallButton: { width: '100%', backgroundColor: '#00d5ff', paddingVertical: 14, borderRadius: 16, flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center' },
   actionSecondaryButtonText: { color: '#0F172A', fontSize: 14, fontWeight: '700' },
 
   emptyContainer: { alignItems: 'center', justifyContent: 'center', marginTop: 120, gap: 10 },

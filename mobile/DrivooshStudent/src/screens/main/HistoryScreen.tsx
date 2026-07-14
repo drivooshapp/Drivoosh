@@ -2,7 +2,6 @@ import LoadingScreen from '@/src/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { FlatList, Image, Modal, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/apiClient';
 
 type UserType = {
@@ -71,7 +70,7 @@ export default function HistoryScreen({ navigation }: any) {
   if (loading) return <LoadingScreen />;
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <StatusBar barStyle="dark-content" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
@@ -180,7 +179,7 @@ export default function HistoryScreen({ navigation }: any) {
           </View>
         </View>
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -25,10 +25,20 @@ import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import StudentCart from './src/screens/student/StudentCart';
 import LessonsHistory from './src/screens/student/LessonsHistory';
 import HistoryScreen from './src/screens/main/AllHistoryScreen';
-
+import AllReviews from './src/screens/main/AllReviews';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
+const SearchStack = createStackNavigator();
+
+function TutorCardStackScreen() {
+  return (
+    <SearchStack.Navigator screenOptions={{ headerShown: false }}>
+      <SearchStack.Screen name="MyTutorCart" component={ViewMyTutorCart} />
+      <SearchStack.Screen name="AllReviews" component={AllReviews} />
+    </SearchStack.Navigator>
+  );
+}
 
 const HeaderAvatar = ({ userData }: any) => {
     const navigation = useNavigation<any>();
@@ -126,8 +136,6 @@ function DrawerNavigator({ onLogout, userData }: any) {
                     drawerIcon: ({ color }) => <Ionicons name="person-outline" size={22} color={color} />,
                 }}
             />
-
-            
             <Drawer.Screen
                 name="Students"
                 component={ViewStudentsScreen}
@@ -155,9 +163,10 @@ function DrawerNavigator({ onLogout, userData }: any) {
                     drawerIcon: ({ color }) => <Ionicons name="time-outline" size={22} color={color} />,
                 }}
             />
+
             <Drawer.Screen
-                name="MyTutorCart"
-                component={ViewMyTutorCart}
+                name="MyTutorCartStack"
+                component={TutorCardStackScreen}
                 options={{
                     title: 'הדף שלי',
                     drawerLabel: 'הדף שלי',

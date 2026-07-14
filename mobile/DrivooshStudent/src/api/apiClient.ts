@@ -2,8 +2,11 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
-const BASE_URL = process.env.EXPO_PUBLIC_URL_SERVER || 'http://192.168.1.101:5000/api';
-
+// const BASE_URL = process.env.EXPO_PUBLIC_URL_SERVER || 'http://192.168.1.101:5000/api';
+const BASE_URL = process.env.EXPO_PUBLIC_LOCAL_API_URL
+    ? `${process.env.EXPO_PUBLIC_LOCAL_API_URL}/api`
+    : "https://drivoosh-1.onrender.com/api";
+    
 console.log("Connect to API at:", BASE_URL);
 
 const apiClient = axios.create({

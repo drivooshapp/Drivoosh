@@ -12,29 +12,83 @@ export default function TutorDetails({ route, navigation }: any) {
     const [tutorOfUser, setTutorOfUser] = useState(null);
     const [loading, setLoading] = useState(true);
     const [isReviewModalVisible, setReviewModalVisible] = useState(false);
+    const [hasReviewed, setHasReviewed] = useState(false);
     const [isStudentOfTutor, setIsStudentOfTutor] = useState(false);
     const [rating, setRating] = useState(5);
     const [content, setContent] = useState('');
 
+    // useEffect(() => {
+    //     fetchTutorDetails();
+    //     checkStudentStatus();
+    // }, [tutorId, isStudentOfTutor]);
+
+    // const fetchTutorDetails = async () => {
+    //     try {
+    //         setLoading(true);
+    //         const response = await apiClient.get(`/tutor/getTutor/${tutorId}`);
+    //         setTutor(response.data);
+    //     } catch (e) {
+    //         console.error(e);
+    //         Alert.alert('שגיאה', 'שגיאה בטעינת פרטי המורה. נסה שוב.');
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+    // const checkStudentStatus = async () => {
+    //     try {
+    //         const response = await apiClient.get('/student/myProfile');
+    //         const currentUser = response.data;
+
+    //         const currentSelectedId = currentUser.chosenTutor ? currentUser.chosenTutor.id : null;
+    //         setTutorOfUser(currentSelectedId);
+
+    //         if (currentSelectedId === tutorId) {
+    //             setIsStudentOfTutor(true);
+    //         } else {
+    //             setIsStudentOfTutor(false);
+    //         }
+
+    //         if (tutor && tutor.reviews && currentUser) {
+    //         const alreadyReviewed = tutor.reviews.some(
+    //             (review: any) => 
+    //                 review.reviewerId === currentUser.id || 
+    //                 review.reviewer?.id === currentUser.id ||
+    //                 review.userId === currentUser.id
+    //         );
+    //         setHasReviewed(alreadyReviewed);
+    //     }
+    //     } catch (e) {
+    //         console.error("Error checking student status:", e);
+    //     }
+    // };
+
     useEffect(() => {
-        fetchTutorDetails();
-        checkStudentStatus();
-    }, [tutorId, isStudentOfTutor]);
+        const loadData = async () => {
+            const loadedTutor = await fetchTutorDetails();
+            if (loadedTutor) {
+                await checkStudentStatus(loadedTutor);
+            }
+        };
+        loadData();
+    }, [tutorId]); // הורדנו את isStudentOfTutor כדי למנוע לופים מיותרים
 
     const fetchTutorDetails = async () => {
         try {
             setLoading(true);
             const response = await apiClient.get(`/tutor/getTutor/${tutorId}`);
             setTutor(response.data);
+            return response.data; // מחזיר את המידע ישירות להמשך עיבוד סנכרוני
         } catch (e) {
             console.error(e);
             Alert.alert('שגיאה', 'שגיאה בטעינת פרטי המורה. נסה שוב.');
+            return null;
         } finally {
             setLoading(false);
         }
     };
 
-    const checkStudentStatus = async () => {
+    const checkStudentStatus = async (currentTutor = tutor) => {
         try {
             const response = await apiClient.get('/student/myProfile');
             const currentUser = response.data;
@@ -47,8 +101,17 @@ export default function TutorDetails({ route, navigation }: any) {
             } else {
                 setIsStudentOfTutor(false);
             }
+
+            // שימוש בפרמטר שמועבר סנכרונית כדי למנוע מצב שהמדינה (State) עדיין null
+            const activeTutor = currentTutor;
+            if (activeTutor && activeTutor.reviews && currentUser) {
+                const alreadyReviewed = activeTutor.reviews.some(
+                    (review: any) => review.studentId === currentUser.id
+                );
+                setHasReviewed(alreadyReviewed);
+            }
         } catch (e) {
-            console.error("Error checking student status:", e);
+            console.error("error", e);
         }
     };
 
@@ -60,6 +123,31 @@ export default function TutorDetails({ route, navigation }: any) {
 
     const averageRating = calculateAverage();
 
+    // const handleSubmitReview = async () => {
+    //     if (!content.trim()) {
+    //         Alert.alert("שגיאה", "נא למלא תוכן להמלצה");
+    //         return;
+    //     }
+    //     try {
+    //         await apiClient.post('/review/addReview', { tutorId: tutor.id, content, rating });
+    //         setReviewModalVisible(false);
+    //         setContent('');
+    //         setRating(5);
+    //         fetchTutorDetails();
+
+    //     } catch (error: any) {
+    //     console.error(error);
+    //     const serverMessage = error.response?.data?.message || '';
+
+    //     if (error.response?.status === 400 || serverMessage.includes('כבר') || serverMessage.toLowerCase().includes('already')) {
+    //         Alert.alert('שים לב', 'כבר פרסמת המלצה למורה זה בעבר.');
+    //         setHasReviewed(true);
+    //         setReviewModalVisible(false);
+    //     } else {
+    //         Alert.alert('שגיאה', 'הוספת ההמלצה נכשלה, נסה שוב מאוחר יותר');
+    //     }
+    // }
+    // };
     const handleSubmitReview = async () => {
         if (!content.trim()) {
             Alert.alert("שגיאה", "נא למלא תוכן להמלצה");
@@ -70,11 +158,17 @@ export default function TutorDetails({ route, navigation }: any) {
             setReviewModalVisible(false);
             setContent('');
             setRating(5);
+            setHasReviewed(true);
             fetchTutorDetails();
-
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            Alert.alert('שגיאה', 'הוספת ההמלצה נכשלה, נסה שוב מאוחר יותר');
+            if (error.response?.status === 409) {
+                Alert.alert('שגיאה', 'פרסמת המלצה למורה זה בעבר');
+                setHasReviewed(true);
+                setReviewModalVisible(false);
+            } else {
+                Alert.alert('שגיאה', 'הוספת ההמלצה נכשלה, נסה שוב מאוחר יותר');
+            }
         }
     };
 
@@ -236,15 +330,15 @@ export default function TutorDetails({ route, navigation }: any) {
                                     {tutor.reviews[0].reviewer?.firstName} {tutor.reviews[0].reviewer?.lastName}
                                 </Text>
                             </View>
-                            <Text style={styles.reviewContent} numberOfLines={2}>
+                            {tutor.reviews[0].content?.length > 0 && <Text style={styles.reviewContent} numberOfLines={2}>
                                 "{tutor.reviews[0].content}"
-                            </Text>
+                            </Text>}
                         </View>
                     ) : (
                         <Text style={styles.noReviews}>אין עדיין המלצות למורה זה.</Text>
                     )}
 
-                    {isStudentOfTutor && (<TouchableOpacity
+                    {isStudentOfTutor && !hasReviewed && (<TouchableOpacity
                         style={styles.addReviewBtn}
                         onPress={() => setReviewModalVisible(true)}
                     >
