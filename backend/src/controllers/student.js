@@ -3,6 +3,24 @@ import { User, Tutor, Booking } from "../models/index.js";
 
 
 
+export const getAllUsers = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'isSetupComplete', 'createdAt']
+        });
+
+        if (!users.length) {
+            return res.status(200).json({ message: "אין משתמשים במערכת", users: [] });
+        }
+
+        res.status(200).json({ users });
+    } catch (error) {
+        console.error("שגיאה בשליפת כל המשתמשים:", error);
+        res.status(500).json({ message: "שגיאת שרת בשליפת משתמשים" });
+    }
+};
+
+
 export const getMyProfile = async (req, res) => {
     try {
         const student = await User.findByPk(req.user.id, {
@@ -28,6 +46,157 @@ export const getMyProfile = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ message: "שגיאה בשליפת פרופיל התלמיד" });
+    }
+};
+
+
+// export const getCurrentUser = async (req, res) => {
+//     try {
+//         const user = await User.findByPk(req.user.id, {
+//             attributes: { exclude: ['password'] }
+//         });
+
+//         if (!user) {
+//             return res.status(404).json({ message: "משתמש מחובר לא נמצא" });
+//         }
+
+//         res.json(user);
+
+//     } catch (error) {
+//         res.status(500).json({ message: "שגיאה בשליפת נתוני המשתמש הנוכחי" });
+//     }
+// };
+
+
+export const getStudentProfile = async (req, res) => {
+    const { studentId } = req.params;
+
+    try {
+        const student = await User.findByPk(studentId, {
+            attributes: ["id", "firstName", "lastName", "email", "phoneNumber", "street", "city", "profileImage", "createdAt"],
+            include: [{
+                model: Tutor,
+                as: "chosenTutor",
+                attributes: ["id", "pricePerLesson", "lessonDuration"]
+            }]
+        });
+
+        if (!student) {
+            return res.status(404).json({ message: "תלמיד לא נמצא" });
+        }
+
+        const bookings = await Booking.findAll({
+            where: { studentId },
+            order: [
+                ["lessonDate", "ASC"],
+                ["startTime", "ASC"]
+            ]
+        });
+
+        const completedLessons = bookings.filter(b => b.status === "completed");
+        const pendingOrConfirmed = bookings.filter(b => b.status === "pending" || b.status === "confirmed");
+        const cancelledLessons = bookings.filter(b => b.status === "cancelled");
+
+        const totalPaid = completedLessons.reduce((sum, b) => sum + parseFloat(b.priceAtBooking || 0), 0);
+        const upcomingRevenue = pendingOrConfirmed.reduce((sum, b) => sum + parseFloat(b.priceAtBooking || 0), 0);
+
+        const locationCounts = {};
+        bookings.forEach(b => {
+            if (b.pickupLocation) {
+                locationCounts[b.pickupLocation] = (locationCounts[b.pickupLocation] || 0) + 1;
+            }
+        });
+        const preferredPickup = Object.keys(locationCounts).reduce((a, b) => 
+            locationCounts[a] > locationCounts[b] ? a : b, null
+        );
+
+        const now = new Date();
+        const nextLesson = bookings.find(b => 
+            (b.status === "pending" || b.status === "confirmed") && new Date(b.lessonDate) >= now
+        ) || null;
+
+        const pastLessons = bookings.filter(b => new Date(b.lessonDate) < now);
+        const lastLesson = pastLessons[pastLessons.length - 1] || null;
+
+        const monthsMap = {};
+        const monthNamesHe = ["ינו׳", "פבר׳", "מרץ", "אפר׳", "מאי", "יוני", "יולי", "אוג׳", "ספט׳", "אוק׳", "נוב׳", "דצמ׳"];
+
+        completedLessons.forEach(b => {
+            const date = new Date(b.lessonDate);
+            const monthIndex = date.getMonth();
+            const year = date.getFullYear();
+            const key = `${year}-${monthIndex}`;
+
+            if (!monthsMap[key]) {
+                monthsMap[key] = {
+                    sortKey: year * 12 + monthIndex,
+                    label: `${monthNamesHe[monthIndex]} ${String(year).substring(2)}`,
+                    count: 0
+                };
+            }
+            monthsMap[key].count += 1;
+        });
+
+        const sortedMonths = Object.values(monthsMap)
+            .sort((a, b) => a.sortKey - b.sortKey)
+            .map(item => ({
+                label: item.label,
+                count: item.count
+            }));
+
+        return res.status(200).json({
+            student: {
+                id: student.id,
+                firstName: student.firstName,
+                lastName: student.lastName,
+                email: student.email,
+                phoneNumber: student.phoneNumber,
+                city: student.city,
+                street: student.street,
+                profileImage: student.profileImage,
+                createdAt: student.createdAt,
+                lessonPrice: student.chosenTutor?.pricePerLesson || 0,
+                lessonDuration: student.chosenTutor?.lessonDuration || 45
+            },
+            statistics: {
+                totalLessonsCount: bookings.length,
+                completedLessons: completedLessons.length,
+                pendingLessons: pendingOrConfirmed.length,
+                cancelledLessons: cancelledLessons.length,
+                cancellationRate: bookings.length > 0 ? Math.round((cancelledLessons.length / bookings.length) * 100) : 0
+            },
+            financials: {
+                totalPaid,
+                upcomingRevenue
+            },
+            preferences: {
+                preferredPickup: preferredPickup || "לא הוגדר עדיין"
+            },
+            nextLesson: nextLesson ? {
+                id: nextLesson.id,
+                date: nextLesson.lessonDate,
+                startTime: nextLesson.startTime,
+                endTime: nextLesson.endTime,
+                pickupLocation: nextLesson.pickupLocation,
+                status: nextLesson.status
+            } : null,
+            lastLesson: lastLesson ? {
+                id: lastLesson.id,
+                date: lastLesson.lessonDate,
+                startTime: lastLesson.startTime,
+                endTime: lastLesson.endTime,
+                pickupLocation: lastLesson.pickupLocation,
+                status: lastLesson.status
+            } : null,
+            lastGoalsForm: {
+                exists: false
+            },
+            chartData: sortedMonths
+        });
+
+    } catch (error) {
+        console.error("error", error);
+        return res.status(500).json({ message: "שגיאה בשליפת פרופיל התלמיד" });
     }
 };
 

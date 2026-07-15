@@ -1,9 +1,9 @@
 import { User, Tutor } from '../models/index.js';
-// import { OAuth2Client } from 'google-auth-library';
 import sgMail from '@sendgrid/mail';
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+
 
 
 export const register = async (req, res) => {
@@ -182,41 +182,5 @@ export const deleteAccount = async (req, res) => {
     } catch (error) {
         console.error("Error deleting account:", error);
         res.status(500).json({ message: "שגיאת שרת פנימית בנסיון למחוק את החשבון" });
-    }
-};
-
-
-export const getCurrentUser = async (req, res) => {
-    try {
-        const user = await User.findByPk(req.user.id, {
-            attributes: { exclude: ['password'] }
-        });
-
-        if (!user) {
-            return res.status(404).json({ message: "משתמש מחובר לא נמצא" });
-        }
-
-        res.json(user);
-
-    } catch (error) {
-        res.status(500).json({ message: "שגיאה בשליפת נתוני המשתמש הנוכחי" });
-    }
-};
-
-
-export const getAllUsers = async (req, res) => {
-    try {
-        const users = await User.findAll({
-            attributes: ['id', 'firstName', 'lastName', 'email', 'role', 'isSetupComplete', 'createdAt']
-        });
-
-        if (!users.length) {
-            return res.status(200).json({ message: "אין משתמשים במערכת", users: [] });
-        }
-
-        res.status(200).json({ users });
-    } catch (error) {
-        console.error("שגיאה בשליפת כל המשתמשים:", error);
-        res.status(500).json({ message: "שגיאת שרת בשליפת משתמשים" });
     }
 };

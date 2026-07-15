@@ -75,7 +75,7 @@ export const deleteReviewContent = async (req, res) => {
 
 export const getTutorReviews = async (req, res) => {
     try {
-        const { tutorId } = req.params;
+        const tutorId = req.user.tutorId;
 
         const tutorExists = await Tutor.findByPk(tutorId);
         if (!tutorExists) {

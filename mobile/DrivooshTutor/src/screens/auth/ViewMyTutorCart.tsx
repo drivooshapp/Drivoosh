@@ -23,7 +23,7 @@ export default function ViewMyTutorCart({ navigation }: any) {
             if (tutorData) {
                 let reviewsData = [];
                 try {
-                    const reviewsResponse = await apiClient.get(`/review/reviews/${tutorData.id}`);
+                    const reviewsResponse = await apiClient.get("/review/reviews");
                     reviewsData = reviewsResponse.data || [];
                 } catch (reviewErr) {
                     console.log("Error fetching reviews specifically:", reviewErr);
@@ -133,7 +133,7 @@ export default function ViewMyTutorCart({ navigation }: any) {
                     <View style={styles.sectionHeader}>
                         <Text style={styles.title}>המלצות תלמידים</Text>
                         {tutor.reviews?.length > 0 && (
-                            <TouchableOpacity onPress={() => navigation.navigate('AllReviews', { tutorId: tutor.id })}>
+                            <TouchableOpacity onPress={() => navigation.navigate('AllReviews')}>
                                 <Text style={styles.linkText}>הצג הכל ({tutor.reviews.length})</Text>
                             </TouchableOpacity>
                         )}

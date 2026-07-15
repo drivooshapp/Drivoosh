@@ -6,14 +6,14 @@ import LoadingScreen from '../../components/LoadingScreen';
 
 
 export default function AllReviews({ route, navigation }: any) {
-    const { tutorId } = route.params;
+    // const { tutorId } = route.params;
     const [reviews, setReviews] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchReviews = async () => {
             try {
-                const res = await apiClient.get(`/review/reviews/${tutorId}`);
+                const res = await apiClient.get("/review/reviews");
                 setReviews(res.data);
             } catch (e) {
                 console.error(e);
@@ -22,7 +22,7 @@ export default function AllReviews({ route, navigation }: any) {
             }
         };
         fetchReviews();
-    }, [tutorId]);
+    }, []);
 
     const calculateAverage = () => {
         if (reviews.length === 0) return 0;

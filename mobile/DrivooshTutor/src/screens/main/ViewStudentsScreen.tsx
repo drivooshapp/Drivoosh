@@ -91,8 +91,7 @@ export default function ViewStudentsScreen({ navigation }: any) {
     <TouchableOpacity
       style={styles.rowItem}
       activeOpacity={0.6}
-      onPress={() => { }}
-    >
+      onPress={() => navigation.navigate("StudentCart", { studentId: item.id })}    >
       <Ionicons name="chevron-back" size={14} color="#A3A3A3" />
 
       <View style={styles.rowContent}>
@@ -191,7 +190,6 @@ export default function ViewStudentsScreen({ navigation }: any) {
                 </View>
 
                 <View style={styles.modalBody}>
-
                   <View style={styles.inputGroup}>
                     <Text style={styles.inputLabel}>שם התלמיד</Text>
                     <View style={styles.modalInputWrapper}>
@@ -230,13 +228,11 @@ export default function ViewStudentsScreen({ navigation }: any) {
                 >
                   <Text style={styles.primaryButtonText}>החל סינון</Text>
                 </TouchableOpacity>
-
               </KeyboardAvoidingView>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
       </Modal>
-
     </View>
   );
 }
@@ -244,14 +240,12 @@ export default function ViewStudentsScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
-
   topActionsSection: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 20, paddingBottom: 16, borderBottomWidth: 1, borderColor: '#F5F5F5' },
   minimalFilterButton: { flexDirection: 'row-reverse', alignItems: 'center', height: 40 },
   filterButtonText: { fontSize: 14, color: '#737373', marginRight: 6, fontWeight: '500' },
   activeFilterText: { color: '#019cbb', fontWeight: '600' },
   resultsBadge: { backgroundColor: '#F5F5F5', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20 },
   resultsBadgeText: { fontSize: 13, color: '#737373', fontWeight: '500' },
-
   listContent: { paddingHorizontal: 24 },
   rowItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderColor: '#F5F5F5' },
   rowContent: { flexDirection: 'row', alignItems: 'center', flex: 1 },
@@ -263,23 +257,19 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row-reverse', alignItems: 'center', flexWrap: 'wrap' },
   subText: { fontSize: 13, color: '#737373' },
   dotDivider: { fontSize: 11, color: '#A3A3A3', marginHorizontal: 6 },
-
   emptyContainer: { alignItems: 'center', marginTop: 60 },
   emptyText: { fontSize: 14, color: '#A3A3A3' },
-
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.3)', justifyContent: 'flex-end' },
   modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 20, paddingBottom: Platform.OS === 'ios' ? 44 : 24 },
   modalHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   resetText: { fontSize: 14, color: '#019cbb', fontWeight: '600' },
   modalTitle: { fontSize: 17, fontWeight: '700', color: '#1A1A1A' },
   closeButtonCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center' },
-
   modalBody: { marginBottom: 24, gap: 16 },
   inputGroup: { width: '100%' },
   inputLabel: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', marginBottom: 8, textAlign: 'right' },
   modalInputWrapper: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 10, paddingHorizontal: 12, height: 44 },
   modalInput: { flex: 1, height: '100%', fontSize: 14, color: '#1A1A1A', marginRight: 8 },
-
   primaryModalButton: { backgroundColor: '#1A1A1A', height: 48, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: '100%' },
   primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
 });

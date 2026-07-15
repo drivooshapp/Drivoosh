@@ -21,7 +21,7 @@ interface HistoryLesson {
   };
 }
 
-export default function HistoryScreen({ navigation }: any) {
+export default function AllHistoryScreen({ navigation }: any) {
   const [history, setHistory] = useState<HistoryLesson[]>([]);
   const [filteredHistory, setFilteredHistory] = useState<HistoryLesson[]>([]);
   const [loading, setLoading] = useState(true);
