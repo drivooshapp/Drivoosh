@@ -22,14 +22,6 @@
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
-    // "plugins": [
-    //   "expo-font",
-    //   "expo-image",
-    //   "expo-splash-screen",
-    //   "expo-status-bar",
-    //   "expo-web-browser",
-    //   "@react-native-community/datetimepicker"
-    // ]
     "plugins": [
       "expo-font",
       "expo-image",
@@ -43,7 +35,8 @@
           "androidDatePickerSelectedDayBackgroundColor": "#00C2E8",
           "androidTimePickerHeaderBackgroundColor": "#00C2E8"
         }
-      ]
+      ],
+      "expo-sharing"
     ]
   }
 }

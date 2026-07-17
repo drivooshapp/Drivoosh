@@ -10,6 +10,7 @@ import tutorRouter from "./src/routes/tutorRoutes.js";
 import studentRouter from "./src/routes/studentRoutes.js";
 import bookingRouter from "./src/routes/bookingRoutes.js";
 import reviewRouter from "./src/routes/reviewRoutes.js";
+import goalFormRouter from "./src/routes/goalFormRoutes.js";
 
 
 const app = express();
@@ -49,6 +50,7 @@ app.use("/api/tutor", tutorRouter);
 app.use("/api/student", studentRouter);
 app.use("/api/booking", bookingRouter);
 app.use("/api/review", reviewRouter);
+app.use("/api/goalForm", goalFormRouter);
 
 // const PORT = process.env.PORT || 5000
 // app.listen(PORT, () => console.log(`server is running on port ${PORT}`));

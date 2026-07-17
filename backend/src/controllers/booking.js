@@ -1,5 +1,5 @@
 import { Booking, Tutor, User } from '../models/index.js';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 
 
 
@@ -339,24 +339,74 @@ export const cancelBooking = async (req, res) => {
 };
 
 
+// export const confirmBooking = async (req, res) => {
+//     try {
+//         const { bookingId } = req.params;
+//         const tutorId = req.user.tutorId;
+
+//         const booking = await Booking.findOne({ where: { id: bookingId, tutorId } });
+
+//         if (!booking) { return res.status(404).json({ message: "השיעור לא נמצא" }); }
+
+//         booking.status = 'confirmed';
+
+//         await booking.save();
+
+//         res.status(200).json({ success: true, message: "השיעור אושר בהצלחה" });
+
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: "שגיאה באישור השיעור", error: error.message });
+//     }
+// };
+
 export const confirmBooking = async (req, res) => {
     try {
         const { bookingId } = req.params;
         const tutorId = req.user.tutorId;
 
         const booking = await Booking.findOne({ where: { id: bookingId, tutorId } });
+        if (!booking) {
+            return res.status(404).json({ message: "השיעור לא נמצא" });
+        }
 
-        if (!booking) { return res.status(404).json({ message: "השיעור לא נמצא" }); }
+        const lastPastConfirmedBooking = await Booking.findOne({
+            where: {
+                tutorId: tutorId,
+                studentId: booking.studentId,
+                status: 'confirmed',
+                [Op.and]: [
+                    Booking.sequelize.literal(`CAST(CONCAT("lessonDate"::date, ' ', "endTime") AS TIMESTAMP) <= NOW()`)
+                ]
+            },
+            order: [['lessonDate', 'DESC'], ['endTime', 'DESC']],
+            limit: 1
+        });
+
+        if (lastPastConfirmedBooking) {
+            const formattedDate = new Date(lastPastConfirmedBooking.lessonDate).toLocaleDateString('he-IL');
+
+            return res.status(400).json({
+                success: false,
+                subErrorCode: 'GOALS_NOT_FILLED',
+                studentId: booking.studentId,
+                message: `יש למלא מטרות בטופס עבור השיעור האחרון שהסתיים ב-${formattedDate} לפני שתוכל לאשר שיעורים חדשים.`
+            });
+        }
 
         booking.status = 'confirmed';
-
         await booking.save();
 
-        res.status(200).json({ success: true, message: "השיעור אושר בהצלחה" });
+        return res.status(200).json({ success: true, message: "השיעור אושר בהצלחה" });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: "שגיאה באישור השיעור", error: error.message });
+        console.error("Error in confirmBooking:", error.message);
+
+        return res.status(500).json({
+            success: false,
+            message: "שגיאה באישור השיעור",
+            error: error.message
+        });
     }
 };
 

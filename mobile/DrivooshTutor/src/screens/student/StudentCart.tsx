@@ -9,6 +9,7 @@ interface StudentProfileProps { route: any; navigation: any; }
 export default function StudentProfile({ route, navigation }: StudentProfileProps) {
   const { studentId } = route.params;
   const [data, setData] = useState<any>(null);
+  const [studentName, setStudentName] = useState("");
   const [loading, setLoading] = useState(true);
 
   const [chartVisibleData, setChartVisibleData] = useState<{ label: string, count: number }[]>([]);
@@ -18,6 +19,7 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
     apiClient.get(`student/getStudent/${studentId}`)
       .then(res => {
         setData(res.data);
+        setStudentName(`${res.data.student.firstName} ${res.data.student.lastName}`);
         const rawChartData = res.data?.chartData || [];
         setChartVisibleData(rawChartData);
         setHiddenMonthsCount(0);
@@ -131,18 +133,13 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
       )}
 
       <View style={styles.timelineContainer}>
-        <Text style={styles.timelineLabel}>שיעור אחרון שהיה</Text>
+        <Text style={styles.timelineLabel}>שיעור אחרון שבוצע</Text>
         {lastLesson ? (
           <View style={styles.lessonRowCard}>
             <View style={styles.lessonHeader}>
               <Text style={styles.lessonDate}>
-                {formatDate(lastLesson.date)}  •  {formatTime(lastLesson.startTime)}-{formatTime(lastLesson.endTime)}
+                {formatTime(lastLesson.startTime)}-{formatTime(lastLesson.endTime)}  •  {formatDate(lastLesson.date)}
               </Text>
-              <View style={styles.badgeCompleted}>
-                <Text style={styles.badgeCompletedText}>
-                  {STATUS_TRANSLATIONS[lastLesson?.status?.toLowerCase()] || lastLesson?.status}
-                </Text>
-              </View>
             </View>
             {lastLesson.pickupLocation ? (
               <View style={styles.lessonLocation}>
@@ -157,20 +154,49 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
           </View>
         )}
 
-        {!lastGoalsForm.exists && (
+        {lastLesson.status == 'completed' ? (
+          <View style={styles.formCard}>
+            <View style={styles.formCardHeader}>
+              <View style={styles.formCardHeaderRight}>
+                <Ionicons name="document-text-outline" size={20} color="#007890" />
+                <Text style={styles.formCardTitle}>טופס מטרות לימוד</Text>
+              </View>
+            </View>
+
+            <Text style={styles.formCardSubtext}>
+              צפייה, מילוי ועדכון שלבי הלמידה והמיומנויות של התלמיד בקורס.
+            </Text>
+
+            <View style={styles.statusBadge}>
+              <View style={styles.statusDot} />
+              <Text style={styles.statusLabelText}>
+                סטטוס שיעור אחרון: <Text style={styles.statusValueText}>מעודכן</Text>
+              </Text>
+            </View>
+
+            <TouchableOpacity
+              style={styles.formCardButton}
+              onPress={() => navigation.navigate("ProgressFormScreen")}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.formCardButtonText}>לטופס</Text>
+              <Ionicons name="chevron-back" size={12} color="#007890" />
+            </TouchableOpacity>
+          </View>
+        ) : (
           <TouchableOpacity
             style={styles.alertBanner}
-            onPress={() => navigation.navigate("ViewProgressForm")}
+            onPress={() => navigation.navigate("ProgressFormScreen", { studentId, studentName })}
             activeOpacity={0.8}
           >
             <View style={styles.alertRightContent}>
               <View style={styles.alertIconBg}>
                 <Ionicons name="warning" size={14} color="#D97706" />
               </View>
-              <Text style={styles.alertText}>טרם מולא משוב פדגוגי לשיעור האחרון</Text>
+              <Text style={styles.alertText}>טרם מולא משוב בטופס המטרות לשיעור האחרון</Text>
             </View>
             <View style={styles.alertLeftAction}>
-              <Text style={styles.alertActionText}>למילוי</Text>
+              <Text style={styles.alertActionText}>מלא עכשיו</Text>
               <Ionicons name="chevron-back" size={14} color="#D97706" />
             </View>
           </TouchableOpacity>
@@ -181,7 +207,7 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
           <View style={styles.lessonRowCard}>
             <View style={styles.lessonHeader}>
               <Text style={styles.lessonDate}>
-                {formatDate(nextLesson.date)}  •  {formatTime(nextLesson.startTime)}-{formatTime(nextLesson.endTime)}
+                {formatTime(nextLesson.startTime)}-{formatTime(nextLesson.endTime)}  •  {formatDate(nextLesson.date)}
               </Text>
               <View style={styles.badgePending}>
                 <Text style={styles.badgePendingText}>
@@ -267,10 +293,21 @@ const styles = StyleSheet.create({
   alertText: { fontSize: 12.5, fontWeight: '700', color: '#92400E', textAlign: 'right', flex: 1 },
   alertLeftAction: { flexDirection: 'row-reverse', alignItems: 'center', gap: 2 },
   alertActionText: { fontSize: 12, fontWeight: '800', color: '#D97706' },
+  formCard: { backgroundColor: '#eefcff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#a7e4f1', marginVertical: 10 },
+  formCardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
+  formCardHeaderRight: { flexDirection: 'row-reverse', alignItems: 'center' },
+  formCardTitle: { fontSize: 16, fontWeight: '700', color: '#007890', marginRight: 8 },
+  statusBadge: { flexDirection: 'row-reverse', paddingBottom: 10, alignItems: 'center' },
+  statusDot: { width: 3, height: 3, borderRadius: 1.5, backgroundColor: '#000000', marginLeft: 6 },
+  statusLabelText: { fontSize: 12, fontWeight: '500', color: '#334155' },
+  statusValueText: { color: '#16A34A' },
+  formCardSubtext: { fontSize: 13, color: '#343f4d', textAlign: 'right', marginBottom: 12, lineHeight: 18 },
+  formCardButton: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', alignSelf: 'flex-start', backgroundColor: '#cff3fb', height: 32, paddingHorizontal: 14, borderRadius: 8, gap: 4 },
+  formCardButtonText: { fontSize: 13, fontWeight: '700', color: '#007890' },
   lessonRowCard: { backgroundColor: '#fff', borderRadius: 14, padding: 12, borderWidth: 1, borderColor: '#e0e0e0' },
   lessonHeader: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
   lessonDate: { fontSize: 13, fontWeight: '700', color: '#1e293b' },
-  lessonLocation: { flexDirection: 'row-reverse', alignItems: 'center', gap: 6, marginTop: 8 },
+  lessonLocation: { flexDirection: 'row-reverse', alignItems: 'center', gap: 2, marginTop: 8 },
   locationText: { fontSize: 12, color: '#64748b', fontWeight: '500', flex: 1, textAlign: 'right' },
   badgePending: { backgroundColor: '#e0f2fe', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
   badgePendingText: { color: '#0369a1', fontSize: 10, fontWeight: '700' },

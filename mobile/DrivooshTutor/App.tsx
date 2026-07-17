@@ -25,8 +25,11 @@ import AllReviews from './src/screens/main/AllReviews';
 import StudentCart from './src/screens/student/StudentCart';
 import LessonsHistory from './src/screens/student/LessonsHistory';
 
+import ProgressFormScreen from './src/screens/student/ProgressForm/NavigationToFormScreen';
 import ViewProgressForm from './src/screens/student/ProgressForm/ViewProgressForm';
 import FillProgressForm from './src/screens/student/ProgressForm/FillProgressForm';
+import StudentProgressFormScreen from './src/screens/student/ProgressForm/StudentProgressFormScreen';
+import FinalFormSealScreen from './src/screens/student/ProgressForm/FinalFormSealScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -38,8 +41,13 @@ function StudentCardStack() {
             <SearchStack.Screen name="AllStudents" component={ViewStudentsScreen} />
             <SearchStack.Screen name="StudentCart" component={StudentCart} />
             <SearchStack.Screen name="StudentHistory" component={LessonsHistory} />
+
+            <SearchStack.Screen name="ProgressFormScreen" component={ProgressFormScreen} />
             <SearchStack.Screen name="ViewProgressForm" component={ViewProgressForm} />
             <SearchStack.Screen name="FillProgressForm" component={FillProgressForm} />
+            
+            <SearchStack.Screen name="GoalsForm" component={StudentProgressFormScreen} />
+            <SearchStack.Screen name="FinalForm" component={FinalFormSealScreen} />
         </SearchStack.Navigator>
     );
 }

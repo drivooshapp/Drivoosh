@@ -133,7 +133,24 @@ export default function UpcomingLessons({ navigation }: any) {
 
   }, [bookingConfirmed]);
 
-  const handleApproveLesson = async (bookingId: string) => {
+  // const handleApproveLesson = async (bookingId: string) => {
+  //   setActionLoading(true);
+  //   try {
+  //     const response = await apiClient.put(`booking/confirm/${bookingId}`);
+
+  //     if (response.data.success) {
+  //       setBookingConfirmed(true);
+  //       setSelectedBooking(prev => prev ? { ...prev, status: 'confirmed' } : prev);
+  //       await fetchSchedule();
+  //     }
+  //   } catch (error) {
+  //     console.log('Error approving lesson:', error);
+  //     Alert.alert('שגיאה', 'לא ניתן לאשר את השיעור כעת');
+  //   } finally {
+  //     setActionLoading(false);
+  //   }
+  // };
+const handleApproveLesson = async (bookingId: string) => {
     setActionLoading(true);
     try {
       const response = await apiClient.put(`booking/confirm/${bookingId}`);
@@ -143,9 +160,45 @@ export default function UpcomingLessons({ navigation }: any) {
         setSelectedBooking(prev => prev ? { ...prev, status: 'confirmed' } : prev);
         await fetchSchedule();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.log('Error approving lesson:', error);
-      Alert.alert('שגיאה', 'לא ניתן לאשר את השיעור כעת');
+      
+      const errorData = error.response?.data;
+      const serverMessage = errorData?.message;
+      const subErrorCode = errorData?.subErrorCode;
+
+      if (subErrorCode === 'GOALS_NOT_FILLED') {
+        const studentId = errorData.studentId;
+        const studentName = selectedBooking ? `${selectedBooking.student?.firstName} ${selectedBooking.student?.lastName}` : 'התלמיד';
+
+        setModalVisible(false);
+
+        Alert.alert(
+          'חיווי חסר בטופס המטרות',
+          serverMessage || 'יש למלא מטרות עבור השיעור האחרון לפני אישור שיעור חדש.',
+          [
+            { text: 'ביטול', style: 'cancel' },
+            { 
+              text: 'למילוי מטרות', 
+              style: 'default',
+              onPress: () => {
+                if (navigation) {
+                  navigation.navigate("AllStudents", {
+                    screen: "ProgressFormScreen",
+                    params: { studentId, studentName }
+                  });
+                }
+              }
+            }
+          ],
+          { cancelable: true }
+        );
+      } 
+      else {
+        const finalFallbackMessage = serverMessage || 'לא ניתן לאשר את השיעור כעת';
+        
+        Alert.alert('שגיאה באישור השיעור', finalFallbackMessage);
+      }
     } finally {
       setActionLoading(false);
     }
@@ -224,10 +277,6 @@ export default function UpcomingLessons({ navigation }: any) {
       <TouchableOpacity
         style={styles.compactCard}
         activeOpacity={0.7}
-        // onPress={() => {
-        //   setSelectedBooking(item);
-        //   setModalVisible(true);
-        // }}
         onPress={() => {
           setSelectedBooking(item);
           setBookingConfirmed(false);
@@ -347,7 +396,6 @@ export default function UpcomingLessons({ navigation }: any) {
           <View style={styles.modalContent}>
             <View style={styles.modalDragHandle} />
 
-            {/* <TouchableOpacity style={styles.modalCloseButton} onPress={() => setModalVisible(false)}> */}
             <TouchableOpacity style={styles.modalCloseButton} onPress={() => { setModalVisible(false); setBookingConfirmed(false) }}>
               <Ionicons name="close" size={18} color="#0F172A" />
             </TouchableOpacity>
@@ -372,7 +420,6 @@ export default function UpcomingLessons({ navigation }: any) {
                   </View>
                 </View>
 
-                {/* {selectedBooking.status === 'pending' && ( */}
                 {selectedBooking.status === 'pending' && !bookingConfirmed && (
                   <TouchableOpacity
                     style={[styles.urgentApproveButton, actionLoading && { opacity: 0.6 }]}
@@ -442,7 +489,14 @@ export default function UpcomingLessons({ navigation }: any) {
                   activeOpacity={0.85}
                   onPress={() => {
                     setModalVisible(false);
-                    if (navigation) navigation.navigate('LessonGoals', { bookingId: selectedBooking.id });
+
+                    if (navigation) navigation.navigate("AllStudents", {
+                      screen: "ProgressFormScreen",
+                      params: {
+                        studentId: selectedBooking.student?.id,
+                        studentName: `${selectedBooking.student?.firstName} ${selectedBooking.student?.lastName}`
+                      }
+                    });
                   }}
                 >
                   <View style={styles.cardHeaderRow}>
@@ -536,7 +590,7 @@ const styles = StyleSheet.create({
   urgentApproveButton: { width: '100%', backgroundColor: '#019cbb', borderRadius: 16, paddingVertical: 15, marginBottom: 20, shadowColor: '#019cbb', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3 },
   urgentButtonContent: { flexDirection: 'row-reverse', justifyContent: 'center', alignItems: 'center' },
   urgentButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700', letterSpacing: 0.2 },
-  pulsingIcon: { fontSize: 18, color: "#FFFFFF", marginLeft: 8,alignItems: 'center' },
+  pulsingIcon: { fontSize: 18, color: "#FFFFFF", marginLeft: 8, alignItems: 'center' },
 
   premiumCard: { width: '100%', backgroundColor: '#F8FAFC', borderRadius: 16, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0' },
   cardHeaderRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: 8, borderBottomWidth: 1, borderColor: '#E2E8F0', paddingBottom: 8, marginBottom: 10 },

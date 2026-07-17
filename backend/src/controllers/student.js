@@ -1,4 +1,5 @@
 import { model } from "mongoose";
+import { Op } from "sequelize";
 import { User, Tutor, Booking } from "../models/index.js";
 
 
@@ -106,12 +107,12 @@ export const getStudentProfile = async (req, res) => {
                 locationCounts[b.pickupLocation] = (locationCounts[b.pickupLocation] || 0) + 1;
             }
         });
-        const preferredPickup = Object.keys(locationCounts).reduce((a, b) => 
+        const preferredPickup = Object.keys(locationCounts).reduce((a, b) =>
             locationCounts[a] > locationCounts[b] ? a : b, null
         );
 
         const now = new Date();
-        const nextLesson = bookings.find(b => 
+        const nextLesson = bookings.find(b =>
             (b.status === "pending" || b.status === "confirmed") && new Date(b.lessonDate) >= now
         ) || null;
 
@@ -247,6 +248,35 @@ export const updateStudentProfile = async (req, res) => {
     } catch (error) {
         console.error("Error updating profile:", error);
         res.status(500).json({ message: "שגיאה בעדכון הפרטים" });
+    }
+};
+
+
+export const getTutorStudentHistory = async (req, res) => {
+    const tutorId = req.user.tutorId;
+    const { studentId } = req.params;
+
+    try {
+        const now = new Date();
+
+        const history = await Booking.findAll({
+            where: {
+                studentId,
+                tutorId,
+                [Op.or]: [
+                    { status: "completed" },
+                ]
+            },
+            order: [
+                ["lessonDate", "DESC"],
+                ["startTime", "DESC"]
+            ]
+        });
+
+        return res.status(200).json(history);
+    } catch (error) {
+        console.error("error", error);
+        return res.status(500).json({ message: "שגיאה בשליפת ההיסטוריה" });
     }
 };
 
