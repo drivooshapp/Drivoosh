@@ -27,6 +27,7 @@
 
 import User from './User.js';
 import Tutor from './Tutor.js';
+import { TutorNote } from './Tutor.js';
 import Booking from './Booking.js';
 import Review from './Review.js';
 import StudentFormHeader from '../models/goalForm/StudentFormHeader.js';
@@ -39,6 +40,9 @@ Tutor.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 Tutor.hasMany(User, { foreignKey: 'myTutor', as: 'students' });
 User.belongsTo(Tutor, { foreignKey: 'myTutor', as: 'chosenTutor' });
+
+Tutor.hasMany(TutorNote, { foreignKey: 'tutorId', as: 'notes', onDelete: 'CASCADE' });
+TutorNote.belongsTo(Tutor, { foreignKey: 'tutorId', as: 'tutor' });
 
 User.hasMany(Booking, { foreignKey: 'studentId', as: 'bookings' });
 Booking.belongsTo(User, { foreignKey: 'studentId', as: 'student' });
@@ -62,4 +66,4 @@ LessonGoal.hasMany(StudentGoalProgress, { foreignKey: 'goalId', as: 'progressRec
 StudentGoalProgress.belongsTo(LessonGoal, { foreignKey: 'goalId', as: 'goalDetails' });
 
 
-export { User, Tutor, Booking, Review, StudentFormHeader, StudentGoalProgress, LessonGoal };
+export { User, Tutor, TutorNote, Booking, Review, StudentFormHeader, StudentGoalProgress, LessonGoal };

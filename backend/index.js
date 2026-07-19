@@ -7,6 +7,7 @@ import sequelize from "./src/config/db.js";
 import "./src/models/index.js";
 import userRouter from "./src/routes/authRoutes.js"
 import tutorRouter from "./src/routes/tutorRoutes.js";
+import tutorNoteRouter from "./src/routes/tutorNoteRoutes.js";
 import studentRouter from "./src/routes/studentRoutes.js";
 import bookingRouter from "./src/routes/bookingRoutes.js";
 import reviewRouter from "./src/routes/reviewRoutes.js";
@@ -17,7 +18,7 @@ const app = express();
 
 // DB connection
 sequelize.sync({ alter: true })
-// sequelize.sync({ force: true })
+    // sequelize.sync({ force: true })
     .then(() => {
         console.log("All tables synced successfully in PostgreSQL.");
     })
@@ -47,6 +48,7 @@ app.use(express.json());
 // routes
 app.use("/api/user", userRouter);
 app.use("/api/tutor", tutorRouter);
+app.use("/api/tutorNote", tutorNoteRouter);
 app.use("/api/student", studentRouter);
 app.use("/api/booking", bookingRouter);
 app.use("/api/review", reviewRouter);

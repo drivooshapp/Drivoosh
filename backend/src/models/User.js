@@ -17,7 +17,8 @@ const User = sequelize.define('User', {
     myTutor: { type: DataTypes.UUID, allowNull: true, references: { model: 'Tutors', key: 'id' } },
     isSetupComplete: { type: DataTypes.BOOLEAN, defaultValue: false },
     resetPasswordToken: { type: DataTypes.STRING, allowNull: true },
-    resetPasswordExpires: { type: DataTypes.DATE, allowNull: true }
+    resetPasswordExpires: { type: DataTypes.DATE, allowNull: true },
+    studentFields: { type: DataTypes.JSON, allowNull: true, defaultValue: null }
 }, {
     timestamps: true
 });

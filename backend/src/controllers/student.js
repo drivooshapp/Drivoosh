@@ -281,6 +281,37 @@ export const getTutorStudentHistory = async (req, res) => {
 };
 
 
+// export const selectTutor = async (req, res) => {
+//     try {
+//         const { tutorId } = req.params;
+//         const studentId = req.user.id;
+
+//         const tutor = await Tutor.findByPk(tutorId);
+//         if (!tutor) return res.status(404).json({ message: 'המורה לא נמצא' });
+
+//         const student = await User.findByPk(studentId);
+//         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
+
+//         student.myTutor = tutorId;
+
+//         await Booking.update(
+//             { status: 'cancelled' },
+//             {
+//                 where: {
+//                     studentId: studentId,
+//                     status: ['pending', 'confirmed']
+//                 }
+//             }
+//         );
+
+//         await student.save();
+
+//         res.status(200).json({ message: 'המורה נבחר בהצלחה', user: student });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'שגיאת שרת בבחירת המורה' });
+//     }
+// };
 export const selectTutor = async (req, res) => {
     try {
         const { tutorId } = req.params;
@@ -294,6 +325,13 @@ export const selectTutor = async (req, res) => {
 
         student.myTutor = tutorId;
 
+        student.studentFields = {
+            ...(student.studentFields || {}),
+            tutorSelectedAt: new Date()
+        };
+
+        student.changed('studentFields', true);
+
         await Booking.update(
             { status: 'cancelled' },
             {
@@ -305,7 +343,6 @@ export const selectTutor = async (req, res) => {
         );
 
         await student.save();
-
         res.status(200).json({ message: 'המורה נבחר בהצלחה', user: student });
     } catch (error) {
         console.error(error);
