@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Platform } from "react-native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Modal, TextInput, Linking, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import apiClient from "../../../src/api/apiClient";
 import ECGChart from "../../../src/components/ECGChart";
+import { EditExternalLessonsModal } from "../../components/EditExternalLessonsModal";
 
 interface StudentProfileProps { route: any; navigation: any; }
 
@@ -11,7 +12,7 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
   const [data, setData] = useState<any>(null);
   const [studentName, setStudentName] = useState("");
   const [loading, setLoading] = useState(true);
-
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [chartVisibleData, setChartVisibleData] = useState<{ label: string, count: number }[]>([]);
   const [hiddenMonthsCount, setHiddenMonthsCount] = useState(0);
 
@@ -32,15 +33,22 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
   if (!data) return <View style={styles.center}><Text style={styles.infoText}>לא נמצאו נתונים עבור תלמיד זה</Text></View>;
 
   const student = data.student || {};
-  const statistics = data.statistics || { completedLessons: 0, pendingLessons: 0, cancelledLessons: 0 };
+  const statistics = data.statistics || {
+    completedLessons: 0,
+    pendingLessons: 0,
+    cancelledLessons: 0,
+    completedWithCurrentTutor: 0,
+    previousLessonsCount: 0,
+    externalLessonsCount: 0,
+    externalLessonsProofUrl: null,
+    isExternalLessonsVerified: false,
+    totalOverallCompletedLessons: 0
+  };
   const financials = data.financials || { totalPaid: 0 };
   const nextLesson = data.nextLesson;
   const lastLesson = data.lastLesson;
-  const lastGoalsForm = data.lastGoalsForm || { exists: true };
-
-  const joinDate = student.createdAt
-    ? new Date(student.createdAt).toLocaleDateString('he-IL', { year: 'numeric', month: 'long' })
-    : '';
+  const dateToDisplay = student?.studentFields?.tutorSelectedAt || student?.createdAt;
+  const joinDate = dateToDisplay ? new Date(dateToDisplay).toLocaleDateString('he-IL', { month: 'long', year: 'numeric' }) : '';
 
   const formatTime = (timeString: string) => {
     if (!timeString) return '';
@@ -49,6 +57,81 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' });
+  };
+
+  const handleSaveExternalLessons = async (data: {
+    externalLessonsCount: number;
+    isVerified: boolean;
+    proofUrl?: string | null;
+    selectedFile?: any | null;
+  }) => {
+    try {
+      let response;
+
+      // if (data.selectedFile) {
+      //   const formData = new FormData();
+
+      //   formData.append("externalLessonsCount", String(data.externalLessonsCount));
+      //   formData.append("isVerified", String(data.isVerified));
+      //   formData.append("proofDocument", {
+      //     uri: data.selectedFile.uri,
+      //     name: data.selectedFile.name || "proof_document.pdf",
+      //     type: data.selectedFile.mimeType || "application/pdf",
+      //   } as any);
+
+      //   response = await apiClient.put(
+      //     `student/updateExternalLessons/${studentId}`,
+      //     formData,
+      //     {
+      //       headers: {
+      //         "Content-Type": "multipart/form-data",
+      //       },
+      //     }
+      //   );
+      // }
+
+      // else {
+      response = await apiClient.put(
+        `student/updateExternalLessons/${studentId}`,
+        {
+          externalLessonsCount: data.externalLessonsCount,
+          isVerified: data.isVerified,
+          externalLessonsProofUrl: data.proofUrl,
+        }
+      );
+      // }
+
+      const updatedFields = response.data?.studentFields || {};
+      const updatedProofUrl = response.data?.proofUrl || data.proofUrl;
+
+      setData((prev: any) => ({
+        ...prev,
+        student: {
+          ...prev.student,
+          studentFields: {
+            ...prev.student?.studentFields,
+            externalLessonsCount: data.externalLessonsCount,
+            isExternalLessonsVerified: data.isVerified,
+            externalLessonsProofUrl: updatedProofUrl,
+          },
+        },
+        statistics: {
+          ...prev.statistics,
+          previousLessonsCount: data.externalLessonsCount,
+          externalLessonsCount: data.externalLessonsCount,
+          isExternalLessonsVerified: data.isVerified,
+          externalLessonsProofUrl: updatedProofUrl,
+          totalOverallCompletedLessons:
+            (prev.statistics?.completedWithCurrentTutor || 0) + data.externalLessonsCount,
+        },
+      }));
+
+      Alert.alert("בוצע", "נתוני השיעורים עודכנו בהצלחה");
+    } catch (error: any) {
+      console.error("Failed to update external lessons:", error);
+      Alert.alert("שגיאה", error.response?.data?.message || "נכשל בעדכון הנתונים");
+      throw error;
+    }
   };
 
   const STATUS_TRANSLATIONS: Record<string, string> = {
@@ -96,20 +179,59 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
         <View style={styles.quickInfoDivider} />
         <View style={styles.quickInfoItem}>
           <Text style={styles.quickInfoLabel}>סך שיעורים</Text>
-          <Text style={styles.quickInfoVal}>{statistics.totalLessonsCount || 0}</Text>
+          <Text style={styles.quickInfoVal}>{statistics.totalOverallCompletedLessons || 0}</Text>
         </View>
+      </View>
+
+      <View style={styles.previousLessonsCard}>
+        <View style={styles.previousLessonsTopRow}>
+          <View style={styles.previousLessonsRight}>
+            <View style={styles.previousIconBadge}>
+              <Ionicons name="school-outline" size={18} color="#007890" />
+            </View>
+            <View>
+              <Text style={styles.previousLessonsTitle}>שיעורים/ בתי ספר קודמים</Text>
+              <Text style={styles.previousLessonsValue}>
+                {statistics.previousLessonsCount || 0} שיעורים אושרו על ידך
+              </Text>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={styles.editExternalBtn}
+            onPress={() => setIsEditModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="create-outline" size={14} color="#80eaff" />
+            <Text style={styles.editExternalBtnText}>עדכן</Text>
+          </TouchableOpacity>
+        </View>
+
+        {statistics.externalLessonsProofUrl ? (
+          <View style={styles.proofRowWrapper}>
+            <TouchableOpacity
+              style={styles.proofBadge}
+              onPress={() => Linking.openURL(statistics.externalLessonsProofUrl)}
+              activeOpacity={0.6}
+            >
+              <Text style={styles.proofBadgeText}>צפה באישור המצורף</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
       </View>
 
       <Text style={styles.sectionLabel}>התקדמות הלמידה</Text>
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
-          <Text style={styles.statNum}>{statistics.completedLessons}</Text>
-          <Text style={styles.statLabel}>הושלמו</Text>
+          <Text style={styles.statNum}>{statistics.completedWithCurrentTutor ?? statistics.completedLessons}</Text>
+          <Text style={styles.statLabel}>הושלמו אצלך</Text>
         </View>
+
         <View style={[styles.statBox, styles.statBoxInactive]}>
           <Text style={[styles.statNum, styles.textDark]}>{statistics.pendingLessons}</Text>
           <Text style={styles.statLabel}>ממתינים</Text>
         </View>
+
         <View style={[styles.statBox, styles.statBoxInactive]}>
           <Text style={[styles.statNum, styles.textMuted]}>{statistics.cancelledLessons}</Text>
           <Text style={styles.statLabel}>בוטלו</Text>
@@ -154,7 +276,7 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
           </View>
         )}
 
-        {lastLesson.status == 'completed' ? (
+        {!lastLesson || lastLesson.status == 'completed' ? (
           <View style={styles.formCard}>
             <View style={styles.formCardHeader}>
               <View style={styles.formCardHeaderRight}>
@@ -168,15 +290,18 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
             </Text>
 
             <View style={styles.statusBadge}>
-              <View style={styles.statusDot} />
-              <Text style={styles.statusLabelText}>
-                סטטוס שיעור אחרון: <Text style={styles.statusValueText}>מעודכן</Text>
-              </Text>
+              {lastLesson && lastLesson.status === "completed" ? <>
+                <View style={styles.statusDot} />
+                <Text style={styles.statusLabelText}>
+                  {'סטטוס שיעור אחרון: '}
+                  <Text style={styles.statusValueText}>מעודכן</Text>
+                </Text></>
+                : null}
             </View>
 
             <TouchableOpacity
               style={styles.formCardButton}
-              onPress={() => navigation.navigate("ProgressFormScreen")}
+              onPress={() => navigation.navigate("ProgressFormScreen", { studentId, studentName })}
               activeOpacity={0.7}
             >
               <Text style={styles.formCardButtonText}>לטופס</Text>
@@ -251,6 +376,15 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
             <Ionicons name="location-outline" size={18} color="#64748b" style={styles.infoIcon} />
           </View>
         ) : null}
+
+        <EditExternalLessonsModal
+          isVisible={isEditModalVisible}
+          onClose={() => setIsEditModalVisible(false)}
+          initialCount={statistics.externalLessonsCount || statistics.previousLessonsCount || 0}
+          initialVerified={statistics.isExternalLessonsVerified}
+          proofUrl={statistics.externalLessonsProofUrl}
+          onSave={handleSaveExternalLessons}
+        />
       </View>
     </ScrollView>
   );
@@ -277,12 +411,24 @@ const styles = StyleSheet.create({
   quickInfoVal: { fontSize: 14, fontWeight: '700', color: '#334155' },
   sectionLabel: { fontSize: 12, fontWeight: '800', color: '#94a3b8', textAlign: 'right', marginTop: 24, marginBottom: 12, textTransform: 'uppercase', letterSpacing: 0.8 },
   statsContainer: { flexDirection: 'row-reverse', gap: 10, marginBottom: 16 },
-  statBox: { flex: 1, backgroundColor: '#f0fdfa', borderRadius: 16, paddingVertical: 14, alignItems: 'center', borderWidth: 1, borderColor: '#ccfbf1' },
   statBoxInactive: { backgroundColor: '#f8fafc', borderColor: '#f1f5f9' },
+  statBox: { flex: 1, backgroundColor: '#f0fdfa', borderRadius: 16, paddingVertical: 14, paddingHorizontal: 4, alignItems: 'center', borderWidth: 1, borderColor: '#ccfbf1', justifyContent: 'center' },
   statNum: { fontSize: 20, fontWeight: '800', color: '#00C2E8' },
+  statLabel: { fontSize: 11, fontWeight: '700', color: '#64748b', marginTop: 4, textAlign: 'center' },
+  statSubText: { fontSize: 9.5, fontWeight: '700', color: '#0891b2', backgroundColor: '#e0fcfd', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, marginTop: 6, overflow: 'hidden' },
+  previousLessonsCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 12, marginVertical: 20, gap: 8 },
+  previousLessonsTopRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center' },
+  previousLessonsRight: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
+  proofRowWrapper: { marginTop: 6, paddingTop: 6, borderTopWidth: 1, borderTopColor: '#F0F0F0', alignItems: 'flex-end' },
+  proofBadge: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, backgroundColor: '#E6F4F8', paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6 },
+  proofBadgeText: { fontSize: 12, color: '#007890', fontWeight: '600' },
+  previousIconBadge: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#E6F4F8', justifyContent: 'center', alignItems: 'center' },
+  previousLessonsTitle: { fontSize: 12, fontWeight: '700', color: '#0f172a', textAlign: 'right' },
+  previousLessonsValue: { fontSize: 11, fontWeight: '600', color: '#64748b', textAlign: 'right', marginTop: 2 },
+  editExternalBtn: { flexDirection: 'row-reverse', alignItems: 'center', gap: 4, backgroundColor: '#000000', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  editExternalBtnText: { fontSize: 12, fontWeight: '700', color: '#80eaff' },
   textDark: { color: '#0f172a' },
   textMuted: { color: '#64748b' },
-  statLabel: { fontSize: 11, fontWeight: '700', color: '#64748b', marginTop: 4 },
   hiddenMonthsBadge: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, backgroundColor: '#fff', borderWidth: 1, borderColor: '#e2e8f0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, alignSelf: 'center', marginTop: 8 },
   hiddenMonthsText: { fontSize: 11, fontWeight: '700', color: '#00C2E8' },
   timelineContainer: { backgroundColor: '#f8fafc', borderRadius: 24, padding: 16, borderWidth: 1, borderColor: '#f1f5f9', marginVertical: 8 },

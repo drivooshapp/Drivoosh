@@ -92,13 +92,111 @@ export const createBooking = async (req, res) => {
 };
 
 
+// export const getAvailableSlots = async (req, res) => {
+//     try {
+//         const { tutorId } = req.params;
+//         const { date } = req.query;
+
+//         const tutor = await Tutor.findByPk(tutorId);
+//         if (!tutor) return res.status(404).json({ message: "המורה לא נמצא" });
+
+//         const BUFFER_TIME = Number(tutor.bufferTime || tutor.BufferTime || 0);
+//         const lessonDuration = Number(tutor.lessonDuration);
+
+//         const now = new Date();
+
+//         const todayStr = new Intl.DateTimeFormat('en-CA', {
+//             timeZone: 'Asia/Jerusalem',
+//             year: 'numeric',
+//             month: '2-digit',
+//             day: '2-digit'
+//         }).format(now);
+
+//         const israelTimeStr = now.toLocaleTimeString('en-GB', {
+//             timeZone: 'Asia/Jerusalem',
+//             hour12: false,
+//             hour: '2-digit',
+//             minute: '2-digit'
+//         });
+//         const [currH, currM] = israelTimeStr.split(':').map(Number);
+//         const currentTotalMinutes = currH * 60 + currM;
+
+//         const startOfDay = new Date(`${date}T00:00:00.000Z`);
+//         const endOfDay = new Date(`${date}T23:59:59.999Z`);
+
+//         const existingBookings = await Booking.findAll({
+//             where: {
+//                 tutorId,
+//                 lessonDate: { [Op.between]: [startOfDay, endOfDay] },
+//                 status: { [Op.ne]: 'cancelled' }
+//             },
+//             attributes: ['startTime', 'endTime', 'status']
+//         });
+
+//         const busyRanges = existingBookings.map(b => {
+//             const [startH, startM] = b.startTime.split(':').map(Number);
+//             const [endH, endM] = b.endTime.split(':').map(Number);
+//             const startMin = startH * 60 + startM;
+//             const endMin = endH * 60 + endM;
+
+//             return {
+//                 start: startMin,
+//                 end: endMin,
+//                 originalStr: `${b.startTime}-${b.endTime}`
+//             };
+//         });
+
+//         const startH = parseInt((tutor.workStartHour || "08:00").split(':')[0]);
+//         const endH = parseInt((tutor.workEndHour || "20:00").split(':')[0]);
+
+//         const allPossibleSlots = [];
+//         const step = 15;
+
+//         for (let totalMin = startH * 60; totalMin + lessonDuration <= endH * 60; totalMin += step) {
+//             const h = Math.floor(totalMin / 60).toString().padStart(2, '0');
+//             const m = (totalMin % 60).toString().padStart(2, '0');
+//             allPossibleSlots.push(`${h}:${m}`);
+//         }
+
+//         const availableSlots = allPossibleSlots.filter(slot => {
+//             const [h, m] = slot.split(':').map(Number);
+//             const slotStartMinutes = h * 60 + m;
+//             const slotEndMinutes = slotStartMinutes + lessonDuration;
+
+//             const isOverlap = busyRanges.some(range => {
+//                 const overlapAsPrior = slotEndMinutes + BUFFER_TIME > range.start && slotStartMinutes < range.start;
+//                 const overlapAsSuccessor = slotStartMinutes < range.end + BUFFER_TIME && slotEndMinutes > range.end;
+//                 const inside = slotStartMinutes >= range.start && slotStartMinutes < range.end;
+
+//                 return overlapAsPrior || overlapAsSuccessor || inside;
+//             });
+
+//             if (isOverlap) return false;
+
+//             if (date === todayStr) {
+//                 if (slotStartMinutes <= currentTotalMinutes + 5) return false;
+//             }
+
+//             return true;
+//         });
+//         console.log("availableSlots:", availableSlots);
+//         res.status(200).json(availableSlots);
+
+//     } catch (error) {
+//         console.log("error:", error);
+//         res.status(500).json({ message: "שגיאה בחישוב שעות", error: error.message });
+//     }
+// };
+
 export const getAvailableSlots = async (req, res) => {
     try {
         const { tutorId } = req.params;
         const { date } = req.query;
 
         const tutor = await Tutor.findByPk(tutorId);
-        if (!tutor) return res.status(404).json({ message: "המורה לא נמצא" });
+        if (!tutor) {
+            return res.status(404).json({ message: "המורה לא נמצא" });
+        }
 
         const BUFFER_TIME = Number(tutor.bufferTime || tutor.BufferTime || 0);
         const lessonDuration = Number(tutor.lessonDuration);
@@ -111,6 +209,10 @@ export const getAvailableSlots = async (req, res) => {
             month: '2-digit',
             day: '2-digit'
         }).format(now);
+
+        if (date < todayStr) {
+            return res.status(200).json([]);
+        }
 
         const israelTimeStr = now.toLocaleTimeString('en-GB', {
             timeZone: 'Asia/Jerusalem',
@@ -146,13 +248,24 @@ export const getAvailableSlots = async (req, res) => {
             };
         });
 
-        const startH = parseInt((tutor.workStartHour || "08:00").split(':')[0]);
-        const endH = parseInt((tutor.workEndHour || "20:00").split(':')[0]);
+        const parseWorkHourToMinutes = (timeStr, defaultMinutes) => {
+            if (!timeStr) return defaultMinutes;
+            const [h, m] = timeStr.split(':').map(Number);
+            if (h === 0 && (m === 0 || isNaN(m))) return 1440;
+            return h * 60 + (m || 0);
+        };
+
+        const startMin = parseWorkHourToMinutes(tutor.workStartHour, 8 * 60); // ברירת מחדל 08:00
+        let endMin = parseWorkHourToMinutes(tutor.workEndHour, 20 * 60);    // ברירת מחדל 20:00
+
+        if (endMin <= startMin) {
+            endMin = 24 * 60;
+        }
 
         const allPossibleSlots = [];
         const step = 15;
 
-        for (let totalMin = startH * 60; totalMin + lessonDuration <= endH * 60; totalMin += step) {
+        for (let totalMin = startMin; totalMin + lessonDuration <= endMin; totalMin += step) {
             const h = Math.floor(totalMin / 60).toString().padStart(2, '0');
             const m = (totalMin % 60).toString().padStart(2, '0');
             allPossibleSlots.push(`${h}:${m}`);
@@ -183,7 +296,6 @@ export const getAvailableSlots = async (req, res) => {
         res.status(200).json(availableSlots);
 
     } catch (error) {
-        console.error("error:", error);
         res.status(500).json({ message: "שגיאה בחישוב שעות", error: error.message });
     }
 };

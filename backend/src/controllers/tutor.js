@@ -190,43 +190,124 @@ export const getTutorDashboardData = async (req, res) => {
         const userId = req.user.id;
 
         const tutor = await Tutor.findOne({ where: { userId } });
+
         if (!tutor) {
             return res.status(404).json({ message: "פרופיל מורה לא נמצא" });
         }
 
-        const pendingLessonsCount = await Booking.count({
-            where: {
-                tutorId: tutor.id,
-                status: 'pending'
-            }
+        const user = await User.findByPk(userId, {
+            attributes: ['firstName', 'lastName', 'email', 'phoneNumber', 'city', 'street', 'profileImage']
         });
 
-        const upcomingLessonsCount = await Booking.count({
+        const startOfToday = new Date();
+        startOfToday.setHours(0, 0, 0, 0);
+
+        const endOfToday = new Date();
+        endOfToday.setHours(23, 59, 59, 999);
+
+        const todayBookings = await Booking.findAll({
+            where: {
+                tutorId: tutor.id,
+                lessonDate: { [Op.between]: [startOfToday, endOfToday] },
+                status: { [Op.in]: ['confirmed', 'pending', 'completed'] }
+            },
+            order: [['startTime', 'ASC']]
+        });
+
+        const todayLessonsCount = todayBookings.filter((b) => ['confirmed', 'completed'].includes(b.status)).length;
+        const completedTodayCount = todayBookings.filter(b => b.status === 'completed').length;
+        const pendingTodayCount = todayBookings.filter(b => b.status === 'pending').length;
+        const todayUniqueStudents = new Set(todayBookings.map(b => b.studentId)).size;
+
+        const now = new Date();
+        const currentTimeString = now.toTimeString().split(' ')[0];
+
+        const futureBookings = await Booking.findAll({
             where: {
                 tutorId: tutor.id,
                 status: 'confirmed',
-                dateTime: { [Op.gte]: new Date() }
+                lessonDate: { [Op.gte]: startOfToday }
+            },
+            order: [['lessonDate', 'ASC'], ['startTime', 'ASC']]
+        });
+
+        const nextBooking = futureBookings.find(b => {
+            const bookingDate = new Date(b.lessonDate);
+            bookingDate.setHours(0, 0, 0, 0);
+
+            if (bookingDate > startOfToday) {
+                return true;
             }
+
+            const lessonEndTime = b.endTime;
+            return lessonEndTime > currentTimeString;
+        }) || null;
+
+        const totalPendingCount = await Booking.count({
+            where: { tutorId: tutor.id, status: 'pending' }
         });
 
-        const totalUniqueStudents = await Booking.count({
-            distinct: true,
-            col: 'studentId',
-            where: { tutorId: tutor.id }
+        const pendingGoalsBooking = await Booking.findOne({
+            where: {
+                tutorId: tutor.id,
+                status: 'confirmed',
+                lessonDate: { [Op.lt]: startOfToday }
+            },
+            order: [['lessonDate', 'DESC']]
         });
 
-        res.status(200).json({
-            tutorId: tutor.id,
-            stats: {
-                pendingLessons: pendingLessonsCount,
-                upcomingLessons: upcomingLessonsCount,
-                totalStudents: totalUniqueStudents,
+        return res.status(200).json({
+            tutor: {
+                id: tutor.id,
+                userId: tutor.userId,
+                carModel: tutor.carModel,
+                pricePerLesson: tutor.pricePerLesson,
+                lessonDuration: tutor.lessonDuration,
+                workStartHour: tutor.workStartHour,
+                workEndHour: tutor.workEndHour,
+                BufferTime: tutor.BufferTime,
+                experienceYears: tutor.experienceYears,
+                bio: tutor.bio,
+                NotesForStudents: tutor.NotesForStudents,
+
+                firstName: user?.firstName || req.user?.firstName || '',
+                lastName: user?.lastName || req.user?.lastName || '',
+                profileImage: user?.profileImage || null,
+
+                stats: {
+                    todayLessons: todayLessonsCount,
+                    completedToday: completedTodayCount,
+                    todayPending: pendingTodayCount,
+                    todayStudents: todayUniqueStudents,
+                    totalPending: totalPendingCount
+                },
+                nextLesson: nextBooking ? {
+                    id: nextBooking.id,
+                    studentId: nextBooking.studentId,
+                    pickupLocation: nextBooking.pickupLocation || 'טרם עודכן',
+                    startTime: nextBooking.startTime,
+                    endTime: nextBooking.endTime,
+                    lessonDate: nextBooking.lessonDate,
+                    status: nextBooking.status
+                } : null,
+                urgentAlerts: {
+                    hasPendingGoals: !!pendingGoalsBooking,
+                    pendingGoalsStudentId: pendingGoalsBooking ? pendingGoalsBooking.studentId : null,
+                    totalPendingRequests: totalPendingCount
+                },
+                systemStatus: {
+                    isOnline: true,
+                    statusText: 'מערכת תקינה ופעילה'
+                }
             }
         });
 
     } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        res.status(500).json({ message: "שגיאה בשליפת נתוני לוח הבקרה" });
+        console.error("Dashboard Error:", error);
+        return res.status(500).json({
+            message: "שגיאה בשרת",
+            error: error.message
+        });
     }
 };
 
@@ -336,3 +417,7 @@ export const getAllMyHistory = async (req, res) => {
         });
     }
 };
+
+
+// export const getAllMyAlerts = async (req, res) => {
+// }

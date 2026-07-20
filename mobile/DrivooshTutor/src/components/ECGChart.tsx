@@ -40,6 +40,24 @@ const ECGChart = ({ data }: ECGChartProps) => {
   const stepX = chartData.length > 1 ? usableWidth / (chartData.length - 1) : usableWidth;
 
   const generatePoints = () => {
+    if (chartData.length === 1) {
+      const d = chartData[0];
+      const paddingY = 20;
+      const usableHeight = CHART_HEIGHT - paddingY * 2;
+      const y = CHART_HEIGHT - paddingY - ((d.count / maxCount) * usableHeight);
+
+      const centerX = calculatedWidth / 2;
+      const startX = X_OFFSET;
+      const endX = calculatedWidth - X_OFFSET;
+
+      const pathD = `M ${startX} ${y} L ${endX} ${y}`;
+      const closedPathD = `M ${startX} ${CHART_HEIGHT} L ${startX} ${y} L ${endX} ${y} L ${endX} ${CHART_HEIGHT} Z`;
+
+      const points = [{ x: centerX, y, label: d.label, count: d.count }];
+
+      return { pathD, closedPathD, points };
+    }
+
     const points = chartData.map((d, index) => {
       const x = X_OFFSET + (index * stepX);
       const paddingY = 20;

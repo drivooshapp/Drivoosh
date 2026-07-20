@@ -158,7 +158,7 @@ function DrawerNavigator({ onLogout, userData }: any) {
                 }}
             />
             <Drawer.Screen
-                name="AllStudents"
+                name="StudentsStack"
                 component={StudentCardStack}
                 options={{
                     title: 'התלמידים שלי',

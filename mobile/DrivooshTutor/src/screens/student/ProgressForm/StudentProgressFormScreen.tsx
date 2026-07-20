@@ -27,7 +27,7 @@ const STAGE_NAMES: Record<StageType, string> = {
 };
 
 export default function StudentGoalsFormScreen({ route, navigation }: any) {
-    const { studentId, studentName } = route.params;
+    const { studentId, studentName } = route.params || {};;
     const [activeStage, setActiveStage] = useState<StageType>('A');
     const [progressData, setProgressData] = useState<GoalProgress[]>([]);
     const [headerData, setHeaderData] = useState<any>(null);

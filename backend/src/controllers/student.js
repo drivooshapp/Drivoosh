@@ -1,6 +1,7 @@
 import { model } from "mongoose";
 import { Op } from "sequelize";
 import { User, Tutor, Booking } from "../models/index.js";
+import { autoCancelExpiredBookings } from "../utils/bookingUtils.js";
 
 
 
@@ -71,10 +72,13 @@ export const getMyProfile = async (req, res) => {
 
 export const getStudentProfile = async (req, res) => {
     const { studentId } = req.params;
+    const currentTutorId = req.user.tutorId;
 
     try {
+        await autoCancelExpiredBookings();
+
         const student = await User.findByPk(studentId, {
-            attributes: ["id", "firstName", "lastName", "email", "phoneNumber", "street", "city", "profileImage", "createdAt"],
+            attributes: ["id", "firstName", "lastName", "email", "phoneNumber", "street", "city", "profileImage", "createdAt", "studentFields"],
             include: [{
                 model: Tutor,
                 as: "chosenTutor",
@@ -94,22 +98,25 @@ export const getStudentProfile = async (req, res) => {
             ]
         });
 
-        const completedLessons = bookings.filter(b => b.status === "completed");
-        const pendingOrConfirmed = bookings.filter(b => b.status === "pending" || b.status === "confirmed");
-        const cancelledLessons = bookings.filter(b => b.status === "cancelled");
+        const currentTutorBookings = bookings.filter(b => String(b.tutorId) === String(currentTutorId));
+        const completedLessons = currentTutorBookings.filter(b => b.status === "completed");
+        const pendingOrConfirmed = currentTutorBookings.filter(b => b.status === "pending" || b.status === "confirmed");
+        const cancelledLessons = currentTutorBookings.filter(b => b.status === "cancelled");
+
+        const completedWithOtherTutors = bookings.filter(
+            b => String(b.tutorId) !== String(currentTutorId) && b.status === "completed"
+        ).length;
+
+        const studentFields = student.studentFields || {};
+        const externalLessonsCount = Number(studentFields.externalLessonsCount) || 0;
+        const externalLessonsProofUrl = studentFields.externalLessonsProofUrl || null;
+        const isExternalLessonsVerified = Boolean(studentFields.isExternalLessonsVerified);
+
+        const previousLessonsCount = completedWithOtherTutors + externalLessonsCount;
+        const totalOverallCompletedLessons = completedLessons.length + previousLessonsCount;
 
         const totalPaid = completedLessons.reduce((sum, b) => sum + parseFloat(b.priceAtBooking || 0), 0);
         const upcomingRevenue = pendingOrConfirmed.reduce((sum, b) => sum + parseFloat(b.priceAtBooking || 0), 0);
-
-        const locationCounts = {};
-        bookings.forEach(b => {
-            if (b.pickupLocation) {
-                locationCounts[b.pickupLocation] = (locationCounts[b.pickupLocation] || 0) + 1;
-            }
-        });
-        const preferredPickup = Object.keys(locationCounts).reduce((a, b) =>
-            locationCounts[a] > locationCounts[b] ? a : b, null
-        );
 
         const now = new Date();
         const nextLesson = bookings.find(b =>
@@ -157,9 +164,16 @@ export const getStudentProfile = async (req, res) => {
                 profileImage: student.profileImage,
                 createdAt: student.createdAt,
                 lessonPrice: student.chosenTutor?.pricePerLesson || 0,
-                lessonDuration: student.chosenTutor?.lessonDuration || 45
+                lessonDuration: student.chosenTutor?.lessonDuration || 45,
+                studentFields
             },
             statistics: {
+                completedWithCurrentTutor: completedLessons.length,
+                previousLessonsCount,
+                externalLessonsCount,
+                externalLessonsProofUrl,
+                isExternalLessonsVerified,
+                totalOverallCompletedLessons,
                 totalLessonsCount: bookings.length,
                 completedLessons: completedLessons.length,
                 pendingLessons: pendingOrConfirmed.length,
@@ -169,9 +183,6 @@ export const getStudentProfile = async (req, res) => {
             financials: {
                 totalPaid,
                 upcomingRevenue
-            },
-            preferences: {
-                preferredPickup: preferredPickup || "לא הוגדר עדיין"
             },
             nextLesson: nextLesson ? {
                 id: nextLesson.id,
@@ -252,6 +263,54 @@ export const updateStudentProfile = async (req, res) => {
 };
 
 
+export const updateExternalLessons = async (req, res) => {
+  try {
+    const { studentId } = req.params;
+    const { externalLessonsCount, externalLessonsProofUrl, isVerified } = req.body;
+
+    const student = await User.findByPk(studentId);
+    if (!student) {
+      return res.status(404).json({ message: "תלמיד לא נמצא" });
+    }
+
+    let finalProofUrl = externalLessonsProofUrl !== undefined 
+      ? externalLessonsProofUrl 
+      : (student.studentFields?.externalLessonsProofUrl || null);
+
+    // =========================================================================
+    // 📌 לוגיקת העלאה לקובץ פיזי (אם קיים):
+    // if (req.file) {
+    //   finalProofUrl = uploadedFileUrl;
+    // }
+    // =========================================================================
+
+    // ביוצר אובייקט עדכני המשלב את השדות הקיימים ב-studentFields
+    const currentFields = student.studentFields || {};
+    const updatedStudentFields = {
+      ...currentFields,
+      externalLessonsCount: Number(externalLessonsCount),
+      externalLessonsProofUrl: finalProofUrl,
+      isExternalLessonsVerified: isVerified !== undefined ? Boolean(isVerified) : true
+    };
+
+    student.studentFields = updatedStudentFields;
+    student.changed('studentFields', true);
+
+    await student.save();
+
+    return res.json({ 
+      message: "עודכן בהצלחה", 
+      studentFields: updatedStudentFields,
+      proofUrl: finalProofUrl 
+    });
+
+  } catch (error) {
+    console.error("Error in updateExternalLessons:", error);
+    return res.status(500).json({ message: "שגיאה בעדכון הנתונים" });
+  }
+};
+
+
 export const getTutorStudentHistory = async (req, res) => {
     const tutorId = req.user.tutorId;
     const { studentId } = req.params;
@@ -281,37 +340,6 @@ export const getTutorStudentHistory = async (req, res) => {
 };
 
 
-// export const selectTutor = async (req, res) => {
-//     try {
-//         const { tutorId } = req.params;
-//         const studentId = req.user.id;
-
-//         const tutor = await Tutor.findByPk(tutorId);
-//         if (!tutor) return res.status(404).json({ message: 'המורה לא נמצא' });
-
-//         const student = await User.findByPk(studentId);
-//         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
-
-//         student.myTutor = tutorId;
-
-//         await Booking.update(
-//             { status: 'cancelled' },
-//             {
-//                 where: {
-//                     studentId: studentId,
-//                     status: ['pending', 'confirmed']
-//                 }
-//             }
-//         );
-
-//         await student.save();
-
-//         res.status(200).json({ message: 'המורה נבחר בהצלחה', user: student });
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: 'שגיאת שרת בבחירת המורה' });
-//     }
-// };
 export const selectTutor = async (req, res) => {
     try {
         const { tutorId } = req.params;
