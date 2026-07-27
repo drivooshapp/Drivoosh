@@ -59,34 +59,109 @@ export const register = async (req, res) => {
 }
 
 
+// export const login = async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+
+//         const user = await User.findOne({ where: { email } });
+
+//         if (!user) {
+//             return res.status(404).json({ message: "משתמש לא נמצא" });
+//         }
+
+//         const isPasswordValid = await bcrypt.compare(password, user.password);
+//         if (!isPasswordValid) {
+//             return res.status(401).json({ message: "סיסמה שגויה" });
+//         }
+
+//         let tutorId = null;
+//         if (user.role === 'tutor') {
+//             const tutor = await Tutor.findOne({ where: { userId: user.id } });
+//             if (tutor) {
+//                 tutorId = tutor.id;
+//             }
+//         }
+
+//         const token = jwt.sign(
+//             { id: user.id, role: user.role, tutorId: tutorId },
+//             process.env.JWT_SECRET,
+//             { expiresIn: '30d' }
+//         );
+
+//         res.status(200).json({
+//             message: "התחברת בהצלחה",
+//             token,
+//             user: {
+//                 id: user.id,
+//                 tutorId: tutorId,
+//                 firstName: user.firstName,
+//                 role: user.role,
+//                 isSetupComplete: user.isSetupComplete
+//             }
+//         });
+
+//     }
+//     catch (error) {
+//         console.error("Login Error:", error);
+//         res.status(500).json({ message: "שגיאה בתהליך ההתחברות" });
+//     }
+// };
 export const login = async (req, res) => {
     try {
+        console.log("\n=======================================");
+        console.log("📥 [Login Request Received]");
+        console.log("Request Body:", JSON.stringify(req.body, null, 2));
+
         const { email, password } = req.body;
 
+        if (!email || !password) {
+             return res.status(400).json({ message: "נא למלא אימייל וסיסמה" });
+        }
+
+        // 1. בדיקת משתמש
+        console.log(`🔎 Searching for user with email: ${email}`);
         const user = await User.findOne({ where: { email } });
 
         if (!user) {
+            console.log(`❌ User not found: ${email}`);
             return res.status(404).json({ message: "משתמש לא נמצא" });
         }
+        console.log(`✅ User found: ID ${user.id}, Role: ${user.role}`);
 
+        // 2. בדיקת סיסמה
+        console.log("🔑 Comparing password...");
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
+            console.log("❌ Password incorrect");
             return res.status(401).json({ message: "סיסמה שגויה" });
         }
+        console.log("✅ Password valid");
 
+        // 3. מציאת TutorID במידת הצורך
         let tutorId = null;
         if (user.role === 'tutor') {
+            console.log(`🔎 Searching for Tutor profile linked to User ID ${user.id}`);
             const tutor = await Tutor.findOne({ where: { userId: user.id } });
             if (tutor) {
                 tutorId = tutor.id;
+                console.log(`✅ Tutor profile found: ID ${tutorId}`);
+            } else {
+                console.log(`⚠️ WARNING: User is role 'tutor' but no Tutor profile found in DB.`);
             }
         }
 
+        // 4. יצירת Token
+        console.log("🎫 Signing JWT Token...");
         const token = jwt.sign(
             { id: user.id, role: user.role, tutorId: tutorId },
             process.env.JWT_SECRET,
             { expiresIn: '30d' }
         );
+        console.log("✅ Token generated successfully");
+
+        // 5. שליחת תשובה
+        console.log("📤 Sending successful login response");
+        console.log("=======================================\n");
 
         res.status(200).json({
             message: "התחברת בהצלחה",
@@ -102,7 +177,34 @@ export const login = async (req, res) => {
 
     }
     catch (error) {
-        console.error("Login Error:", error);
+        // --- לוגים מורחבים ל-CATCH ---
+        console.error("\n=======================================");
+        console.error("❌ [CRITICAL LOGIN ERROR CAUGHT]");
+        
+        // 1. הדפסת האובייקט המלא כדי לראות את סוג השגיאה
+        console.error("Full Error Object:", error);
+
+        // 2. ספציפית עבור Sequelize (חיבור ל-DB)
+        if (error.name === 'SequelizeConnectionError') {
+            console.error("🛑 DATABASE CONNECTION FAILED (Sequelize)");
+             return res.status(503).json({ message: "שגיאת שרת: לא ניתן להתחבר לבסיס הנתונים" });
+        }
+        
+        // 3. שגיאות חיבור לרשת
+        if (error.code === 'ECONNREFUSED') {
+            console.error("🛑 NETWORK ERROR: Connection refused (Check DB host/port)");
+            return res.status(503).json({ message: "שגיאת שרת: שרת בסיס הנתונים אינו זמין" });
+        }
+
+        // 4. הדפסת ה-Stack Trace לדיבאג מעמיק
+        if (error.stack) {
+             console.error("Stack Trace:\n", error.stack);
+        }
+        
+        console.error("=======================================\n");
+        // -------------------------------------
+
+        // תשובה כללית לפרונט כדי לא לחשוף מידע רגיש
         res.status(500).json({ message: "שגיאה בתהליך ההתחברות" });
     }
 };
