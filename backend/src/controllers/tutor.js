@@ -1,6 +1,6 @@
 import { User, Tutor, Booking, Review } from '../models/index.js';
 import { Op } from 'sequelize';
-
+import { autoCancelExpiredBookings } from '../utils/bookingUtils.js';
 
 
 export const getAllTutors = async (req, res) => {
@@ -188,12 +188,13 @@ export const updateTutorProfile = async (req, res) => {
 export const getTutorDashboardData = async (req, res) => {
     try {
         const userId = req.user.id;
-
         const tutor = await Tutor.findOne({ where: { userId } });
 
         if (!tutor) {
             return res.status(404).json({ message: "פרופיל מורה לא נמצא" });
         }
+
+        await autoCancelExpiredBookings();
 
         const user = await User.findByPk(userId, {
             attributes: ['firstName', 'lastName', 'email', 'phoneNumber', 'city', 'street', 'profileImage']
