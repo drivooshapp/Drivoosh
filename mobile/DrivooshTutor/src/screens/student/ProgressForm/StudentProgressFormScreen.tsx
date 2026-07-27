@@ -86,7 +86,7 @@ export default function StudentGoalsFormScreen({ route, navigation }: any) {
             if (!isStudentFullySigned) {
                 Alert.alert(
                     'חתימה חסרה',
-                    'על התלמיד לחתום קודם על אישור פרק ב׳ בשלב ד׳ באפליקציה שלו לפני שתוכל לבצע עדכון סופי לטופס משרד הרישוי.'
+                    'על התלמיד לחתום קודם על אישור פרק ב׳ בשלב ד׳ באפליקציה שלו לפני שתוכל לבצע עדכון סופי לטופס.'
                 );
                 return;
             }
