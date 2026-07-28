@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, ActivityIndicator, Image, RefreshControl, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, FlatList, Image, RefreshControl, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '@/src/api/apiClient';
 import HistoryFilters from '../../components/HistoryFilters';
+import LoadingScreen from '@/src/components/LoadingScreen';
 
 interface HistoryLesson {
   id: string;
@@ -159,13 +160,7 @@ export default function AllHistoryScreen({ navigation }: any) {
     );
   };
 
-  if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="small" color="#019cbb" />
-      </View>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   const hasActiveFilters = searchName.trim() !== '' || searchCity.trim() !== '' || searchDate.trim() !== '' || paidStatus !== 'all';
 

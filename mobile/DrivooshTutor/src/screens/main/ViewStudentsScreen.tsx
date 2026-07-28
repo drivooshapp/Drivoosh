@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, ActivityIndicator, Image, RefreshControl, Modal, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Image, RefreshControl, Modal, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import LoadingScreen from '@/src/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '@/src/api/apiClient';
 
@@ -116,13 +117,7 @@ export default function ViewStudentsScreen({ navigation }: any) {
     </TouchableOpacity>
   );
 
-  if (loading) {
-    return (
-      <View style={styles.centerContainer}>
-        <ActivityIndicator size="small" color="#019cbb" />
-      </View>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   return (
     <View style={styles.container}>

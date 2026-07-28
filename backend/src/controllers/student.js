@@ -74,7 +74,6 @@ export const getMyProfile = async (req, res) => {
 export const getStudentProfile = async (req, res) => {
     const { studentId } = req.params;
     const currentTutorId = req.user.tutorId;
-
     try {
         await autoCancelExpiredBookings();
 

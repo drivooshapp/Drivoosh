@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, FlatList, Alert, ActivityIndicator, Platform, KeyboardAvoidingView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '@/src/api/apiClient';
+import LoadingScreen from '@/src/components/LoadingScreen';
 
 interface TutorNote {
   id: string;
@@ -118,9 +119,7 @@ export default function MessagesScreen({ navigation }: any) {
       </View>
 
       {loading ? (
-        <View style={styles.center}>
-          <ActivityIndicator size="small" color="#019cbb" />
-        </View>
+        <LoadingScreen />
       ) : (
         <FlatList
           data={notes}

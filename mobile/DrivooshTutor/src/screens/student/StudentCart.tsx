@@ -301,7 +301,8 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
                   <View style={styles.alertIconBg}>
                     <Ionicons name="warning" size={14} color="#D97706" />
                   </View>
-                  <Text style={styles.alertText}>טרם מולא משוב בטופס המטרות לשיעורים שחלפו</Text>                </View>
+                  <Text style={styles.alertText}>טרם מולא משוב בטופס המטרות לשיעורים שחלפו</Text>
+                </View>
                 <View style={styles.alertLeftAction}>
                   <Text style={styles.alertActionText}>{"מלא\nעכשיו"}</Text>
                   <Ionicons name="chevron-back" size={14} color="#D97706" />

@@ -77,58 +77,60 @@ export const updateGoalProgress = async (req, res) => {
             return res.status(404).json({ message: 'סעיף זה לא נמצא' });
         }
 
-        const totalLessonsCount = await Booking.count({ where: { studentId } });
+        if (!progress.lessonId) {
+            const totalLessonsCount = await Booking.count({ where: { studentId } });
 
-        if (totalLessonsCount === 0) {
-            return res.status(400).json({
-                message: 'צריך לעבור לפחות שיעור אחד קודם עדכון המטרה'
-            });
-        }
+            if (totalLessonsCount === 0) {
+                return res.status(400).json({
+                    message: 'צריך לעבור לפחות שיעור אחד קודם עדכון המטרה'
+                });
+            }
 
-        const now = new Date();
-        const currentDate = now.toISOString().split("T")[0];
-        const currentTime = now.toTimeString().substring(0, 5);
+            const now = new Date();
+            const currentDate = now.toISOString().split("T")[0];
+            const currentTime = now.toTimeString().substring(0, 5);
 
-        let targetLesson = await Booking.findOne({
-            where: {
-                studentId,
-                status: 'confirmed',
-                [Op.or]: [
-                    { lessonDate: { [Op.lt]: currentDate } },
-                    {
-                        lessonDate: currentDate,
-                        endTime: { [Op.lt]: currentTime }
-                    }
-                ]
-            },
-            order: [['lessonDate', 'ASC'], ['startTime', 'ASC']]
-        });
-
-        if (!targetLesson) {
-            targetLesson = await Booking.findOne({
+            let targetLesson = await Booking.findOne({
                 where: {
                     studentId,
-                    status: 'completed'
+                    status: 'confirmed',
+                    [Op.or]: [
+                        { lessonDate: { [Op.lt]: currentDate } },
+                        {
+                            lessonDate: currentDate,
+                            endTime: { [Op.lt]: currentTime }
+                        }
+                    ]
                 },
-                order: [['lessonDate', 'DESC'], ['startTime', 'DESC']]
+                order: [['lessonDate', 'ASC'], ['startTime', 'ASC']]
             });
-        }
 
-        if (!targetLesson) {
-            return res.status(400).json({ message: 'לא נמצאו שיעורים עבור תלמיד זה' });
-        }
+            if (!targetLesson) {
+                targetLesson = await Booking.findOne({
+                    where: {
+                        studentId,
+                        status: 'completed'
+                    },
+                    order: [['lessonDate', 'DESC'], ['startTime', 'DESC']]
+                });
+            }
 
-        progress.lessonId = targetLesson.id;
+            if (!targetLesson) {
+                return res.status(400).json({ message: 'לא נמצאו שיעורים עבור תלמיד זה' });
+            }
+
+            progress.lessonId = targetLesson.id;
+
+            if (targetLesson.status === 'confirmed') {
+                await targetLesson.update({ status: 'completed' });
+            }
+        }
 
         if (isChecked !== undefined) progress.isChecked = isChecked;
         if (rating !== undefined) progress.rating = rating;
         if (notes !== undefined) progress.notes = notes;
 
         await progress.save();
-
-        if (targetLesson.status === 'confirmed') {
-            await targetLesson.update({ status: 'completed' });
-        }
 
         return res.status(200).json({ message: 'עודכן בהצלחה', progress });
 

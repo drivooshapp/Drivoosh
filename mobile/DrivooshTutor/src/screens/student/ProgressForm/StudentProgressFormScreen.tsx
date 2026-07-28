@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
+import LoadingScreen from '@/src/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../../../api/apiClient';
 import LessonReview from '../../../components/FormModal/LessonReview';
@@ -114,9 +115,7 @@ export default function StudentGoalsFormScreen({ route, navigation }: any) {
         }
     };
 
-    if (loading) {
-        return <View style={styles.centered}><ActivityIndicator size="large" color="#00A8B5" /></View>;
-    }
+    if (loading) return <LoadingScreen />;
 
     const currentStageGoals = progressData.filter(g => g.goalDetails.stage === activeStage);
 

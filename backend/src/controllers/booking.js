@@ -1,4 +1,4 @@
-import { Booking, Tutor, User } from '../models/index.js';
+import { Booking, Tutor, User, StudentGoalProgress, LessonGoal } from '../models/index.js';
 import { Op, Sequelize } from 'sequelize';
 
 
@@ -409,68 +409,141 @@ export const updateBookingStatus = async (req, res) => {
 };
 
 
+export const getGoalsBooking = async (req, res) => {
+    const { bookingId } = req.params;
+
+    try {
+        const goals = await StudentGoalProgress.findAll({
+            where: { lessonId: bookingId },
+            include: [{
+                model: LessonGoal,
+                as: 'goalDetails',
+                attributes: ['title']
+            }]
+        });
+
+        return res.status(200).json({
+            success: true,
+            goals: goals
+        });
+
+    } catch (error) {
+        console.log("Error fetching goals for lesson:", error);
+        return res.status(500).json({ message: "שגיאה בשליפת מטרות השיעור" });
+    }
+};
+
+
+// export const cancelBooking = async (req, res) => {
+//     try {
+//         const { bookingId } = req.params;
+//         const studentId = req.user.id;
+
+//         const booking = await Booking.findOne({ where: { id: bookingId, studentId } });
+
+//         if (!booking) {
+//             return res.status(404).json({ message: "הזמנה לא נמצאה" });
+//         }
+
+//         try {
+//             const now = new Date();
+
+//             const lessonDateObj = new Date(booking.lessonDate);
+//             const datePart = lessonDateObj.toISOString().split('T')[0];
+
+//             const lessonFullDateTime = new Date(`${datePart}T${booking.startTime}`);
+
+//             const hoursLeft = (lessonFullDateTime - now) / (1000 * 60 * 60);
+
+//             if (hoursLeft < 24) {
+//                 return res.status(200).json({
+//                     success: false,
+//                     message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
+//                 });
+//             }
+//         } catch (dateError) {
+//             throw new Error("שגיאה בחישוב הזמן לביטול - ודא פורמט תאריך ושעה תקינים");
+//         }
+
+//         booking.status = 'cancelled';
+//         await booking.save();
+
+//         res.status(200).json({ message: "השיעור בוטל בהצלחה" });
+
+//     } catch (error) {
+//         res.status(500).json({ message: "שגיאה בביטול השיעור", error: error.message });
+//     }
+// };
+
 export const cancelBooking = async (req, res) => {
     try {
         const { bookingId } = req.params;
-        const studentId = req.user.id;
+        const userId = req.user.id;
+        const userRole = req.user.role;
 
-        const booking = await Booking.findOne({ where: { id: bookingId, studentId } });
+        console.log("User ID:", userId, "| Role:", userRole);
 
-        if (!booking) {
-            return res.status(404).json({ message: "הזמנה לא נמצאה" });
+        const query = { id: bookingId };
+
+        if (userRole === 'student') {
+            query.studentId = userId;
+        } else if (userRole === 'tutor' || userRole === 'teacher') {
+            // אם ה-userId בטוקן הוא של טבלת ה-User, נצטרך למצוא את ה-Tutor ששייך אליו
+            const tutor = await Tutor.findOne({ where: { userId: userId } });
+            
+            if (!tutor) {
+                return res.status(400).json({ message: "פרופיל מורה לא נמצא עבור משתמש זה" });
+            }
+
+            // השימוש בשדה הנכון מתוך מודל ה-Booking (tutorId)
+            query.tutorId = tutor.id; 
+            
+            // * הערה: אם במקרה ה-req.user.id שלך הוא כבר ה-id של טבלת ה-Tutor ישירות, 
+            // פשוט תשתמשי ב: query.tutorId = userId; ותמחקי את השליפה של Tutor מעל.
         }
 
-        try {
-            const now = new Date();
+        console.log("Search Query:", query);
 
-            const lessonDateObj = new Date(booking.lessonDate);
-            const datePart = lessonDateObj.toISOString().split('T')[0];
+        const booking = await Booking.findOne({ where: query });
 
-            const lessonFullDateTime = new Date(`${datePart}T${booking.startTime}`);
+        if (!booking) {
+            return res.status(400).json({ message: "הזמנה לא נמצאה עבור משתמש זה" });
+        }
 
-            const hoursLeft = (lessonFullDateTime - now) / (1000 * 60 * 60);
+        // הגבלת 24 שעות חלה רק על תלמידים
+        if (userRole === 'student') {
+            try {
+                const now = new Date();
+                const lessonDateObj = new Date(booking.lessonDate);
+                const datePart = lessonDateObj.toISOString().split('T')[0];
+                const lessonFullDateTime = new Date(`${datePart}T${booking.startTime}`);
 
-            if (hoursLeft < 24) {
-                return res.status(200).json({
-                    success: false,
-                    message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
-                });
+                const hoursLeft = (lessonFullDateTime - now) / (1000 * 60 * 60);
+
+                if (hoursLeft < 24) {
+                    return res.status(200).json({
+                        success: false,
+                        message: "ביטול פחות מ-24 שעות לפני השיעור דורש תיאום טלפוני מול המורה"
+                    });
+                }
+            } catch (dateError) {
+                throw new Error("שגיאה בחישוב הזמן לביטול - ודא פורמט תאריך ושעה תקינים");
             }
-        } catch (dateError) {
-            throw new Error("שגיאה בחישוב הזמן לביטול - ודא פורמט תאריך ושעה תקינים");
         }
 
         booking.status = 'cancelled';
         await booking.save();
 
-        res.status(200).json({ message: "השיעור בוטל בהצלחה" });
+        res.status(200).json({ 
+            success: true, 
+            message: "השיעור בוטל בהצלחה" 
+        });
 
     } catch (error) {
         res.status(500).json({ message: "שגיאה בביטול השיעור", error: error.message });
     }
 };
 
-
-// export const confirmBooking = async (req, res) => {
-//     try {
-//         const { bookingId } = req.params;
-//         const tutorId = req.user.tutorId;
-
-//         const booking = await Booking.findOne({ where: { id: bookingId, tutorId } });
-
-//         if (!booking) { return res.status(404).json({ message: "השיעור לא נמצא" }); }
-
-//         booking.status = 'confirmed';
-
-//         await booking.save();
-
-//         res.status(200).json({ success: true, message: "השיעור אושר בהצלחה" });
-
-//     } catch (error) {
-//         console.error(error);
-//         res.status(500).json({ message: "שגיאה באישור השיעור", error: error.message });
-//     }
-// };
 
 export const confirmBooking = async (req, res) => {
     try {
