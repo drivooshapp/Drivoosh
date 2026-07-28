@@ -8,9 +8,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // //     : "https://drivoosh-1.onrender.com/api";
     
 // const BASE_URL = process.env.EXPO_PUBLIC_URL_SERVER || "https://drivoosh-1.onrender.com/api";
-const BASE_URL = process.env.EXPO_LOCAL_URL_SERVER
-    ? `${process.env.EXPO_LOCAL_URL_SERVER}/api`
-    : "https://drivoosh-1.onrender.com/api";
+const BASE_URL = process.env.EXPO_PUBLIC_LOCAL_URL_SERVER
+    ? process.env.EXPO_PUBLIC_LOCAL_URL_SERVER
+    : process.env.EXPO_PUBLIC_URL_SERVER;
 
 console.log("Connect to API at:", BASE_URL);
 

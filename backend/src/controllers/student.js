@@ -70,6 +70,7 @@ export const getMyProfile = async (req, res) => {
 // };
 
 
+
 export const getStudentProfile = async (req, res) => {
     const { studentId } = req.params;
     const currentTutorId = req.user.tutorId;
@@ -126,6 +127,24 @@ export const getStudentProfile = async (req, res) => {
         const pastLessons = bookings.filter(b => new Date(b.lessonDate) < now);
         const lastLesson = pastLessons[pastLessons.length - 1] || null;
 
+        const hasUncompletedPastConfirmedLesson = currentTutorBookings.some(b => {
+            if (b.status !== 'confirmed') return false;
+
+            const dateOnly = b.lessonDate instanceof Date
+                ? b.lessonDate.toISOString().split('T')[0]
+                : String(b.lessonDate).split('T')[0];
+
+            const lessonDateTime = new Date(`${dateOnly}T${b.endTime || '23:59:59'}`);
+
+            if (isNaN(lessonDateTime.getTime())) {
+                return false;
+            }
+
+            const isPast = lessonDateTime < now;
+
+            return isPast;
+        });
+
         const monthsMap = {};
         const monthNamesHe = ["ינו׳", "פבר׳", "מרץ", "אפר׳", "מאי", "יוני", "יולי", "אוג׳", "ספט׳", "אוק׳", "נוב׳", "דצמ׳"];
 
@@ -178,7 +197,8 @@ export const getStudentProfile = async (req, res) => {
                 completedLessons: completedLessons.length,
                 pendingLessons: pendingOrConfirmed.length,
                 cancelledLessons: cancelledLessons.length,
-                cancellationRate: bookings.length > 0 ? Math.round((cancelledLessons.length / bookings.length) * 100) : 0
+                cancellationRate: bookings.length > 0 ? Math.round((cancelledLessons.length / bookings.length) * 100) : 0,
+                hasUncompletedPastConfirmedLesson
             },
             financials: {
                 totalPaid,
@@ -264,50 +284,50 @@ export const updateStudentProfile = async (req, res) => {
 
 
 export const updateExternalLessons = async (req, res) => {
-  try {
-    const { studentId } = req.params;
-    const { externalLessonsCount, externalLessonsProofUrl, isVerified } = req.body;
+    try {
+        const { studentId } = req.params;
+        const { externalLessonsCount, externalLessonsProofUrl, isVerified } = req.body;
 
-    const student = await User.findByPk(studentId);
-    if (!student) {
-      return res.status(404).json({ message: "תלמיד לא נמצא" });
+        const student = await User.findByPk(studentId);
+        if (!student) {
+            return res.status(404).json({ message: "תלמיד לא נמצא" });
+        }
+
+        let finalProofUrl = externalLessonsProofUrl !== undefined
+            ? externalLessonsProofUrl
+            : (student.studentFields?.externalLessonsProofUrl || null);
+
+        // =========================================================================
+        // 📌 לוגיקת העלאה לקובץ פיזי (אם קיים):
+        // if (req.file) {
+        //   finalProofUrl = uploadedFileUrl;
+        // }
+        // =========================================================================
+
+        // ביוצר אובייקט עדכני המשלב את השדות הקיימים ב-studentFields
+        const currentFields = student.studentFields || {};
+        const updatedStudentFields = {
+            ...currentFields,
+            externalLessonsCount: Number(externalLessonsCount),
+            externalLessonsProofUrl: finalProofUrl,
+            isExternalLessonsVerified: isVerified !== undefined ? Boolean(isVerified) : true
+        };
+
+        student.studentFields = updatedStudentFields;
+        student.changed('studentFields', true);
+
+        await student.save();
+
+        return res.json({
+            message: "עודכן בהצלחה",
+            studentFields: updatedStudentFields,
+            proofUrl: finalProofUrl
+        });
+
+    } catch (error) {
+        console.error("Error in updateExternalLessons:", error);
+        return res.status(500).json({ message: "שגיאה בעדכון הנתונים" });
     }
-
-    let finalProofUrl = externalLessonsProofUrl !== undefined 
-      ? externalLessonsProofUrl 
-      : (student.studentFields?.externalLessonsProofUrl || null);
-
-    // =========================================================================
-    // 📌 לוגיקת העלאה לקובץ פיזי (אם קיים):
-    // if (req.file) {
-    //   finalProofUrl = uploadedFileUrl;
-    // }
-    // =========================================================================
-
-    // ביוצר אובייקט עדכני המשלב את השדות הקיימים ב-studentFields
-    const currentFields = student.studentFields || {};
-    const updatedStudentFields = {
-      ...currentFields,
-      externalLessonsCount: Number(externalLessonsCount),
-      externalLessonsProofUrl: finalProofUrl,
-      isExternalLessonsVerified: isVerified !== undefined ? Boolean(isVerified) : true
-    };
-
-    student.studentFields = updatedStudentFields;
-    student.changed('studentFields', true);
-
-    await student.save();
-
-    return res.json({ 
-      message: "עודכן בהצלחה", 
-      studentFields: updatedStudentFields,
-      proofUrl: finalProofUrl 
-    });
-
-  } catch (error) {
-    console.error("Error in updateExternalLessons:", error);
-    return res.status(500).json({ message: "שגיאה בעדכון הנתונים" });
-  }
 };
 
 

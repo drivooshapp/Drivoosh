@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Platform, Modal, TextInput, Linking, Alert } from "react-native";
+import React, { useCallback, useState } from "react";
+import { useFocusEffect } from "@react-navigation/native";
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, Platform, Linking, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import apiClient from "../../../src/api/apiClient";
 import ECGChart from "../../../src/components/ECGChart";
 import { EditExternalLessonsModal } from "../../components/EditExternalLessonsModal";
+import LoadingScreen from "@/src/components/LoadingScreen";
 
 interface StudentProfileProps { route: any; navigation: any; }
 
@@ -16,7 +18,7 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
   const [chartVisibleData, setChartVisibleData] = useState<{ label: string, count: number }[]>([]);
   const [hiddenMonthsCount, setHiddenMonthsCount] = useState(0);
 
-  useEffect(() => {
+  const fetchStudentData = () => {
     apiClient.get(`student/getStudent/${studentId}`)
       .then(res => {
         setData(res.data);
@@ -27,10 +29,16 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
       })
       .catch(err => console.log("Error loading student:", err))
       .finally(() => setLoading(false));
-  }, [studentId]);
+  };
 
-  if (loading) return <View style={styles.center}><ActivityIndicator size="small" color="#00C2E8" /></View>;
-  if (!data) return <View style={styles.center}><Text style={styles.infoText}>לא נמצאו נתונים עבור תלמיד זה</Text></View>;
+  useFocusEffect(
+    useCallback(() => {
+      fetchStudentData();
+    }, [studentId])
+  );
+
+  if (loading) return <LoadingScreen />;
+  if (!data) return <View style={styles.center}><Text style={styles.infoText}>שגיאה בטעינת הנתונים עבור תלמיד זה</Text></View>;
 
   const student = data.student || {};
   const statistics = data.statistics || {
@@ -42,7 +50,8 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
     externalLessonsCount: 0,
     externalLessonsProofUrl: null,
     isExternalLessonsVerified: false,
-    totalOverallCompletedLessons: 0
+    totalOverallCompletedLessons: 0,
+    hasUncompletedPastConfirmedLesson: false
   };
   const financials = data.financials || { totalPaid: 0 };
   const nextLesson = data.nextLesson;
@@ -276,56 +285,67 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
           </View>
         )}
 
-        {!lastLesson || lastLesson.status == 'completed' ? (
-          <View style={styles.formCard}>
-            <View style={styles.formCardHeader}>
-              <View style={styles.formCardHeaderRight}>
-                <Ionicons name="document-text-outline" size={20} color="#007890" />
-                <Text style={styles.formCardTitle}>טופס מטרות לימוד</Text>
+        {(() => {
+          if (!lastLesson) {
+            return null;
+          }
+
+          if (statistics?.hasUncompletedPastConfirmedLesson) {
+            return (
+              <TouchableOpacity
+                style={styles.alertBanner}
+                onPress={() => navigation.navigate("ProgressFormScreen", { studentId, studentName })}
+                activeOpacity={0.8}
+              >
+                <View style={styles.alertRightContent}>
+                  <View style={styles.alertIconBg}>
+                    <Ionicons name="warning" size={14} color="#D97706" />
+                  </View>
+                  <Text style={styles.alertText}>טרם מולא משוב בטופס המטרות לשיעורים שחלפו</Text>                </View>
+                <View style={styles.alertLeftAction}>
+                  <Text style={styles.alertActionText}>{"מלא\nעכשיו"}</Text>
+                  <Ionicons name="chevron-back" size={14} color="#D97706" />
+                </View>
+              </TouchableOpacity>
+            );
+          }
+
+          return (
+            <View style={styles.formCard}>
+              <View style={styles.formCardHeader}>
+                <View style={styles.formCardHeaderRight}>
+                  <Ionicons name="document-text-outline" size={20} color="#007890" />
+                  <Text style={styles.formCardTitle}>טופס מטרות לימוד</Text>
+                </View>
               </View>
-            </View>
 
-            <Text style={styles.formCardSubtext}>
-              צפייה, מילוי ועדכון שלבי הלמידה והמיומנויות של התלמיד בקורס.
-            </Text>
+              <Text style={styles.formCardSubtext}>
+                צפייה, מילוי ועדכון שלבי הלמידה והמיומנויות של התלמיד בקורס.
+              </Text>
 
-            <View style={styles.statusBadge}>
-              {lastLesson && lastLesson.status === "completed" ? <>
-                <View style={styles.statusDot} />
-                <Text style={styles.statusLabelText}>
-                  {'סטטוס שיעור אחרון: '}
-                  <Text style={styles.statusValueText}>מעודכן</Text>
-                </Text></>
-                : null}
-            </View>
-
-            <TouchableOpacity
-              style={styles.formCardButton}
-              onPress={() => navigation.navigate("ProgressFormScreen", { studentId, studentName })}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.formCardButtonText}>לטופס</Text>
-              <Ionicons name="chevron-back" size={12} color="#007890" />
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <TouchableOpacity
-            style={styles.alertBanner}
-            onPress={() => navigation.navigate("ProgressFormScreen", { studentId, studentName })}
-            activeOpacity={0.8}
-          >
-            <View style={styles.alertRightContent}>
-              <View style={styles.alertIconBg}>
-                <Ionicons name="warning" size={14} color="#D97706" />
+              <View style={styles.statusBadge}>
+                {lastLesson.status === 'completed' && (
+                  <>
+                    <View style={styles.statusDot} />
+                    <Text style={styles.statusLabelText}>
+                      {'סטטוס שיעור אחרון: '}
+                      <Text style={styles.statusValueText}>מעודכן</Text>
+                    </Text>
+                  </>
+                )}
               </View>
-              <Text style={styles.alertText}>טרם מולא משוב בטופס המטרות לשיעור האחרון</Text>
+
+              <TouchableOpacity
+                style={styles.formCardButton}
+                onPress={() => navigation.navigate("ProgressFormScreen", { studentId, studentName })}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.formCardButtonText}>לטופס</Text>
+                <Ionicons name="chevron-back" size={12} color="#007890" />
+              </TouchableOpacity>
             </View>
-            <View style={styles.alertLeftAction}>
-              <Text style={styles.alertActionText}>מלא עכשיו</Text>
-              <Ionicons name="chevron-back" size={14} color="#D97706" />
-            </View>
-          </TouchableOpacity>
-        )}
+          );
+        })()}
 
         <Text style={[styles.timelineLabel, { marginTop: 16 }]}>השיעור הבא</Text>
         {nextLesson ? (
@@ -438,7 +458,7 @@ const styles = StyleSheet.create({
   alertIconBg: { width: 26, height: 26, borderRadius: 8, backgroundColor: '#FEF3C7', justifyContent: 'center', alignItems: 'center' },
   alertText: { fontSize: 12.5, fontWeight: '700', color: '#92400E', textAlign: 'right', flex: 1 },
   alertLeftAction: { flexDirection: 'row-reverse', alignItems: 'center', gap: 2 },
-  alertActionText: { fontSize: 12, fontWeight: '800', color: '#D97706' },
+  alertActionText: { fontSize: 12, fontWeight: '800', color: '#D97706', textAlign: 'center' },
   formCard: { backgroundColor: '#eefcff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#a7e4f1', marginVertical: 10 },
   formCardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   formCardHeaderRight: { flexDirection: 'row-reverse', alignItems: 'center' },

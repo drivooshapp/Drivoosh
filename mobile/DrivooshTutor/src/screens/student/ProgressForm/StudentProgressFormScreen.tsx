@@ -109,7 +109,7 @@ export default function StudentGoalsFormScreen({ route, navigation }: any) {
             setModalVisible(false);
             fetchFormDetails();
         } catch (e) {
-            console.log(e);
+            console.log("error", e);
             Alert.alert('שגיאה', 'שמירת ההתקדמות נכשלה');
         }
     };
