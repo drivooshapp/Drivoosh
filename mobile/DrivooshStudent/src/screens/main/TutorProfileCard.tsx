@@ -71,14 +71,14 @@ export default function TutorDetails({ route, navigation }: any) {
             }
         };
         loadData();
-    }, [tutorId]); // הורדנו את isStudentOfTutor כדי למנוע לופים מיותרים
+    }, [tutorId]);
 
     const fetchTutorDetails = async () => {
         try {
             setLoading(true);
             const response = await apiClient.get(`/tutor/getTutor/${tutorId}`);
             setTutor(response.data);
-            return response.data; // מחזיר את המידע ישירות להמשך עיבוד סנכרוני
+            return response.data;
         } catch (e) {
             console.error(e);
             Alert.alert('שגיאה', 'שגיאה בטעינת פרטי המורה. נסה שוב.');
@@ -102,7 +102,6 @@ export default function TutorDetails({ route, navigation }: any) {
                 setIsStudentOfTutor(false);
             }
 
-            // שימוש בפרמטר שמועבר סנכרונית כדי למנוע מצב שהמדינה (State) עדיין null
             const activeTutor = currentTutor;
             if (activeTutor && activeTutor.reviews && currentUser) {
                 const alreadyReviewed = activeTutor.reviews.some(
@@ -148,6 +147,7 @@ export default function TutorDetails({ route, navigation }: any) {
     //     }
     // }
     // };
+
     const handleSubmitReview = async () => {
         if (!content.trim()) {
             Alert.alert("שגיאה", "נא למלא תוכן להמלצה");
@@ -181,9 +181,11 @@ export default function TutorDetails({ route, navigation }: any) {
                     Alert.alert('בוצע', `בחרת ב${tutor.user?.firstName} כמורה שלך.`);
                     await checkStudentStatus();
                 }
-            } catch (e) {
+            }
+            catch (e: any) {
                 console.error(e);
-                Alert.alert('שגיאה', 'בחירת המורה נכשלה');
+                const errorMessage = e.response?.data?.message || 'בחירת המורה נכשלה';
+                Alert.alert('שגיאה', errorMessage);
             } finally {
                 setLoading(false);
             }
@@ -221,8 +223,11 @@ export default function TutorDetails({ route, navigation }: any) {
                             await apiClient.put(`/student/unselectTutor`);
                             setIsStudentOfTutor(false);
                             Alert.alert("השיוך בוטל", "כעת ניתן לבחור מורה חדש.");
-                        } catch (e) {
-                            Alert.alert("שגיאה", "הסרת מורה נכשלה");
+                            await checkStudentStatus();
+                        } catch (e: any) {
+                            console.error(e);
+                            const errorMessage = e.response?.data?.message || "הסרת מורה נכשלה";
+                            Alert.alert("שים לב", errorMessage);
                         }
                     }
                 }

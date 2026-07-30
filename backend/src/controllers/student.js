@@ -1,8 +1,9 @@
 import { model } from "mongoose";
 import { Op } from "sequelize";
-import { User, Tutor, Booking } from "../models/index.js";
+import { User, Tutor, Booking, Notification } from "../models/index.js";
+import { NOTIFICATION_TYPES } from "../models/Notification.js";
 import { autoCancelExpiredBookings } from "../utils/bookingUtils.js";
-
+import { validateStudentCanDisconnectOrSwitchTutor } from "../utils/studentTutorValidation.js";
 
 
 export const getAllUsers = async (req, res) => {
@@ -68,7 +69,6 @@ export const getMyProfile = async (req, res) => {
 //         res.status(500).json({ message: "שגיאה בשליפת נתוני המשתמש הנוכחי" });
 //     }
 // };
-
 
 
 export const getStudentProfile = async (req, res) => {
@@ -359,6 +359,109 @@ export const getTutorStudentHistory = async (req, res) => {
 };
 
 
+// export const selectTutor = async (req, res) => {
+//     try {
+//         const { tutorId } = req.params;
+//         const studentId = req.user.id;
+
+//         const tutor = await Tutor.findByPk(tutorId);
+//         if (!tutor) return res.status(404).json({ message: 'המורה לא נמצא' });
+
+//         const student = await User.findByPk(studentId);
+//         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
+
+//         const currentTutorId = student.myTutor;
+
+//         if (currentTutorId) {
+//             const validationResult = await validateStudentCanDisconnectOrSwitchTutor(studentId, currentTutorId);
+//             if (!validationResult.allowed) {
+//                 return res.status(validationResult.status).json({ message: validationResult.message });
+//             }
+
+//             await Notification.destroy({
+//                 where: {
+//                     studentId,
+//                     tutorId: currentTutorId,
+//                     type: NOTIFICATION_TYPES.PENDING_GOALS
+//                 }
+//             });
+//         }
+
+//         student.myTutor = tutorId;
+
+//         student.studentFields = {
+//             ...(student.studentFields || {}),
+//             tutorSelectedAt: new Date()
+//         };
+
+//         student.changed('studentFields', true);
+
+//         await Booking.update(
+//             { status: 'cancelled' },
+//             {
+//                 where: {
+//                     studentId: studentId,
+//                     tutorId: currentTutorId,
+//                     status: ['pending', 'confirmed']
+//                 }
+//             }
+//         );
+
+//         await student.save();
+//         res.status(200).json({ message: 'המורה נבחר בהצלחה', user: student });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'שגיאת שרת בבחירת המורה' });
+//     }
+// };
+
+
+// export const unselectTutor = async (req, res) => {
+//     const studentId = req.user.id;
+
+//     try {
+//         const student = await User.findByPk(studentId);
+//         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
+
+//         const currentTutorId = student.myTutor;
+
+//         if (currentTutorId) {
+//             const validationResult = await validateStudentCanDisconnectOrSwitchTutor(studentId, currentTutorId);
+//             if (!validationResult.allowed) {
+//                 return res.status(validationResult.status).json({ message: validationResult.message });
+//             }
+
+//             await Notification.destroy({
+//                 where: {
+//                     studentId,
+//                     tutorId: currentTutorId,
+//                     type: NOTIFICATION_TYPES.PENDING_GOALS
+//                 }
+//             });
+//         }
+
+//         student.myTutor = null;
+
+//         await Booking.update(
+//             { status: 'cancelled' },
+//             {
+//                 where: {
+//                     studentId: studentId,
+//                     tutorId: currentTutorId,
+//                     status: ['pending', 'confirmed']
+//                 }
+//             }
+//         );
+
+//         await student.save();
+
+//         res.status(200).json({ message: 'המורה הוסר בהצלחה', user: student });
+//     } catch (error) {
+//         console.error(error);
+//         res.status(500).json({ message: 'שגיאת שרת בהסרת המורה' });
+//     }
+// };
+
 export const selectTutor = async (req, res) => {
     try {
         const { tutorId } = req.params;
@@ -370,29 +473,72 @@ export const selectTutor = async (req, res) => {
         const student = await User.findByPk(studentId);
         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
 
-        student.myTutor = tutorId;
+        const currentTutorId = student.myTutor;
 
+        // 🛑 כאן הייתה חסרה קריאת הוולידציה!
+        if (currentTutorId) {
+            const validationResult = await validateStudentCanDisconnectOrSwitchTutor(studentId, currentTutorId);
+            if (!validationResult.allowed) {
+                return res.status(validationResult.status).json({ message: validationResult.message });
+            }
+
+            // מחיקת ההתראה אם הוולידציה עברה (או שאין שיעורים חוסמים)
+            await Notification.destroy({
+                where: {
+                    studentId,
+                    tutorId: currentTutorId,
+                    type: NOTIFICATION_TYPES.PENDING_GOALS
+                }
+            });
+        }
+
+        // 1. ביטול שיעורים עתידיים בלבד מול המורה הישן
+        if (currentTutorId) {
+            console.log(`[selectTutor] Cancelling future confirmed/pending bookings with old tutor ${currentTutorId}`);
+            
+            const allBookings = await Booking.findAll({
+                where: {
+                    studentId: studentId,
+                    tutorId: currentTutorId,
+                    status: ['pending', 'confirmed']
+                }
+            });
+
+            const now = new Date();
+            for (const booking of allBookings) {
+                let lessonDateTime;
+                if (typeof booking.lessonDate === 'string' && booking.lessonDate.includes('-')) {
+                    const [year, month, day] = booking.lessonDate.split('-').map(Number);
+                    const [hours, minutes] = (booking.startTime || '00:00').split(':').map(Number);
+                    lessonDateTime = new Date(year, month - 1, day, hours, minutes);
+                } else {
+                    lessonDateTime = new Date(booking.lessonDate);
+                    if (booking.startTime) {
+                        const [hours, minutes] = booking.startTime.split(':').map(Number);
+                        lessonDateTime.setHours(hours, minutes, 0, 0);
+                    }
+                }
+
+                if (lessonDateTime.getTime() >= now.getTime()) {
+                    booking.status = 'cancelled';
+                    await booking.save();
+                }
+            }
+        }
+
+        // 2. עדכון המורה החדש למשתמש
+        student.myTutor = tutorId;
         student.studentFields = {
             ...(student.studentFields || {}),
             tutorSelectedAt: new Date()
         };
-
         student.changed('studentFields', true);
 
-        await Booking.update(
-            { status: 'cancelled' },
-            {
-                where: {
-                    studentId: studentId,
-                    status: ['pending', 'confirmed']
-                }
-            }
-        );
-
         await student.save();
+        console.log(`[selectTutor] Success! Student switched to new tutor ${tutorId}`);
         res.status(200).json({ message: 'המורה נבחר בהצלחה', user: student });
     } catch (error) {
-        console.error(error);
+        console.error('[selectTutor] Server error:', error);
         res.status(500).json({ message: 'שגיאת שרת בבחירת המורה' });
     }
 };
@@ -405,23 +551,64 @@ export const unselectTutor = async (req, res) => {
         const student = await User.findByPk(studentId);
         if (!student) return res.status(404).json({ message: 'התלמיד לא נמצא' });
 
-        student.myTutor = null;
+        const currentTutorId = student.myTutor;
 
-        await Booking.update(
-            { status: 'cancelled' },
-            {
+        // 🛑 קריאת הוולידציה גם בהסרת מורה!
+        if (currentTutorId) {
+            const validationResult = await validateStudentCanDisconnectOrSwitchTutor(studentId, currentTutorId);
+            if (!validationResult.allowed) {
+                return res.status(validationResult.status).json({ message: validationResult.message });
+            }
+
+            await Notification.destroy({
+                where: {
+                    studentId,
+                    tutorId: currentTutorId,
+                    type: NOTIFICATION_TYPES.PENDING_GOALS
+                }
+            });
+        }
+
+        if (currentTutorId) {
+            console.log(`[unselectTutor] Cancelling future confirmed/pending bookings with tutor ${currentTutorId}`);
+            
+            const allBookings = await Booking.findAll({
                 where: {
                     studentId: studentId,
+                    tutorId: currentTutorId,
                     status: ['pending', 'confirmed']
                 }
+            });
+
+            const now = new Date();
+            for (const booking of allBookings) {
+                let lessonDateTime;
+                if (typeof booking.lessonDate === 'string' && booking.lessonDate.includes('-')) {
+                    const [year, month, day] = booking.lessonDate.split('-').map(Number);
+                    const [hours, minutes] = (booking.startTime || '00:00').split(':').map(Number);
+                    lessonDateTime = new Date(year, month - 1, day, hours, minutes);
+                } else {
+                    lessonDateTime = new Date(booking.lessonDate);
+                    if (booking.startTime) {
+                        const [hours, minutes] = booking.startTime.split(':').map(Number);
+                        lessonDateTime.setHours(hours, minutes, 0, 0);
+                    }
+                }
+
+                if (lessonDateTime.getTime() >= now.getTime()) {
+                    booking.status = 'cancelled';
+                    await booking.save();
+                }
             }
-        );
+        }
+
+        student.myTutor = null;
 
         await student.save();
-
+        console.log(`[unselectTutor] Success! Student disconnected from tutor.`);
         res.status(200).json({ message: 'המורה הוסר בהצלחה', user: student });
     } catch (error) {
-        console.error(error);
+        console.error('[unselectTutor] Server error:', error);
         res.status(500).json({ message: 'שגיאת שרת בהסרת המורה' });
     }
 };

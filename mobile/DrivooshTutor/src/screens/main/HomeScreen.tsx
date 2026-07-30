@@ -15,6 +15,14 @@ interface TutorData {
   urgentAlerts: { hasPendingGoals: boolean; pendingGoalsStudentId: string | null; totalPendingRequests: number; };
 }
 
+interface NotificationItem {
+  id: string;
+  content: string;
+  status: 'pending' | 'resolved';
+  type: string;
+  createdAt?: string;
+}
+
 const AnimatedCoffeeIcon = () => {
   const steam1 = useRef(new Animated.Value(0)).current;
   const steam2 = useRef(new Animated.Value(0)).current;
@@ -87,7 +95,7 @@ export default function HomeScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [tutor, setTutor] = useState<TutorData | null>(null);
-
+  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const progressAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.96)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -135,10 +143,33 @@ export default function HomeScreen({ navigation }: any) {
     return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : timeString;
   };
 
+  // const fetchDashboard = async () => {
+  //   try {
+  //     const response = await apiClient.get('/tutor/dashboard');
+  //     setTutor(response.data.tutor);
+  //   } catch (error) {
+  //     console.log('Error:', error);
+  //   } finally {
+  //     setLoading(false);
+  //     setRefreshing(false);
+  //   }
+  // };
+
   const fetchDashboard = async () => {
     try {
-      const response = await apiClient.get('/tutor/dashboard');
-      setTutor(response.data.tutor);
+      // שליפת נתוני הדשבורד וההתראות במקביל
+      const [dashboardRes, notificationsRes] = await Promise.all([
+        apiClient.get('/tutor/dashboard'),
+        apiClient.get('/tutor/notifications').catch(() => ({ data: { notifications: [] } })) // נתיב לדוגמה לשליפת התראות
+      ]);
+
+      setTutor(dashboardRes.data.tutor);
+
+      // 🔔 סינון ההתראות כך שיוצגו רק אלו שסטטוס שלהן הוא 'pending' (ממתין ולא טופל)
+      const allNotifications: NotificationItem[] = notificationsRes.data.notifications || [];
+      const pendingOnly = allNotifications.filter(n => n.status === 'pending');
+      setNotifications(pendingOnly);
+
     } catch (error) {
       console.log('Error:', error);
     } finally {
@@ -147,7 +178,9 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
-  useEffect(() => { fetchDashboard(); }, []);
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
 
   useEffect(() => {
     if (tutor) {
@@ -185,8 +218,6 @@ export default function HomeScreen({ navigation }: any) {
     }
   }, [tutor]);
 
-  if (loading) return <LoadingScreen />;
-
   const totalLessons = tutor?.stats.todayLessons || 0;
   const completedLessons = tutor?.stats.completedToday || 0;
   const remainingLessons = Math.max(totalLessons - completedLessons, 0);
@@ -220,6 +251,24 @@ export default function HomeScreen({ navigation }: any) {
 
   const status = getStatusDetails(percent);
 
+  if (loading) return <LoadingScreen />;
+
+  if (!tutor) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 24, backgroundColor: '#F8F9FA' }}>
+        <View style={{ width: 64, height: 64, borderRadius: 32, backgroundColor: '#fee2e200', justifyContent: 'center', alignItems: 'center' }}>
+          <Ionicons name="alert-circle-outline" size={32} color="#00C2E8" />
+        </View>
+        <Text style={{ fontSize: 18, fontWeight: '700', color: '#1F2937', marginBottom: 8, textAlign: 'center' }}>
+          התרחשה שגיאה בטעינת הנתונים
+        </Text>
+        <Text style={{ textAlign: 'center', fontSize: 14, color: '#4B5563', marginBottom: 24, lineHeight: 22, maxWidth: '85%' }}>
+          אנא נסה להתנתק ולהתחבר מחדש לחשבונך.
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.container}
@@ -243,7 +292,7 @@ export default function HomeScreen({ navigation }: any) {
 
         <View style={styles.cardHeaderRow}>
           <View style={styles.titleWrapper}>
-            <Text style={styles.cardTitle}>התקדמות היום</Text>
+            <Text style={styles.cardTitle}>התקדמות יומית</Text>
             <Text style={styles.cardSubTitle}>{completedLessons} מתוך {totalLessons} שיעורים הושלמו</Text>
           </View>
           <Ionicons name="analytics-outline" size={18} color="#00C2E8" />
@@ -347,7 +396,27 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       )}
 
-      {(tutor?.urgentAlerts.totalPendingRequests || 0) > 0 && (
+      {/* 🔔 הצגת התראות עם סטטוס ממתין בלבד (pending) */}
+      {notifications.length > 0 && (
+        <>
+          <Text style={styles.sectionLabel}>התראות דחופות</Text>
+          {notifications.map((item) => (
+            <TouchableOpacity 
+              key={item.id} 
+              style={styles.alertRow} 
+              activeOpacity={0.7} 
+              onPress={() => navigation?.navigate('UpcomingLessons')}
+            >
+              <Ionicons name="notifications-outline" size={16} color="#00C2E8" />
+              <Text style={styles.alertText}>{item.content}</Text>
+              <Ionicons name="chevron-back" size={14} color="#64748B" />
+            </TouchableOpacity>
+          ))}
+        </>
+      )}
+
+      {/* שמירה על תאימות לבקשות אישור קיימות מדשבורד אם קיימות */}
+      {(tutor?.urgentAlerts.totalPendingRequests || 0) > 0 && notifications.length === 0 && (
         <>
           <Text style={styles.sectionLabel}>התראות</Text>
           <TouchableOpacity style={styles.alertRow} activeOpacity={0.7} onPress={() => navigation?.navigate('UpcomingLessons')}>
@@ -363,9 +432,9 @@ export default function HomeScreen({ navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FAFAFA', marginBottom: 30 },
-  content: { paddingHorizontal: 20, paddingTop: 50, paddingBottom: 40 },
+  content: { paddingHorizontal: 20, paddingTop: 30, paddingBottom: 40 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FAFAFA' },
-  topHeader: { alignItems: 'flex-end', marginBottom: 20 },
+  topHeader: { alignItems: 'flex-end', marginBottom: 30 },
   welcomeTitle: { fontSize: 22, fontWeight: '700', color: '#0F172A', letterSpacing: -0.3 },
   welcomeSub: { fontSize: 13, color: '#64748B', marginTop: 2 },
   heroCard: { backgroundColor: '#ffffff', borderRadius: 20, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: '#E2E8F0' },

@@ -303,26 +303,29 @@ export default function UpcomingLessons({ navigation }: any) {
       </View>
 
       <View style={styles.calendarStripContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.calendarStrip}>
-          {days.map((day) => {
+        <FlatList
+          horizontal
+          inverted
+          data={days}
+          keyExtractor={(item) => item.dateString}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.calendarStrip}
+          renderItem={({ item: day }) => {
             const isSelected = selectedDay?.dateString === day.dateString;
+
             return (
               <TouchableOpacity
-                key={day.dateString}
-                style={[styles.dayButton, isSelected && styles.dayButtonActive]}
-                onPress={() => {
-                  setSelectedDay(day);
-                  setActiveFilter('all');
-                }}
+                style={[styles.dayButton, isSelected && styles.dayButtonActive,]}
+                onPress={() => { setSelectedDay(day); setActiveFilter('all'); }}
                 activeOpacity={0.8}
               >
-                <Text style={[styles.dayNameText, isSelected && styles.dayNameTextActive]}>{day.dayName}</Text>
-                <Text style={[styles.dayNumText, isSelected && styles.dayNumTextActive]}>{day.dayNum}</Text>
-                {day.isToday && !isSelected ? <View style={styles.todayDot} /> : null}
+                <Text style={[styles.dayNameText, isSelected && styles.dayNameTextActive,]}>{day.dayName}</Text>
+                <Text style={[styles.dayNumText, isSelected && styles.dayNumTextActive,]}>{day.dayNum}</Text>
+                {day.isToday && !isSelected && (<View style={styles.todayDot} />)}
               </TouchableOpacity>
             );
-          })}
-        </ScrollView>
+          }}
+        />
       </View>
 
       <View style={styles.filterSection}>
@@ -358,7 +361,11 @@ export default function UpcomingLessons({ navigation }: any) {
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Ionicons name="calendar-clear-outline" size={42} color="#D1D5DB" />
-            <Text style={styles.emptyText}>אין שיעורים התואמים לסינון זה</Text>
+            <Text style={styles.emptyText}>
+              {activeFilter === 'all'
+                ? 'לא נמצאו שיעורים'
+                : 'אין שיעורים התואמים לסינון זה'}
+            </Text>
           </View>
         }
       />
@@ -397,7 +404,7 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 22, fontWeight: '800', color: '#0F172A', textAlign: 'right' },
   headerSubtitle: { fontSize: 13, color: '#64748B', textAlign: 'right', marginTop: 2 },
   calendarStripContainer: { backgroundColor: '#FFFFFF', borderBottomWidth: 1, borderColor: '#F1F5F9', paddingBottom: 14 },
-  calendarStrip: { flexDirection: 'row-reverse', paddingHorizontal: 16, gap: 8 },
+  calendarStrip: { paddingHorizontal: 16, gap: 8 },
   dayButton: { width: 48, height: 64, borderRadius: 12, backgroundColor: '#F8FAFC', justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
   dayButtonActive: { backgroundColor: '#0F172A', borderColor: '#0F172A' },
   dayNameText: { fontSize: 11, color: '#64748B', fontWeight: '500', marginBottom: 2 },

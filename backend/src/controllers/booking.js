@@ -480,29 +480,19 @@ export const cancelBooking = async (req, res) => {
         const { bookingId } = req.params;
         const userId = req.user.id;
         const userRole = req.user.role;
-
-        console.log("User ID:", userId, "| Role:", userRole);
-
         const query = { id: bookingId };
 
         if (userRole === 'student') {
             query.studentId = userId;
-        } else if (userRole === 'tutor' || userRole === 'teacher') {
-            // אם ה-userId בטוקן הוא של טבלת ה-User, נצטרך למצוא את ה-Tutor ששייך אליו
+        } else if (userRole === 'tutor') {
             const tutor = await Tutor.findOne({ where: { userId: userId } });
-            
+
             if (!tutor) {
                 return res.status(400).json({ message: "פרופיל מורה לא נמצא עבור משתמש זה" });
             }
 
-            // השימוש בשדה הנכון מתוך מודל ה-Booking (tutorId)
-            query.tutorId = tutor.id; 
-            
-            // * הערה: אם במקרה ה-req.user.id שלך הוא כבר ה-id של טבלת ה-Tutor ישירות, 
-            // פשוט תשתמשי ב: query.tutorId = userId; ותמחקי את השליפה של Tutor מעל.
+            query.tutorId = tutor.id;
         }
-
-        console.log("Search Query:", query);
 
         const booking = await Booking.findOne({ where: query });
 
@@ -510,7 +500,6 @@ export const cancelBooking = async (req, res) => {
             return res.status(400).json({ message: "הזמנה לא נמצאה עבור משתמש זה" });
         }
 
-        // הגבלת 24 שעות חלה רק על תלמידים
         if (userRole === 'student') {
             try {
                 const now = new Date();
@@ -534,9 +523,9 @@ export const cancelBooking = async (req, res) => {
         booking.status = 'cancelled';
         await booking.save();
 
-        res.status(200).json({ 
-            success: true, 
-            message: "השיעור בוטל בהצלחה" 
+        res.status(200).json({
+            success: true,
+            message: "השיעור בוטל בהצלחה"
         });
 
     } catch (error) {

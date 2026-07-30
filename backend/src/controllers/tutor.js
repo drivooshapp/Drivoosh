@@ -419,7 +419,3 @@ export const getAllMyHistory = async (req, res) => {
         });
     }
 };
-
-
-// export const getAllMyAlerts = async (req, res) => {
-// }
