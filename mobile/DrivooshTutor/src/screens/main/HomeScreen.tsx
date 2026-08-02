@@ -143,29 +143,15 @@ export default function HomeScreen({ navigation }: any) {
     return parts.length >= 2 ? `${parts[0]}:${parts[1]}` : timeString;
   };
 
-  // const fetchDashboard = async () => {
-  //   try {
-  //     const response = await apiClient.get('/tutor/dashboard');
-  //     setTutor(response.data.tutor);
-  //   } catch (error) {
-  //     console.log('Error:', error);
-  //   } finally {
-  //     setLoading(false);
-  //     setRefreshing(false);
-  //   }
-  // };
-
   const fetchDashboard = async () => {
     try {
-      // שליפת נתוני הדשבורד וההתראות במקביל
       const [dashboardRes, notificationsRes] = await Promise.all([
         apiClient.get('/tutor/dashboard'),
-        apiClient.get('/tutor/notifications').catch(() => ({ data: { notifications: [] } })) // נתיב לדוגמה לשליפת התראות
+        apiClient.get('/notification/notifications').catch(() => ({ data: { notifications: [] } }))
       ]);
 
       setTutor(dashboardRes.data.tutor);
 
-      // 🔔 סינון ההתראות כך שיוצגו רק אלו שסטטוס שלהן הוא 'pending' (ממתין ולא טופל)
       const allNotifications: NotificationItem[] = notificationsRes.data.notifications || [];
       const pendingOnly = allNotifications.filter(n => n.status === 'pending');
       setNotifications(pendingOnly);
@@ -396,16 +382,15 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       )}
 
-      {/* 🔔 הצגת התראות עם סטטוס ממתין בלבד (pending) */}
       {notifications.length > 0 && (
         <>
           <Text style={styles.sectionLabel}>התראות דחופות</Text>
           {notifications.map((item) => (
-            <TouchableOpacity 
-              key={item.id} 
-              style={styles.alertRow} 
-              activeOpacity={0.7} 
-              onPress={() => navigation?.navigate('UpcomingLessons')}
+            <TouchableOpacity
+              key={item.id}
+              style={styles.alertRow}
+              activeOpacity={0.7}
+              // onPress={() => navigation?.navigate('')}
             >
               <Ionicons name="notifications-outline" size={16} color="#00C2E8" />
               <Text style={styles.alertText}>{item.content}</Text>
@@ -415,7 +400,6 @@ export default function HomeScreen({ navigation }: any) {
         </>
       )}
 
-      {/* שמירה על תאימות לבקשות אישור קיימות מדשבורד אם קיימות */}
       {(tutor?.urgentAlerts.totalPendingRequests || 0) > 0 && notifications.length === 0 && (
         <>
           <Text style={styles.sectionLabel}>התראות</Text>

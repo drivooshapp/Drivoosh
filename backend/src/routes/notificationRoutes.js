@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { getStudentGoalsForm, updateGoalProgress, updateFormHeader, exportFormToPDF } from '../controllers/goalForm.js';
+import { getTutorNotifications } from '../controllers/notification.js';
 import { authenticate } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
-router.get('/goalsForm/:studentId', authenticate, getStudentGoalsForm);
+router.get('/notifications', authenticate, getTutorNotifications);
 
 export default router;

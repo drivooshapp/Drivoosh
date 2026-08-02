@@ -475,14 +475,12 @@ export const selectTutor = async (req, res) => {
 
         const currentTutorId = student.myTutor;
 
-        // 🛑 כאן הייתה חסרה קריאת הוולידציה!
         if (currentTutorId) {
             const validationResult = await validateStudentCanDisconnectOrSwitchTutor(studentId, currentTutorId);
             if (!validationResult.allowed) {
                 return res.status(validationResult.status).json({ message: validationResult.message });
             }
 
-            // מחיקת ההתראה אם הוולידציה עברה (או שאין שיעורים חוסמים)
             await Notification.destroy({
                 where: {
                     studentId,
@@ -492,10 +490,7 @@ export const selectTutor = async (req, res) => {
             });
         }
 
-        // 1. ביטול שיעורים עתידיים בלבד מול המורה הישן
-        if (currentTutorId) {
-            console.log(`[selectTutor] Cancelling future confirmed/pending bookings with old tutor ${currentTutorId}`);
-            
+        if (currentTutorId) {            
             const allBookings = await Booking.findAll({
                 where: {
                     studentId: studentId,
@@ -526,7 +521,6 @@ export const selectTutor = async (req, res) => {
             }
         }
 
-        // 2. עדכון המורה החדש למשתמש
         student.myTutor = tutorId;
         student.studentFields = {
             ...(student.studentFields || {}),
@@ -535,7 +529,6 @@ export const selectTutor = async (req, res) => {
         student.changed('studentFields', true);
 
         await student.save();
-        console.log(`[selectTutor] Success! Student switched to new tutor ${tutorId}`);
         res.status(200).json({ message: 'המורה נבחר בהצלחה', user: student });
     } catch (error) {
         console.error('[selectTutor] Server error:', error);
@@ -553,7 +546,6 @@ export const unselectTutor = async (req, res) => {
 
         const currentTutorId = student.myTutor;
 
-        // 🛑 קריאת הוולידציה גם בהסרת מורה!
         if (currentTutorId) {
             const validationResult = await validateStudentCanDisconnectOrSwitchTutor(studentId, currentTutorId);
             if (!validationResult.allowed) {
@@ -570,7 +562,6 @@ export const unselectTutor = async (req, res) => {
         }
 
         if (currentTutorId) {
-            console.log(`[unselectTutor] Cancelling future confirmed/pending bookings with tutor ${currentTutorId}`);
             
             const allBookings = await Booking.findAll({
                 where: {
@@ -605,7 +596,6 @@ export const unselectTutor = async (req, res) => {
         student.myTutor = null;
 
         await student.save();
-        console.log(`[unselectTutor] Success! Student disconnected from tutor.`);
         res.status(200).json({ message: 'המורה הוסר בהצלחה', user: student });
     } catch (error) {
         console.error('[unselectTutor] Server error:', error);
