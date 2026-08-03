@@ -279,7 +279,8 @@ export default function HomeScreen({ navigation }: any) {
         <View style={styles.cardHeaderRow}>
           <View style={styles.titleWrapper}>
             <Text style={styles.cardTitle}>התקדמות יומית</Text>
-            <Text style={styles.cardSubTitle}>{completedLessons} מתוך {totalLessons} שיעורים הושלמו</Text>
+            {/* <Text style={styles.cardSubTitle}>{completedLessons} מתוך {totalLessons} שיעורים הושלמו</Text> */}
+            <Text style={styles.cardSubTitle}>{completedLessons}/{totalLessons} שיעורים הושלמו</Text>
           </View>
           <Ionicons name="analytics-outline" size={18} color="#00C2E8" />
         </View>
@@ -390,7 +391,7 @@ export default function HomeScreen({ navigation }: any) {
               key={item.id}
               style={styles.alertRow}
               activeOpacity={0.7}
-              // onPress={() => navigation?.navigate('')}
+            // onPress={() => navigation?.navigate('')}
             >
               <Ionicons name="notifications-outline" size={16} color="#00C2E8" />
               <Text style={styles.alertText}>{item.content}</Text>

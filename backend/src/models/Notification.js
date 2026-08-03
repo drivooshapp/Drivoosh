@@ -2,9 +2,14 @@ import { DataTypes } from 'sequelize';
 import sequelize from '../config/db.js';
 
 
+// export const NOTIFICATION_TYPES = {
+//     GENERAL: 'GENERAL',
+//     PENDING_GOALS: 'PENDING_GOALS'
+// };
 export const NOTIFICATION_TYPES = {
     GENERAL: 'GENERAL',
-    PENDING_GOALS: 'PENDING_GOALS'
+    PENDING_LESSON_FORM: 'PENDING_LESSON_FORM',
+    STUDENT_QUIT_PENDING_GOALS: 'STUDENT_QUIT_PENDING_GOALS'
 };
 
 export const NOTIFICATION_STATUS = {

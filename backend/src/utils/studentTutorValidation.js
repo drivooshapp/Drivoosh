@@ -39,7 +39,7 @@ export const validateStudentCanDisconnectOrSwitchTutor = async (studentId, tutor
             where: {
                 studentId,
                 tutorId,
-                type: NOTIFICATION_TYPES.PENDING_GOALS
+                type: NOTIFICATION_TYPES.PENDING_LESSON_FORM
             }
         });
 
@@ -51,7 +51,7 @@ export const validateStudentCanDisconnectOrSwitchTutor = async (studentId, tutor
                 tutorId,
                 studentId,
                 content: `לידיעתך, ${studentFullName} ביקש/ה לעזוב את מסגרת הלימודים או להחליף מורה. קיימים שיעורים קודמים המחייבים השלמת טופס מטרות טרם השלמת התהליך.`,
-                type: NOTIFICATION_TYPES.PENDING_GOALS
+                type: NOTIFICATION_TYPES.PENDING_LESSON_FORM
             });
         }
 

@@ -485,7 +485,7 @@ export const selectTutor = async (req, res) => {
                 where: {
                     studentId,
                     tutorId: currentTutorId,
-                    type: NOTIFICATION_TYPES.PENDING_GOALS
+                    type: NOTIFICATION_TYPES.PENDING_LESSON_FORM
                 }
             });
         }
@@ -556,7 +556,7 @@ export const unselectTutor = async (req, res) => {
                 where: {
                     studentId,
                     tutorId: currentTutorId,
-                    type: NOTIFICATION_TYPES.PENDING_GOALS
+                    type: NOTIFICATION_TYPES.PENDING_LESSON_FORM
                 }
             });
         }

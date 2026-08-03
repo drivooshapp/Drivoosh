@@ -383,7 +383,7 @@ export default function UpcomingLessons({ navigation }: any) {
         onOpenProgress={() => {
           setModalVisible(false);
           if (navigation && selectedBooking) {
-            navigation.navigate("AllStudents", {
+            navigation.navigate("StudentsStack", {
               screen: "ProgressFormScreen",
               params: {
                 studentId: selectedBooking.student?.id,

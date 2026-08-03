@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
 import { Image, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import apiClient from './src/api/apiClient';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemList, } from '@react-navigation/drawer';
 import { NavigationContainer, useNavigation } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
@@ -21,6 +22,7 @@ import ViewStudentsScreen from './src/screens/main/ViewStudentsScreen';
 import MessaggesScreen from './src/screens/main/MessaggesScreen';
 import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import AllReviews from './src/screens/main/AllReviews';
+import AlertsScreen from './src/screens/main/AlertsScreen';
 
 import StudentCart from './src/screens/student/StudentCart';
 import LessonsHistory from './src/screens/student/LessonsHistory';
@@ -45,7 +47,7 @@ function StudentCardStack() {
             <SearchStack.Screen name="ProgressFormScreen" component={ProgressFormScreen} />
             <SearchStack.Screen name="ViewProgressForm" component={ViewProgressForm} />
             <SearchStack.Screen name="FillProgressForm" component={FillProgressForm} />
-            
+
             <SearchStack.Screen name="GoalsForm" component={StudentProgressFormScreen} />
             <SearchStack.Screen name="FinalForm" component={FinalFormSealScreen} />
         </SearchStack.Navigator>
@@ -101,6 +103,22 @@ function CustomDrawerContent(props: any) {
 }
 
 function DrawerNavigator({ onLogout, userData }: any) {
+    const [unreadCount, setUnreadCount] = useState(0);
+
+    useEffect(() => {
+        const fetchBadgeCount = async () => {
+            try {
+                const res = await apiClient.get('/notification/notifications');
+                const allNotifications = res.data.notifications || [];
+                const pendingOnly = allNotifications.filter((n: any) => n.status === 'pending');
+                setUnreadCount(pendingOnly.length);
+            } catch (error) {
+                console.log('Error fetching badge count:', error);
+            }
+        };
+        fetchBadgeCount();
+    }, []);
+
     return (
         <Drawer.Navigator
             drawerContent={(props) => <CustomDrawerContent {...props} onLogout={onLogout} />}
@@ -117,12 +135,13 @@ function DrawerNavigator({ onLogout, userData }: any) {
                 drawerActiveBackgroundColor: '#47b4c91a',
                 drawerLabelStyle: {
                     fontSize: 18,
-                    fontWeight: '700',
+                    fontWeight: '400',
                     textAlign: 'right',
                 },
                 drawerItemStyle: {
                     borderRadius: 10,
-                    marginVertical: 8,
+                    // marginVertical: 8,
+                    marginVertical: 4,
                 },
                 headerLeft: () => (
                     <View style={{ marginLeft: 20 }}>
@@ -210,6 +229,40 @@ function DrawerNavigator({ onLogout, userData }: any) {
                     title: 'הודעות לתלמידים',
                     drawerLabel: 'הודעות לתלמידים',
                     drawerIcon: ({ color }) => <Ionicons name="chatbubble-outline" size={22} color={color} />,
+                }}
+            />
+            <Drawer.Screen
+                name="Alerts"
+                component={AlertsScreen}
+                options={{
+                    title: 'התראות',
+                    drawerLabel: () => (
+                        <View style={{
+                            flexDirection: 'row-reverse',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            paddingLeft: 8
+                        }}>
+                            <Text style={{ fontSize: 18, color: '#333', textAlign: 'right' }}>התראות</Text>
+                            {unreadCount > 0 && (
+                                <View style={{
+                                    backgroundColor: '#010101',
+                                    borderRadius: 11,
+                                    minWidth: 22,
+                                    height: 22,
+                                    paddingHorizontal: 6,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                }}>
+                                    <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', lineHeight: 14 }}>
+                                        {unreadCount}
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+                    ),
+                    drawerIcon: ({ color }) => <Ionicons name="notifications-outline" size={22} color={color} />,
                 }}
             />
         </Drawer.Navigator>
