@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, Image, RefreshControl, TouchableOpaci
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '@/src/api/apiClient';
 import HistoryFilters from '../../components/HistoryFilters';
-import LoadingScreen from '@/src/components/LoadingScreen';
+import LoadingScreen from '../../components/LoadingScreen';
 
 interface HistoryLesson {
   id: string;
@@ -14,7 +14,7 @@ interface HistoryLesson {
   status: 'completed' | 'cancelled';
   priceAtBooking: string;
   notes: string | null;
-  isPaid?: boolean; // שדה תשלום מדומה
+  isPaid?: boolean;
   student?: {
     firstName: string;
     lastName: string;
@@ -28,12 +28,10 @@ export default function AllHistoryScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
-
   const [searchName, setSearchName] = useState('');
   const [searchCity, setSearchCity] = useState('');
   const [searchDate, setSearchDate] = useState('');
   const [paidStatus, setPaidStatus] = useState<'all' | 'paid' | 'unpaid'>('all');
-
   const [tempName, setTempName] = useState('');
   const [tempCity, setTempCity] = useState('');
   const [tempDate, setTempDate] = useState('');
@@ -215,14 +213,7 @@ const styles = StyleSheet.create({
   topHeaderBar: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 14, paddingBottom: 6 },
   filterTriggerButton: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
   filterTriggerText: { fontSize: 14, fontWeight: '500' },
-  countBadge: {
-    backgroundColor: '#F3F4F6', // רקע אפור בהיר תואם
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20, // מעגל את הפינות לצורת קפסולה מושלמת
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  countBadge: { backgroundColor: '#F3F4F6', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 20, justifyContent: 'center', alignItems: 'center', },
   totalCountText: { fontSize: 13, color: '#737373', fontWeight: '500' },
   centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
   listContent: { paddingHorizontal: 24, paddingTop: 10, paddingBottom: 75 },

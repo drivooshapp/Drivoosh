@@ -199,7 +199,7 @@ export default function StudentProfile({ route, navigation }: StudentProfileProp
               <Ionicons name="school-outline" size={18} color="#007890" />
             </View>
             <View>
-              <Text style={styles.previousLessonsTitle}>שיעורים/ בתי ספר קודמים</Text>
+              <Text style={styles.previousLessonsTitle}>שיעורים קודמים/ מחוץ למערכת</Text>
               <Text style={styles.previousLessonsValue}>
                 {statistics.previousLessonsCount || 0} שיעורים אושרו על ידך
               </Text>

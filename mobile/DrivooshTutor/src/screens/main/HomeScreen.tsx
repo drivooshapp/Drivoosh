@@ -151,7 +151,6 @@ export default function HomeScreen({ navigation }: any) {
       ]);
 
       setTutor(dashboardRes.data.tutor);
-
       const allNotifications: NotificationItem[] = notificationsRes.data.notifications || [];
       const pendingOnly = allNotifications.filter(n => n.status === 'pending');
       setNotifications(pendingOnly);
@@ -173,32 +172,13 @@ export default function HomeScreen({ navigation }: any) {
       const total = tutor.stats.todayLessons || 0;
       const completed = tutor.stats.completedToday || 0;
       const targetPercent = total > 0 ? completed / total : 0;
-
       progressAnim.setValue(0);
-
       Animated.parallel([
-        Animated.timing(progressAnim, {
-          toValue: Math.min(targetPercent, 1),
-          duration: 1400,
-          easing: Easing.bezier(0.16, 1, 0.3, 1),
-          useNativeDriver: false,
-        }),
-        Animated.spring(scaleAnim, {
-          toValue: 1,
-          friction: 9,
-          tension: 40,
-          useNativeDriver: true,
-        }),
-        Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
-          useNativeDriver: true,
-        }),
+        Animated.timing(progressAnim, { toValue: Math.min(targetPercent, 1), duration: 1400, easing: Easing.bezier(0.16, 1, 0.3, 1), useNativeDriver: false, }),
+        Animated.spring(scaleAnim, { toValue: 1, friction: 9, tension: 40, useNativeDriver: true, }),
+        Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true, }),
         Animated.spring(percentPopAnim, {
-          toValue: 1,
-          friction: 7,
-          tension: 50,
-          useNativeDriver: true,
+          toValue: 1, friction: 7, tension: 50, useNativeDriver: true,
         }),
       ]).start();
     }
@@ -236,6 +216,8 @@ export default function HomeScreen({ navigation }: any) {
   });
 
   const status = getStatusDetails(percent);
+
+  const totalPendingNotificationsCount = notifications.length;
 
   if (loading) return <LoadingScreen />;
 
@@ -383,30 +365,16 @@ export default function HomeScreen({ navigation }: any) {
         </View>
       )}
 
-      {notifications.length > 0 && (
-        <>
-          <Text style={styles.sectionLabel}>התראות דחופות</Text>
-          {notifications.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={styles.alertRow}
-              activeOpacity={0.7}
-            // onPress={() => navigation?.navigate('')}
-            >
-              <Ionicons name="notifications-outline" size={16} color="#00C2E8" />
-              <Text style={styles.alertText}>{item.content}</Text>
-              <Ionicons name="chevron-back" size={14} color="#64748B" />
-            </TouchableOpacity>
-          ))}
-        </>
-      )}
-
-      {(tutor?.urgentAlerts.totalPendingRequests || 0) > 0 && notifications.length === 0 && (
+      {totalPendingNotificationsCount > 0 && (
         <>
           <Text style={styles.sectionLabel}>התראות</Text>
-          <TouchableOpacity style={styles.alertRow} activeOpacity={0.7} onPress={() => navigation?.navigate('UpcomingLessons')}>
+          <TouchableOpacity
+            style={styles.alertRow}
+            activeOpacity={0.7}
+            onPress={() => navigation?.navigate('Alerts')}
+          >
             <Ionicons name="notifications-outline" size={16} color="#00C2E8" />
-            <Text style={styles.alertText}>{tutor?.urgentAlerts.totalPendingRequests} בקשות לאישור שיעור</Text>
+            <Text style={styles.alertText}>{totalPendingNotificationsCount}  התראות חדשות</Text>
             <Ionicons name="chevron-back" size={14} color="#64748B" />
           </TouchableOpacity>
         </>

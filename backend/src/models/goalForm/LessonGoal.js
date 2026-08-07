@@ -9,6 +9,8 @@ LessonGoal.init({
   chapter: { type: DataTypes.STRING, allowNull: false },
   goalNumber: { type: DataTypes.INTEGER, allowNull: false },
   title: { type: DataTypes.STRING, allowNull: false }
-}, { sequelize, tableName: 'lesson_goals', timestamps: false });
+}, {
+  sequelize, tableName: 'lesson_goals', timestamps: false
+});
 
 export default LessonGoal;

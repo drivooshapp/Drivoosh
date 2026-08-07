@@ -1,8 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, TouchableOpacity, Image, RefreshControl, Modal, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard } from 'react-native';
-import LoadingScreen from '@/src/components/LoadingScreen';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, RefreshControl } from 'react-native';
+import LoadingScreen from '../../components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '@/src/api/apiClient';
+import StudentFilterModal from '../../components/StudentFilters';
+
+interface Booking {
+  id: string;
+  lessonDate: string;
+  status: string;
+  isPaid: boolean;
+}
 
 interface Student {
   id: string;
@@ -13,6 +21,7 @@ interface Student {
   city: string;
   street: string;
   profileImage: string | null;
+  bookings?: Booking[];
 }
 
 export default function ViewStudentsScreen({ navigation }: any) {
@@ -20,13 +29,12 @@ export default function ViewStudentsScreen({ navigation }: any) {
   const [filteredStudents, setFilteredStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-
   const [searchQuery, setSearchQuery] = useState('');
-  const [cityQuery, setCityQuery] = useState('');
-
+  const [inactiveOnly, setInactiveOnly] = useState(false);
+  const [unpaidOnly, setUnpaidOnly] = useState(false);
   const [tempSearchQuery, setTempSearchQuery] = useState('');
-  const [tempCityQuery, setTempCityQuery] = useState('');
-
+  const [tempInactiveOnly, setTempInactiveOnly] = useState(false);
+  const [tempUnpaidOnly, setTempUnpaidOnly] = useState(false);
   const [isFilterModalVisible, setIsFilterModalVisible] = useState(false);
 
   const fetchStudents = async () => {
@@ -49,17 +57,31 @@ export default function ViewStudentsScreen({ navigation }: any) {
   }, []);
 
   useEffect(() => {
+    const threeWeeksAgo = new Date();
+    threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
+
     const filtered = students.filter(student => {
       const fullName = `${student.firstName} ${student.lastName}`.toLowerCase();
-      const studentCity = (student.city || '').toLowerCase();
-
       const matchesName = fullName.includes(searchQuery.toLowerCase());
-      const matchesCity = studentCity.includes(cityQuery.toLowerCase());
 
-      return matchesName && matchesCity;
+      const bookings = student.bookings || [];
+      const activeStatuses = ['completed', 'confirmed', 'pending'];
+      const hasRecentActivity = bookings.some(booking => {
+        const lessonDate = new Date(booking.lessonDate);
+        return activeStatuses.includes(booking.status) && lessonDate >= threeWeeksAgo;
+      });
+      const isInactive = !hasRecentActivity;
+
+      const hasUnpaidLessons = bookings.some(booking => booking.isPaid === false && booking.status !== 'cancelled');
+
+      if (inactiveOnly && !isInactive) return false;
+      if (unpaidOnly && !hasUnpaidLessons) return false;
+
+      return matchesName;
     });
+
     setFilteredStudents(filtered);
-  }, [searchQuery, cityQuery, students]);
+  }, [searchQuery, inactiveOnly, unpaidOnly, students]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -68,31 +90,36 @@ export default function ViewStudentsScreen({ navigation }: any) {
 
   const openFilterModal = () => {
     setTempSearchQuery(searchQuery);
-    setTempCityQuery(cityQuery);
+    setTempInactiveOnly(inactiveOnly);
+    setTempUnpaidOnly(unpaidOnly);
     setIsFilterModalVisible(true);
   };
 
   const applyFilters = () => {
     setSearchQuery(tempSearchQuery);
-    setCityQuery(tempCityQuery);
+    setInactiveOnly(tempInactiveOnly);
+    setUnpaidOnly(tempUnpaidOnly);
     setIsFilterModalVisible(false);
   };
 
   const clearFilters = () => {
     setTempSearchQuery('');
-    setTempCityQuery('');
+    setTempInactiveOnly(false);
+    setTempUnpaidOnly(false);
     setSearchQuery('');
-    setCityQuery('');
+    setInactiveOnly(false);
+    setUnpaidOnly(false);
     setIsFilterModalVisible(false);
   };
 
-  const hasActiveFilters = searchQuery !== '' || cityQuery !== '';
+  const hasActiveFilters = searchQuery !== '' || inactiveOnly || unpaidOnly;
 
   const renderStudentRow = ({ item }: { item: Student }) => (
     <TouchableOpacity
       style={styles.rowItem}
       activeOpacity={0.6}
-      onPress={() => navigation.navigate("StudentCart", { studentId: item.id })}    >
+      onPress={() => navigation.navigate("StudentCart", { studentId: item.id })}
+    >
       <Ionicons name="chevron-back" size={14} color="#A3A3A3" />
 
       <View style={styles.rowContent}>
@@ -101,8 +128,8 @@ export default function ViewStudentsScreen({ navigation }: any) {
 
           <View style={styles.metaRow}>
             {item.phoneNumber ? <Text style={styles.subText}>{item.phoneNumber}</Text> : null}
-            {item.phoneNumber && item.street ? <Text style={styles.dotDivider}>•</Text> : null}
-            {item.city ? (<Text>{item.city}</Text>) : null}
+            {item.phoneNumber && item.city ? <Text style={styles.dotDivider}>•</Text> : null}
+            {item.city ? (<Text style={styles.subText}>{item.city}</Text>) : null}
           </View>
         </View>
 
@@ -121,7 +148,6 @@ export default function ViewStudentsScreen({ navigation }: any) {
 
   return (
     <View style={styles.container}>
-
       <View style={styles.topActionsSection}>
         <View style={styles.resultsBadge}>
           <Text style={styles.resultsBadgeText}>נמצאו {filteredStudents.length} תלמידים</Text>
@@ -155,86 +181,24 @@ export default function ViewStudentsScreen({ navigation }: any) {
         }
       />
 
-      <Modal
+      <StudentFilterModal
         visible={isFilterModalVisible}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setIsFilterModalVisible(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setIsFilterModalVisible(false)}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-              <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.modalContent}
-              >
-                <View style={styles.modalHeaderRow}>
-                  <TouchableOpacity onPress={clearFilters} activeOpacity={0.7}>
-                    <Text style={styles.resetText}>נקה הכל</Text>
-                  </TouchableOpacity>
-
-                  <Text style={styles.modalTitle}>מסננים</Text>
-
-                  <TouchableOpacity
-                    style={styles.closeButtonCircle}
-                    onPress={() => setIsFilterModalVisible(false)}
-                    activeOpacity={0.7}
-                  >
-                    <Ionicons name="close" size={18} color="#1A1A1A" />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.modalBody}>
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>שם התלמיד</Text>
-                    <View style={styles.modalInputWrapper}>
-                      <Ionicons name="person-outline" size={16} color="#A3A3A3" />
-                      <TextInput
-                        style={styles.modalInput}
-                        placeholder="חפש לפי שם"
-                        placeholderTextColor="#A3A3A3"
-                        value={tempSearchQuery}
-                        onChangeText={setTempSearchQuery}
-                        textAlign="right"
-                      />
-                    </View>
-                  </View>
-
-                  <View style={styles.inputGroup}>
-                    <Text style={styles.inputLabel}>עיר / אזור</Text>
-                    <View style={styles.modalInputWrapper}>
-                      <Ionicons name="map-outline" size={16} color="#A3A3A3" />
-                      <TextInput
-                        style={styles.modalInput}
-                        placeholder="איפה התלמיד גר?"
-                        placeholderTextColor="#A3A3A3"
-                        value={tempCityQuery}
-                        onChangeText={setTempCityQuery}
-                        textAlign="right"
-                      />
-                    </View>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={styles.primaryModalButton}
-                  onPress={applyFilters}
-                  activeOpacity={0.9}
-                >
-                  <Text style={styles.primaryButtonText}>החל סינון</Text>
-                </TouchableOpacity>
-              </KeyboardAvoidingView>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
+        onClose={() => setIsFilterModalVisible(false)}
+        tempSearchQuery={tempSearchQuery}
+        setTempSearchQuery={setTempSearchQuery}
+        tempInactiveOnly={tempInactiveOnly}
+        setTempInactiveOnly={setTempInactiveOnly}
+        tempUnpaidOnly={tempUnpaidOnly}
+        setTempUnpaidOnly={setTempUnpaidOnly}
+        onApply={applyFilters}
+        onClear={clearFilters}
+      />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFFFFF' },
-  centerContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' },
   topActionsSection: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, paddingTop: 20, paddingBottom: 16, borderBottomWidth: 1, borderColor: '#F5F5F5' },
   minimalFilterButton: { flexDirection: 'row-reverse', alignItems: 'center', height: 40 },
   filterButtonText: { fontSize: 14, color: '#737373', marginRight: 6, fontWeight: '500' },
@@ -254,17 +218,4 @@ const styles = StyleSheet.create({
   dotDivider: { fontSize: 11, color: '#A3A3A3', marginHorizontal: 6 },
   emptyContainer: { alignItems: 'center', marginTop: 60 },
   emptyText: { fontSize: 14, color: '#A3A3A3' },
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.3)', justifyContent: 'flex-end' },
-  modalContent: { backgroundColor: '#FFFFFF', borderTopLeftRadius: 28, borderTopRightRadius: 28, paddingHorizontal: 24, paddingTop: 20, paddingBottom: Platform.OS === 'ios' ? 44 : 24 },
-  modalHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
-  resetText: { fontSize: 14, color: '#019cbb', fontWeight: '600' },
-  modalTitle: { fontSize: 17, fontWeight: '700', color: '#1A1A1A' },
-  closeButtonCircle: { width: 32, height: 32, borderRadius: 16, backgroundColor: '#F5F5F5', justifyContent: 'center', alignItems: 'center' },
-  modalBody: { marginBottom: 24, gap: 16 },
-  inputGroup: { width: '100%' },
-  inputLabel: { fontSize: 14, fontWeight: '600', color: '#1A1A1A', marginBottom: 8, textAlign: 'right' },
-  modalInputWrapper: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#F5F5F5', borderRadius: 10, paddingHorizontal: 12, height: 44 },
-  modalInput: { flex: 1, height: '100%', fontSize: 14, color: '#1A1A1A', marginRight: 8 },
-  primaryModalButton: { backgroundColor: '#1A1A1A', height: 48, borderRadius: 10, justifyContent: 'center', alignItems: 'center', width: '100%' },
-  primaryButtonText: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
 });

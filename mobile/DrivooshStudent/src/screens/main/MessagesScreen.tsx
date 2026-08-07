@@ -95,7 +95,7 @@ const styles = StyleSheet.create({
 
   // Feed List
   list: { paddingHorizontal: 24, paddingTop: 16, paddingBottom: 40, flexGrow: 1 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: '#F1F5F9', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.015, shadowRadius: 16, elevation: 1 },
+  card: { backgroundColor: '#FFFFFF', borderRadius: 20, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: '#e3e3e3' },
   cardHeader: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
   dateBadge: { backgroundColor: '#F8FAFC', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#F1F5F9' },
   cardDate: { fontSize: 11, color: '#64748B', fontWeight: '600' },

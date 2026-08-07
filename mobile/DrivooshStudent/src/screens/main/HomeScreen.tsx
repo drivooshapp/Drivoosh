@@ -64,7 +64,8 @@ export default function HomeScreen({ navigation }: any) {
   const [nextLesson, setNextLesson] = useState<Lesson | null>(null);
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
-  const [allCompletedCount, setAllCompletedCount] = useState(0);
+  // const [allCompletedCount, setAllCompletedCount] = useState(0);
+  const [completedGoalsCount, setCompletedGoalsCount] = useState(0);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -94,14 +95,16 @@ export default function HomeScreen({ navigation }: any) {
       const lessonsRes = await apiClient.get('/booking/myHistory');
       const bookings: Lesson[] = lessonsRes.data || [];
 
-      const totalCompleted = bookings.filter(b =>
-        b.status === 'completed' ||
-        new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now
-      ).length;
-      setAllCompletedCount(totalCompleted);
+      // const totalCompleted = bookings.filter(b =>
+      //   b.status === 'completed' ||
+      //   new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now
+      // ).length;
+      // setAllCompletedCount(totalCompleted);
+      const goalProgressList = profileRes.data?.goalsProgress || [];
+      const checkedGoals = goalProgressList.filter((g: any) => g.isChecked === true).length;
+      setCompletedGoalsCount(checkedGoals);
 
       if (tutor) {
-
         const future = bookings
           .filter(b =>
             getLessonDateTime(b) > now &&
@@ -153,7 +156,7 @@ export default function HomeScreen({ navigation }: any) {
     completed: 'בוצע',
     cancelled: 'בוטל',
   };
-  
+
   const getStatusColor = (status: string) => {
     return status === 'confirmed' ? '#18875b' : '#000000';
   };
@@ -228,16 +231,30 @@ export default function HomeScreen({ navigation }: any) {
           </Text>
         </View>
 
-        <Section title="כמה התקדמנו בדרך לרישיון">
+        {/* <Section title="כמה התקדמנו בדרך לרישיון">
           <TouchableOpacity>
             <View style={styles.progressWrapper}>
               <ProgressCircle
-                progress={(allCompletedCount / 52) * 100}
+                progress={(allCompletedCount / 45) * 100}
                 size={135}
                 strokeWidth={8}
               />
               <Text style={styles.goalsProgressText}>
-                {`${allCompletedCount} מתוך 52 הושלמו`}
+                {`${allCompletedCount} מתוך 45 הושלמו`}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </Section> */}
+        <Section title="כמה התקדמנו בדרך לרישיון">
+          <TouchableOpacity>
+            <View style={styles.progressWrapper}>
+              <ProgressCircle
+                progress={(completedGoalsCount / 45) * 100}
+                size={135}
+                strokeWidth={8}
+              />
+              <Text style={styles.goalsProgressText}>
+                {`${completedGoalsCount} מתוך 45 הושלמו`}
               </Text>
             </View>
           </TouchableOpacity>

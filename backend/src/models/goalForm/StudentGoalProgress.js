@@ -21,6 +21,4 @@ StudentGoalProgress.init({
   ]
 });
 
-// StudentGoalProgress.belongsTo(LessonGoal, { foreignKey: 'goalId', as: 'goalDetails' });
-
 export default StudentGoalProgress;

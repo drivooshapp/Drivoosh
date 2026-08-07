@@ -48,6 +48,41 @@ export const getAllTutors = async (req, res) => {
 };
 
 
+// export const getAllMyStudents = async (req, res) => {
+//     try {
+//         const userId = req.user?.id;
+
+//         if (!userId) {
+//             return res.status(401).json({ message: 'משתמש לא נמצא' });
+//         }
+
+//         const tutor = await Tutor.findOne({ where: { userId } });
+
+//         if (!tutor) {
+//             return res.status(44, 404).json({ message: 'פרופיל מורה לא נמצא עבור משתמש זה' });
+//         }
+
+//         const students = await User.findAll({
+//             where: {
+//                 myTutor: tutor.id,
+//                 role: 'student'
+//             },
+//             attributes: { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] },
+//             order: [['firstName', 'ASC']]
+//         });
+
+//         return res.status(200).json({
+//             success: true,
+//             count: students.length,
+//             students
+//         });
+
+//     } catch (error) {
+//         console.error('Error:', error);
+//         return res.status(500).json({ message: 'שגיאת שרת פנימית בעת שליפת התלמידים' });
+//     }
+// };
+
 export const getAllMyStudents = async (req, res) => {
     try {
         const userId = req.user?.id;
@@ -59,7 +94,7 @@ export const getAllMyStudents = async (req, res) => {
         const tutor = await Tutor.findOne({ where: { userId } });
 
         if (!tutor) {
-            return res.status(44, 404).json({ message: 'פרופיל מורה לא נמצא עבור משתמש זה' });
+            return res.status(404).json({ message: 'פרופיל מורה לא נמצא עבור משתמש זה' });
         }
 
         const students = await User.findAll({
@@ -68,18 +103,54 @@ export const getAllMyStudents = async (req, res) => {
                 role: 'student'
             },
             attributes: { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] },
+            include: [
+                {
+                    model: Booking,
+                    as: 'bookings',
+                    where: { tutorId: tutor.id },
+                    required: false
+                }
+            ],
             order: [['firstName', 'ASC']]
+        });
+
+        const threeWeeksAgo = new Date();
+        threeWeeksAgo.setDate(threeWeeksAgo.getDate() - 21);
+
+        const inactiveStudents = [];
+        const unpaidLessonsStudents = [];
+
+        students.forEach(student => {
+            const bookings = student.bookings || [];
+
+            const activeStatuses = ['completed', 'confirmed', 'pending'];
+            const hasRecentActivity = bookings.some(booking => {
+                const lessonDate = new Date(booking.lessonDate);
+                return activeStatuses.includes(booking.status) && lessonDate >= threeWeeksAgo;
+            });
+
+            if (!hasRecentActivity) {
+                inactiveStudents.add ? inactiveStudents.push(student) : inactiveStudents.push(student);
+            }
+
+            const hasUnpaidLessons = bookings.some(booking => booking.isPaid === false && booking.status !== 'cancelled');
+
+            if (hasUnpaidLessons) {
+                unpaidLessonsStudents.push(student);
+            }
         });
 
         return res.status(200).json({
             success: true,
             count: students.length,
-            students
+            students,
+            inactiveStudents,
+            unpaidLessonsStudents
         });
 
     } catch (error) {
         console.error('Error:', error);
-        return res.status(500).json({ message: 'שגיאת שרת פנימית בעת שליפת התלמידים' });
+        return res.status(500).json({ message: 'server error' });
     }
 };
 
