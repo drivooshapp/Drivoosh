@@ -2,8 +2,10 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
+
 export default function ProgressFormScreen({ route, navigation }: any) {
     const { studentId, studentName } = route.params;
+    
     return (
         <View style={styles.container}>
             <View style={styles.header}>
@@ -18,7 +20,7 @@ export default function ProgressFormScreen({ route, navigation }: any) {
 
                 <TouchableOpacity
                     style={styles.actionCard}
-                    onPress={() => navigation.navigate("ViewProgressForm")}
+                    onPress={() => navigation.navigate("ViewProgressForm", { studentId })}
                     activeOpacity={0.7}
                 >
                     <View style={styles.iconContainer}>
@@ -33,7 +35,7 @@ export default function ProgressFormScreen({ route, navigation }: any) {
 
                 <TouchableOpacity
                     style={[styles.actionCard, styles.actionCardPrimary]}
-                    onPress={() => navigation.navigate("GoalsForm", { studentId, studentName})}
+                    onPress={() => navigation.navigate("GoalsForm", { studentId, studentName })}
                     activeOpacity={0.7}
                 >
                     <View style={[styles.iconContainer, styles.iconContainerPrimary]}>

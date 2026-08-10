@@ -20,6 +20,7 @@ import MessagesScreen from './src/screens/main/MessagesScreen';
 import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import SearchTutors from './src/screens/main/SearchTutors';
 import TutorProfileCard from './src/screens/main/TutorProfileCard';
+import ViewProgressForm from './src/screens/main/ViewProgressForm';
 
 
 const Stack = createStackNavigator();
@@ -171,6 +172,16 @@ function DrawerNavigator({ onLogout, userData }: any) {
           title: 'הודעות מהמורה',
           drawerLabel: 'הודעות מהמורה',
           drawerIcon: ({ color }) => <Ionicons name="chatbubble-outline" size={22} color={color} />
+        }}
+      />
+
+      <Drawer.Screen
+        name="ProgressForm"
+        component={ViewProgressForm}
+        options={{
+          title: 'טופס מטרות',
+          drawerItemStyle: { display: 'none' },
+          headerShown: true,
         }}
       />
       <Drawer.Screen

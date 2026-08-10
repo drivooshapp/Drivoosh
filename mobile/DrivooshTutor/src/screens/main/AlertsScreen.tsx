@@ -97,7 +97,7 @@ export default function AlertsScreen({ navigation }: any) {
           <View style={styles.emptyIconContainer}>
             <Ionicons name="checkmark-done-outline" size={32} color="#00C2E8" />
           </View>
-          <Text style={styles.emptyTitle}>הכל נקי ומעודכן!</Text>
+          <Text style={styles.emptyTitle}>הכל מעודכן</Text>
           <Text style={styles.emptyText}>אין התראות חדשות שממתינות לטיפולך כרגע</Text>
         </View>
       )}
@@ -118,9 +118,9 @@ const styles = StyleSheet.create({
   cardHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', paddingBottom: 6 },
   dateText: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
   cardBodyRow: { flexDirection: 'row-reverse', alignItems: 'flex-start' },
-  alertText: { flex: 1, textAlign: 'right', fontSize: 14, fontWeight: '600', color: '#1E293B', lineHeight: 20 },
-  emptyBox: { padding: 40, backgroundColor: '#FFFFFF', borderRadius: 20, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0', marginTop: 20 },
-  emptyIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#F0FDFA', alignItems: 'center', justifyContent: 'center', marginBottom: 16, borderWidth: 1, borderColor: '#CCFBF1' },
+  alertText: { flex: 1, textAlign: 'right', fontSize: 14, fontWeight: '500', color: '#1E293B', lineHeight: 20 },
+  emptyBox: { padding: 40, borderRadius: 20, alignItems: 'center', marginTop: 20 },
+  emptyIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 6 },
   emptyText: { fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 18 },
 });

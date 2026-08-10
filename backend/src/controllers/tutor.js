@@ -48,41 +48,6 @@ export const getAllTutors = async (req, res) => {
 };
 
 
-// export const getAllMyStudents = async (req, res) => {
-//     try {
-//         const userId = req.user?.id;
-
-//         if (!userId) {
-//             return res.status(401).json({ message: 'משתמש לא נמצא' });
-//         }
-
-//         const tutor = await Tutor.findOne({ where: { userId } });
-
-//         if (!tutor) {
-//             return res.status(44, 404).json({ message: 'פרופיל מורה לא נמצא עבור משתמש זה' });
-//         }
-
-//         const students = await User.findAll({
-//             where: {
-//                 myTutor: tutor.id,
-//                 role: 'student'
-//             },
-//             attributes: { exclude: ['password', 'resetPasswordToken', 'resetPasswordExpires'] },
-//             order: [['firstName', 'ASC']]
-//         });
-
-//         return res.status(200).json({
-//             success: true,
-//             count: students.length,
-//             students
-//         });
-
-//     } catch (error) {
-//         console.error('Error:', error);
-//         return res.status(500).json({ message: 'שגיאת שרת פנימית בעת שליפת התלמידים' });
-//     }
-// };
-
 export const getAllMyStudents = async (req, res) => {
     try {
         const userId = req.user?.id;

@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from '../../api/apiClient';
 
 type UserType = {
+  id?: string;
   firstName?: string;
   lastName?: string;
   profileImage?: string;
@@ -57,6 +58,7 @@ const getDayName = (d: string) =>
   ['יום ראשון', 'יום שני', 'יום שלישי', 'יום רביעי', 'יום חמישי', 'יום שישי', 'יום שבת'][new Date(d).getDay()];
 
 export default function HomeScreen({ navigation }: any) {
+  const [userId, setUserId] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>('');
   const [tutorId, setTutorId] = useState('');
   const [chosenTutorData, setChosenTutorData] = useState<any>(null);
@@ -64,7 +66,6 @@ export default function HomeScreen({ navigation }: any) {
   const [nextLesson, setNextLesson] = useState<Lesson | null>(null);
   const [upcomingLessons, setUpcomingLessons] = useState<Lesson[]>([]);
   const [completedCount, setCompletedCount] = useState(0);
-  // const [allCompletedCount, setAllCompletedCount] = useState(0);
   const [completedGoalsCount, setCompletedGoalsCount] = useState(0);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [modalVisible, setModalVisible] = useState(false);
@@ -81,6 +82,7 @@ export default function HomeScreen({ navigation }: any) {
       setLoading(true);
 
       const profileRes = await apiClient.get('/student/myProfile');
+      setUserId(profileRes.data?.id);
       setUserName(profileRes.data?.firstName);
 
       if (profileRes.data?.chosenTutor) {
@@ -94,12 +96,6 @@ export default function HomeScreen({ navigation }: any) {
       const tutor = profileRes.data?.chosenTutor?.id;
       const lessonsRes = await apiClient.get('/booking/myHistory');
       const bookings: Lesson[] = lessonsRes.data || [];
-
-      // const totalCompleted = bookings.filter(b =>
-      //   b.status === 'completed' ||
-      //   new Date(`${b.lessonDate.split('T')[0]}T${b.endTime}`) < now
-      // ).length;
-      // setAllCompletedCount(totalCompleted);
       const goalProgressList = profileRes.data?.goalsProgress || [];
       const checkedGoals = goalProgressList.filter((g: any) => g.isChecked === true).length;
       setCompletedGoalsCount(checkedGoals);
@@ -231,30 +227,17 @@ export default function HomeScreen({ navigation }: any) {
           </Text>
         </View>
 
-        {/* <Section title="כמה התקדמנו בדרך לרישיון">
-          <TouchableOpacity>
-            <View style={styles.progressWrapper}>
-              <ProgressCircle
-                progress={(allCompletedCount / 45) * 100}
-                size={135}
-                strokeWidth={8}
-              />
-              <Text style={styles.goalsProgressText}>
-                {`${allCompletedCount} מתוך 45 הושלמו`}
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </Section> */}
         <Section title="כמה התקדמנו בדרך לרישיון">
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate('ProgressForm', { studentId: userId })}>
             <View style={styles.progressWrapper}>
               <ProgressCircle
-                progress={(completedGoalsCount / 45) * 100}
+                progress={(completedGoalsCount / 52) * 100}
                 size={135}
                 strokeWidth={8}
               />
               <Text style={styles.goalsProgressText}>
-                {`${completedGoalsCount} מתוך 45 הושלמו`}
+                {`${completedGoalsCount} מתוך 52 הושלמו`}
               </Text>
             </View>
           </TouchableOpacity>

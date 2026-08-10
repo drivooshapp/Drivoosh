@@ -25,34 +25,6 @@ export const getAllUsers = async (req, res) => {
 };
 
 
-// export const getMyProfile = async (req, res) => {
-//     try {
-//         const student = await User.findByPk(req.user.id, {
-//             attributes:
-//                 ['id', 'firstName', 'lastName', 'identityNumber', 'email', 'phoneNumber', 'street', 'city', 'profileImage', 'role', 'createdAt'],
-//             include: [{
-//                 model: Tutor,
-//                 as: 'chosenTutor',
-//                 attributes: ['id', 'pricePerLesson', 'lessonDuration'],
-//                 include: [{
-//                     model: User,
-//                     as: 'user',
-//                     attributes: ['id', 'firstName', 'lastName', 'profileImage', 'phoneNumber']
-//                 }]
-//             }]
-//         });
-
-//         if (!student) {
-//             return res.status(404).json({ message: "משתמש לא נמצא" });
-//         }
-
-//         res.status(200).json(student);
-
-//     } catch (error) {
-//         res.status(500).json({ message: "שגיאה בשליפת פרופיל התלמיד" });
-//     }
-// };
-
 export const getMyProfile = async (req, res) => {
     try {
         const student = await User.findByPk(req.user.id, {

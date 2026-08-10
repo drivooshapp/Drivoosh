@@ -247,8 +247,8 @@ function DrawerNavigator({ onLogout, userData }: any) {
                             <Text style={{ fontSize: 18, color: '#333', textAlign: 'right' }}>התראות</Text>
                             {unreadCount > 0 && (
                                 <View style={{
-                                    backgroundColor: '#010101',
-                                    borderRadius: 11,
+                                    backgroundColor: '#b7b6b6',
+                                    borderRadius: 8,
                                     minWidth: 22,
                                     height: 22,
                                     paddingHorizontal: 6,

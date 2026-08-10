@@ -16,6 +16,7 @@ interface HistoryLesson {
   notes: string | null;
   isPaid?: boolean;
   student?: {
+    id: string;
     firstName: string;
     lastName: string;
     profileImage: string | null;
@@ -115,46 +116,56 @@ export default function AllHistoryScreen({ navigation }: any) {
       : 'תלמיד לשעבר';
 
     return (
-      <View style={styles.rowItem}>
-        <View style={styles.leftContainer}>
-          <Text style={styles.priceText}>₪{parseInt(item.priceAtBooking)}</Text>
-          <View style={[styles.statusBadge, isPaid ? styles.badgeCompleted : styles.badgeCancelled]}>
-            <Text style={[styles.statusText, isPaid ? styles.textCompleted : styles.textCancelled]}>
-              {isPaid ? 'שולם' : 'לא שולם'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.rowContent}>
-          <View style={styles.textGroup}>
-
-            <View style={styles.titleInlineRow}>
-              <Text style={styles.nameText}>{studentName}</Text>
-            </View>
-
-            <View style={styles.locationRow}>
-              <Ionicons name="time-outline" size={14} color="#737373" style={styles.locationIcon} />
-              <Text style={styles.subText}>
-                {formatDate(item.lessonDate)} • {formatTime(item.startTime)}-{formatTime(item.endTime)}</Text>
-            </View>
-
-            <View style={styles.locationRow}>
-              <Ionicons name="location-outline" size={14} color="#737373" style={styles.locationIcon} />
-              <Text style={styles.locationText} numberOfLines={1}>{item.pickupLocation}</Text>
-            </View>
-          </View>
-
-          {item.student?.profileImage ? (
-            <Image source={{ uri: item.student.profileImage }} style={styles.miniAvatar} />
-          ) : (
-            <View style={styles.miniAvatarInitials}>
-              <Text style={styles.initialsText}>
-                {item.student?.firstName ? item.student.firstName.charAt(0).toUpperCase() : 'U'}
+      <TouchableOpacity
+        activeOpacity={0.7}
+        onPress={() => {
+          navigation.navigate("StudentsStack", {
+            screen: "StudentCart",
+            params: { studentId: item.student?.id }
+          });
+        }}
+      >
+        <View style={styles.rowItem}>
+          <View style={styles.leftContainer}>
+            <Text style={styles.priceText}>₪{parseInt(item.priceAtBooking)}</Text>
+            <View style={[styles.statusBadge, isPaid ? styles.badgeCompleted : styles.badgeCancelled]}>
+              <Text style={[styles.statusText, isPaid ? styles.textCompleted : styles.textCancelled]}>
+                {isPaid ? 'שולם' : 'לא שולם'}
               </Text>
             </View>
-          )}
+          </View>
+
+          <View style={styles.rowContent}>
+            <View style={styles.textGroup}>
+
+              <View style={styles.titleInlineRow}>
+                <Text style={styles.nameText}>{studentName}</Text>
+              </View>
+
+              <View style={styles.locationRow}>
+                <Ionicons name="time-outline" size={14} color="#737373" style={styles.locationIcon} />
+                <Text style={styles.subText}>
+                  {formatDate(item.lessonDate)} • {formatTime(item.startTime)}-{formatTime(item.endTime)}</Text>
+              </View>
+
+              <View style={styles.locationRow}>
+                <Ionicons name="location-outline" size={14} color="#737373" style={styles.locationIcon} />
+                <Text style={styles.locationText} numberOfLines={1}>{item.pickupLocation}</Text>
+              </View>
+            </View>
+
+            {item.student?.profileImage ? (
+              <Image source={{ uri: item.student.profileImage }} style={styles.miniAvatar} />
+            ) : (
+              <View style={styles.miniAvatarInitials}>
+                <Text style={styles.initialsText}>
+                  {item.student?.firstName ? item.student.firstName.charAt(0).toUpperCase() : 'U'}
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
+      </TouchableOpacity >
     );
   };
 

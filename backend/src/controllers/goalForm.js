@@ -56,10 +56,24 @@ export const getStudentGoalsForm = async (req, res) => {
             return plainItem;
         });
 
+        const totalGoalsCount = allGoals.length;
+        const completedGoalsCount = formattedProgress.filter(item => item.isChecked).length;
+        const progressPercentage = totalGoalsCount > 0 ? Math.round((completedGoalsCount / totalGoalsCount) * 100) : 0;
+
         return res.status(200).json({
             header,
-            progress: formattedProgress
+            progress: formattedProgress,
+            stats: {
+                completedGoalsCount,
+                totalGoalsCount,
+                progressPercentage
+            }
         });
+
+        // return res.status(200).json({
+        //     header,
+        //     progress: formattedProgress
+        // });
 
     } catch (error) {
         console.error("error:", error);

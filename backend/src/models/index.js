@@ -45,4 +45,5 @@ Notification.belongsTo(Tutor, { foreignKey: 'tutorId', as: 'tutor' });
 User.hasMany(Notification, { foreignKey: 'studentId', as: 'studentNotifications', onDelete: 'CASCADE' });
 Notification.belongsTo(User, { foreignKey: 'studentId', as: 'student' });
 
+
 export { User, Tutor, TutorNote, Booking, Review, StudentFormHeader, StudentGoalProgress, LessonGoal, Notification };

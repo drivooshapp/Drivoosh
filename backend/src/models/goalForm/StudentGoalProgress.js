@@ -2,6 +2,7 @@ import { DataTypes, Model } from 'sequelize';
 import sequelize from '../../config/db.js'
 import LessonGoal from './LessonGoal.js';
 
+
 export class StudentGoalProgress extends Model { }
 
 StudentGoalProgress.init({
