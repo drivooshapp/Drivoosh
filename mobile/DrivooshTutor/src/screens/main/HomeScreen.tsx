@@ -1,5 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Animated, RefreshControl, Easing } from 'react-native';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, Animated, RefreshControl, Easing } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import apiClient from '../../api/apiClient';
@@ -163,9 +164,14 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   fetchDashboard();
+  // }, []);
+  useFocusEffect(
+  useCallback(() => {
     fetchDashboard();
-  }, []);
+  }, [])
+);
 
   useEffect(() => {
     if (tutor) {

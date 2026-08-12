@@ -39,7 +39,7 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
 
       if (!token || !firstName) {
         console.log('ERROR: token או firstName לא התקבלו מהשרת', response.data);
-        Alert.alert('שגיאה', 'התחברות נכשלה, לא התקבלו פרטי משתמש תקינים');
+        Alert.alert('שגיאה', 'התחברות נכשלה. פרטי המשתמש שהוזנו אינם תקינים');
         return;
       }
 

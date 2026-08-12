@@ -1,12 +1,12 @@
 import 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useCallback } from 'react';
 import { Image, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from './src/api/apiClient';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItem, DrawerItemList, } from '@react-navigation/drawer';
-import { NavigationContainer, useNavigation } from '@react-navigation/native';
+import { NavigationContainer, useNavigation, useFocusEffect } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import LoadingScreen from './src/components/LoadingScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
@@ -14,7 +14,6 @@ import ProfileScreen from './src/screens/auth/ProfileScreen';
 import ResetPasswordScreen from './src/screens/auth/ResetPasswordScreen';
 import SignupScreen from './src/screens/auth/SignupScreen';
 import ViewMyTutorCart from './src/screens/auth/ViewMyTutorCart';
-
 import HomeScreen from './src/screens/main/HomeScreen';
 import AllHistoryScreen from './src/screens/main/AllHistoryScreen';
 import UpcomingLessons from './src/screens/main/UpcomingLessons';
@@ -23,10 +22,8 @@ import MessaggesScreen from './src/screens/main/MessaggesScreen';
 import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import AllReviews from './src/screens/main/AllReviews';
 import AlertsScreen from './src/screens/main/AlertsScreen';
-
 import StudentCart from './src/screens/student/StudentCart';
 import LessonsHistory from './src/screens/student/LessonsHistory';
-
 import ProgressFormScreen from './src/screens/student/ProgressForm/NavigationToFormScreen';
 import ViewProgressForm from './src/screens/student/ProgressForm/ViewProgressForm';
 import FillProgressForm from './src/screens/student/ProgressForm/FillProgressForm';
@@ -105,19 +102,35 @@ function CustomDrawerContent(props: any) {
 function DrawerNavigator({ onLogout, userData }: any) {
     const [unreadCount, setUnreadCount] = useState(0);
 
-    useEffect(() => {
-        const fetchBadgeCount = async () => {
-            try {
-                const res = await apiClient.get('/notification/notifications');
-                const allNotifications = res.data.notifications || [];
-                const pendingOnly = allNotifications.filter((n: any) => n.status === 'pending');
-                setUnreadCount(pendingOnly.length);
-            } catch (error) {
-                console.log('Error fetching badge count:', error);
-            }
-        };
-        fetchBadgeCount();
-    }, []);
+    // useEffect(() => {
+    //     const fetchBadgeCount = async () => {
+    //         try {
+    //             const res = await apiClient.get('/notification/notifications');
+    //             const allNotifications = res.data.notifications || [];
+    //             const pendingOnly = allNotifications.filter((n: any) => n.status === 'pending');
+    //             setUnreadCount(pendingOnly.length);
+    //         } catch (error) {
+    //             console.log('Error fetching badge count:', error);
+    //         }
+    //     };
+    //     fetchBadgeCount();
+    // }, []);
+
+    useFocusEffect(
+        useCallback(() => {
+            const fetchBadgeCount = async () => {
+                try {
+                    const res = await apiClient.get('/notification/notifications');
+                    const allNotifications = res.data.notifications || [];
+                    const pendingOnly = allNotifications.filter((n: any) => n.status === 'pending');
+                    setUnreadCount(pendingOnly.length);
+                } catch (error) {
+                    console.log('Error fetching badge count:', error);
+                }
+            };
+            fetchBadgeCount();
+        }, [])
+    );
 
     return (
         <Drawer.Navigator
