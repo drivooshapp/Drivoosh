@@ -7,6 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { Image, Text, TouchableOpacity, View, StatusBar } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import 'react-native-gesture-handler';
+import apiClient from './src/api/apiClient';
 import LoadingScreen from './src/components/LoadingScreen';
 import LoginScreen from './src/screens/auth/LoginScreen';
 import ProfileScreen from './src/screens/auth/ProfileScreen';
@@ -79,6 +80,7 @@ function CustomDrawerContent(props: any) {
 }
 
 function DrawerNavigator({ onLogout, userData }: any) {
+
   return (
     <Drawer.Navigator
       drawerContent={(props) => <CustomDrawerContent {...props} onLogout={onLogout} />}
@@ -206,18 +208,59 @@ export default function App() {
 
   const checkLoginStatus = async () => {
     try {
-      const [token, setup, name, image] = await Promise.all([
-        AsyncStorage.getItem('userToken'),
-        AsyncStorage.getItem('isSetupComplete'),
-        AsyncStorage.getItem('userName'),
-        AsyncStorage.getItem('profileImage')
-      ]);
+      const token = await AsyncStorage.getItem('userToken');
+      const profileImage = await AsyncStorage.getItem('profileImage');
+
+      if (!token) {
+        setUserToken(null);
+        setIsSetupComplete(false);
+        setIsLoading(false);
+        return;
+      }
+
       setUserToken(token);
-      setIsSetupComplete(setup === 'true');
-      setUserName(name);
-      setProfileImage(image);
+      
+      if (profileImage)
+        setUserName(profileImage);
+
+      const response = await apiClient.get('/student/myProfile');
+      const user = response.data;
+
+      let studentFieldsObj = user.studentFields;
+      if (typeof studentFieldsObj === 'string') {
+        try {
+          studentFieldsObj = JSON.parse(studentFieldsObj);
+        } catch (e) {
+          studentFieldsObj = {};
+        }
+      }
+
+      const theoryPassed = studentFieldsObj?.hasPassedTheory === true;
+      const setupComplete = user.isSetupComplete === true || (
+        user.firstName &&
+        user.lastName &&
+        user.identityNumber &&
+        user.city &&
+        user.street &&
+        theoryPassed
+      );
+
+      setIsSetupComplete(setupComplete);
+      await AsyncStorage.setItem('isSetupComplete', setupComplete ? 'true' : 'false');
+
+      const fullName = `${user.firstName || ''} ${user.lastName || ''}`.trim();
+      if (fullName) {
+        setUserName(fullName);
+        await AsyncStorage.setItem('userName', fullName);
+      }
+      if (user.profileImage) {
+        setProfileImage(user.profileImage);
+        await AsyncStorage.setItem('profileImage', user.profileImage);
+      }
+
     } catch (e) {
-      console.error(e);
+      console.error("Error checking login status:", e);
+      setIsSetupComplete(false);
     } finally {
       setIsLoading(false);
     }
@@ -227,6 +270,7 @@ export default function App() {
     try {
       await AsyncStorage.multiRemove(['userToken', 'userName', 'isSetupComplete']);
       setUserToken(null);
+      setProfileImage(null);
       setIsSetupComplete(false);
     } catch (e) {
       console.error(e);

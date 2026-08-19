@@ -1,12 +1,20 @@
 import React, { useState, useCallback } from 'react';
 import { useFocusEffect } from '@react-navigation/native';
-import { StyleSheet, Text, View, ScrollView, RefreshControl } from 'react-native';
+import { StyleSheet, Text, View, ScrollView, RefreshControl, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '@/src/components/LoadingScreen';
 
+
+export const NOTIFICATION_TYPES = {
+  GENERAL: 'GENERAL',
+  PENDING_LESSON_FORM: 'PENDING_LESSON_FORM',
+  STUDENT_QUIT_PENDING_GOALS: 'STUDENT_QUIT_PENDING_GOALS',
+} as const;
+
 interface NotificationItem {
   id: string;
+  studentId?: string;
   content: string;
   status: 'pending' | 'resolved';
   type: string;
@@ -36,14 +44,26 @@ export default function AlertsScreen({ navigation }: any) {
     }
   };
 
-  // useEffect(() => {
-  //   fetchNotifications();
-  // }, []);
   useFocusEffect(
     useCallback(() => {
       fetchNotifications();
     }, [])
   );
+
+  const handleNotificationPress = (notification: any) => {
+    switch (notification.type) {
+      case NOTIFICATION_TYPES.STUDENT_QUIT_PENDING_GOALS:
+        const studentFullName = `${notification.student?.firstName} ${notification.student?.lastName}`
+        navigation.navigate("StudentsStack", {
+          screen: "ProgressFormScreen",
+          params: {
+            studentId: notification.student?.id || notification.studentId,
+            studentName: studentFullName
+          }
+        });
+        break;
+    }
+  };
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return '';
@@ -65,7 +85,10 @@ export default function AlertsScreen({ navigation }: any) {
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
-          onRefresh={() => { setRefreshing(true); fetchNotifications(); }}
+          onRefresh={() => {
+            setRefreshing(true);
+            fetchNotifications();
+          }}
           colors={['#00C2E8']}
           tintColor="#00C2E8"
         />
@@ -85,7 +108,12 @@ export default function AlertsScreen({ navigation }: any) {
 
       {notifications.length > 0 ? (
         notifications.map((item) => (
-          <View key={item.id} style={styles.alertCard}>
+          <TouchableOpacity
+            key={item.id}
+            style={styles.alertCard}
+            activeOpacity={0.7}
+            onPress={() => handleNotificationPress(item)}
+          >
             {item.createdAt && (
               <View style={styles.cardHeaderRow}>
                 <Ionicons name="notifications-outline" size={18} color="#00C2E8" />
@@ -96,7 +124,7 @@ export default function AlertsScreen({ navigation }: any) {
             <View style={styles.cardBodyRow}>
               <Text style={styles.alertText}>{item.content}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         ))
       ) : (
         <View style={styles.emptyBox}>
@@ -123,8 +151,9 @@ const styles = StyleSheet.create({
   alertCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#dfdfdf' },
   cardHeaderRow: { flexDirection: 'row-reverse', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, borderBottomWidth: 1, borderBottomColor: '#F1F5F9', paddingBottom: 6 },
   dateText: { fontSize: 11, color: '#94A3B8', fontWeight: '600' },
-  cardBodyRow: { flexDirection: 'row-reverse', alignItems: 'flex-start' },
+  cardBodyRow: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'space-between' },
   alertText: { flex: 1, textAlign: 'right', fontSize: 14, fontWeight: '500', color: '#1E293B', lineHeight: 20 },
+  arrowIcon: { marginRight: 8 },
   emptyBox: { padding: 40, borderRadius: 20, alignItems: 'center', marginTop: 20 },
   emptyIconContainer: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#ffffff', alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
   emptyTitle: { fontSize: 16, fontWeight: '700', color: '#1E293B', marginBottom: 6 },

@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
     profileImage: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#00C2E8' },
     initialsContainer: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#fff', overflow: 'hidden' },
     initialsText: { color: '#fff', fontSize: 45, fontWeight: 'bold', textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center', paddingBottom: 5, lineHeight: 55 },
-    cameraIconBadge: { position: 'absolute', right: 0, bottom: 5, backgroundColor: '#fff', borderRadius: 15, padding: 6, elevation: 3 },
+    cameraIconBadge: { position: 'absolute', right: 0, bottom: 5, backgroundColor: '#fff', borderRadius: 15, padding: 6 },
     actionButtonsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 10 },
     outlineButton: { borderWidth: 1, borderColor: '#00C2E8', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 25 },
     outlineButtonText: { color: '#0194b1', fontSize: 14, fontWeight: '600' },

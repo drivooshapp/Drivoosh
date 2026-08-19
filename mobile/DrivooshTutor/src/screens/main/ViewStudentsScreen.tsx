@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 24 },
   rowItem: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 16, borderBottomWidth: 1, borderColor: '#F5F5F5' },
   rowContent: { flexDirection: 'row', alignItems: 'center', flex: 1 },
-  miniAvatar: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#F5F5F5' },
+  miniAvatar: { width: 44, height: 44, borderRadius: 15, backgroundColor: '#F5F5F5' },
   miniAvatarInitials: { width: 44, height: 44, borderRadius: 15, backgroundColor: '#d0f5f9', justifyContent: 'center', alignItems: 'center' },
   initialsText: { fontSize: 15, fontWeight: '700', color: '#019cbb' },
   textGroup: { marginRight: 14, alignItems: 'flex-end', flex: 1 },

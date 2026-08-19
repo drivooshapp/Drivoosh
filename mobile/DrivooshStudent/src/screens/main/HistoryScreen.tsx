@@ -251,7 +251,7 @@ const styles = StyleSheet.create({
   headerTitleContainer: { flexDirection: 'row-reverse', alignItems: 'center' },
   headerTitle: { fontSize: 18, fontWeight: 'bold' },
   countText: { color: '#a9a9a9', fontWeight: '500', marginRight: 15, fontSize: 15 },
-  listContent: { padding: 20 },
+  listContent: { padding: 20, paddingBottom: 50 },
   historyCard: { backgroundColor: '#ffffff', borderRadius: 16, padding: 16, marginBottom: 15, borderWidth: 1, borderColor: '#e0e0e0' },
   cardTopRow: { flexDirection: 'row', justifyContent: 'space-between' },
   statusBadge: { backgroundColor: '#E6F6F7', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8 },

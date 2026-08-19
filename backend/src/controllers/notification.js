@@ -1,5 +1,5 @@
 import Notification from "../models/Notification.js";
-
+import User from "../models/User.js";
 
 
 export const getTutorNotifications = async (req, res) => {
@@ -8,6 +8,11 @@ export const getTutorNotifications = async (req, res) => {
 
         const notifications = await Notification.findAll({
             where: { tutorId },
+            include: [{
+                model: User,
+                as: 'student',
+                attributes: ['id', 'firstName', 'lastName', 'email', 'phoneNumber']
+            }],
             order: [['createdAt', 'DESC']]
         });
 

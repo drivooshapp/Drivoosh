@@ -96,10 +96,10 @@ export const login = async (req, res) => {
                 tutorId: tutorId,
                 firstName: user.firstName,
                 role: user.role,
+                profileImage: user.profileImage,
                 isSetupComplete: user.isSetupComplete
             }
         });
-
     }
     catch (error) {
         console.error("Login Error:", error);

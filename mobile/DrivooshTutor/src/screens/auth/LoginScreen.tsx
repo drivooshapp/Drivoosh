@@ -52,6 +52,9 @@ export default function LoginScreen({ navigation, onLoginSuccess }: any) {
       await AsyncStorage.setItem('userName', firstName);
       await AsyncStorage.setItem('currentUserId', String(currentUserId));
       await AsyncStorage.setItem('isSetupComplete', String(isSetupComplete));
+      if (user.profileImage) {
+        await AsyncStorage.setItem('profileImage', user.profileImage);
+      }
 
       if (onLoginSuccess) {
         await onLoginSuccess();

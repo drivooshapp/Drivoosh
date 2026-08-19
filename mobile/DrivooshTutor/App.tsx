@@ -1,7 +1,7 @@
 import 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState,useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Image, StatusBar, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import apiClient from './src/api/apiClient';
@@ -99,36 +99,44 @@ function CustomDrawerContent(props: any) {
     );
 }
 
-function DrawerNavigator({ onLogout, userData }: any) {
+function DrawerNavigator({ onLogout, userData: initialUserData }: any) {
     const [unreadCount, setUnreadCount] = useState(0);
+    const [userData, setUserData] = useState(initialUserData);
 
-    // useEffect(() => {
-    //     const fetchBadgeCount = async () => {
-    //         try {
-    //             const res = await apiClient.get('/notification/notifications');
-    //             const allNotifications = res.data.notifications || [];
-    //             const pendingOnly = allNotifications.filter((n: any) => n.status === 'pending');
-    //             setUnreadCount(pendingOnly.length);
-    //         } catch (error) {
-    //             console.log('Error fetching badge count:', error);
-    //         }
-    //     };
-    //     fetchBadgeCount();
-    // }, []);
+    // useFocusEffect(
+    //     useCallback(() => {
+    //         const fetchBadgeCount = async () => {
+    //             try {
+    //                 const res = await apiClient.get('/notification/notifications');
+    //                 const allNotifications = res.data.notifications || [];
+    //                 const pendingOnly = allNotifications.filter((n: any) => n.status === 'pending');
+    //                 setUnreadCount(pendingOnly.length);
+    //             } catch (error) {
+    //                 console.log('Error fetching badge count:', error);
+    //             }
+    //         };
+    //         fetchBadgeCount();
+    //     }, [])
+    // );
 
     useFocusEffect(
         useCallback(() => {
-            const fetchBadgeCount = async () => {
+            const fetchDrawerData = async () => {
                 try {
+                    const name = await AsyncStorage.getItem('userName');
+                    const image = await AsyncStorage.getItem('profileImage');
+                    setUserData({ name, image });
+
                     const res = await apiClient.get('/notification/notifications');
                     const allNotifications = res.data.notifications || [];
                     const pendingOnly = allNotifications.filter((n: any) => n.status === 'pending');
                     setUnreadCount(pendingOnly.length);
                 } catch (error) {
-                    console.log('Error fetching badge count:', error);
+                    console.log('Error refreshing drawer data:', error);
                 }
             };
-            fetchBadgeCount();
+
+            fetchDrawerData();
         }, [])
     );
 
@@ -297,6 +305,7 @@ export default function App() {
                 AsyncStorage.getItem('userName'),
                 AsyncStorage.getItem('profileImage'),
             ]);
+
             setUserToken(token);
             setIsSetupComplete(setup === 'true');
             setUserName(name);
@@ -312,6 +321,7 @@ export default function App() {
         try {
             await AsyncStorage.multiRemove(['userToken', 'userName', 'isSetupComplete']);
             setUserToken(null);
+            setProfileImage(null);
             setIsSetupComplete(false);
         } catch (e) {
             console.error(e);

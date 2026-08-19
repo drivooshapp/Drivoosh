@@ -321,7 +321,7 @@ export const updateGoalProgress = async (req, res) => {
                     {
                         where: {
                             studentId,
-                            type: NOTIFICATION_TYPES.PENDING_LESSON_FORM,
+                            type: NOTIFICATION_TYPES.STUDENT_QUIT_PENDING_GOALS,
                             status: NOTIFICATION_STATUS.PENDING
                         }
                     }

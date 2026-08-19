@@ -16,6 +16,9 @@ interface UserProfile {
     street: string;
     profileImage?: string;
     isSetupComplete: boolean;
+    studentFields?: {
+        hasPassedTheory?: boolean;
+    };
     chosenTutor?: {
         id: string;
         pricePerLesson: number;
@@ -135,7 +138,6 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     const handleSave = async () => {
         try {
             setErrors({});
-
             const newErrors: Record<string, string> = {};
 
             if (!tempProfile.firstName || !tempProfile.firstName.trim()) {
@@ -152,6 +154,10 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
             }
             if (!tempProfile.street || !tempProfile.street.trim()) {
                 newErrors.street = 'רחוב הוא שדה חובה';
+            }
+
+            if (tempProfile.hasPassedTheory !== true) {
+                newErrors.hasPassedTheory = 'חובה לאשר שעברת את מבחן התאוריה';
             }
 
             const phoneResult = validateAndFormatPhone(tempProfile.phoneNumber);
@@ -173,7 +179,8 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                 identityNumber: tempProfile.identityNumber.trim(),
                 city: tempProfile.city.trim(),
                 street: tempProfile.street.trim(),
-                phoneNumber: phoneResult.formatted
+                phoneNumber: phoneResult.formatted,
+                hasPassedTheory: tempProfile.hasPassedTheory === true
             };
 
             const response = await apiClient.put('/student/updateProfile', sanitizedProfile);
@@ -187,17 +194,22 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                 };
             });
 
-            await AsyncStorage.setItem('isSetupComplete', 'true');
+            const setupComplete = response.data.user.isSetupComplete;
+
+            await AsyncStorage.setItem(
+                'isSetupComplete',
+                setupComplete ? 'true' : 'false'
+            );
+
+            if (setupComplete && onSetupComplete) {
+                onSetupComplete();
+            }
 
             setModalVisible(false);
             Alert.alert("בוצע", "הפרופיל עודכן בהצלחה");
 
-            if (onSetupComplete) {
-                onSetupComplete();
-            }
-
         } catch (error: any) {
-            console.error("Update Error:", error);
+            console.error("Update Error full object:", error);
 
             const serverMessage = error.response?.data?.message;
 
@@ -218,6 +230,9 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
     if (fetching) return <LoadingScreen />;
 
     if (!profile) return null;
+
+    const hasPassedTheoryValue = profile.studentFields?.hasPassedTheory;
+    const theoryDisplayString = hasPassedTheoryValue === true ? 'עבר' : hasPassedTheoryValue === false ? 'טרם עבר' : '';
 
     return (
         <KeyboardAvoidingView
@@ -272,6 +287,76 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                                 </View>
                             ))}
 
+                            <View style={styles.theorySection}>
+                                <Text style={styles.theoryLabel}>
+                                    האם עברת את מבחן התאוריה?
+                                </Text>
+
+                                <View style={styles.theoryOptions}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.theoryOption,
+                                            tempProfile.hasPassedTheory === true && styles.theoryOptionSelected
+                                        ]}
+                                        onPress={() => {
+                                            setTempProfile({
+                                                ...tempProfile,
+                                                hasPassedTheory: true
+                                            });
+
+                                            if (errors.hasPassedTheory) {
+                                                setErrors(prev => {
+                                                    const copy = { ...prev };
+                                                    delete copy.hasPassedTheory;
+                                                    return copy;
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        <Ionicons
+                                            name={tempProfile.hasPassedTheory === true ? 'radio-button-on' : 'radio-button-off'}
+                                            size={20}
+                                            color={tempProfile.hasPassedTheory === true ? '#00C2E8' : '#999'}
+                                        />
+                                        <Text style={styles.theoryOptionText}>כן</Text>
+                                    </TouchableOpacity>
+
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.theoryOption,
+                                            tempProfile.hasPassedTheory === false && styles.theoryOptionSelected
+                                        ]}
+                                        onPress={() => {
+                                            setTempProfile({
+                                                ...tempProfile,
+                                                hasPassedTheory: false
+                                            });
+
+                                            if (errors.hasPassedTheory) {
+                                                setErrors(prev => {
+                                                    const copy = { ...prev };
+                                                    delete copy.hasPassedTheory;
+                                                    return copy;
+                                                });
+                                            }
+                                        }}
+                                    >
+                                        <Ionicons
+                                            name={tempProfile.hasPassedTheory === false ? 'radio-button-on' : 'radio-button-off'}
+                                            size={20}
+                                            color={tempProfile.hasPassedTheory === false ? '#00C2E8' : '#999'}
+                                        />
+                                        <Text style={styles.theoryOptionText}>לא</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {errors.hasPassedTheory ? (
+                                    <Text style={styles.errorText}>
+                                        {errors.hasPassedTheory}
+                                    </Text>
+                                ) : null}
+                            </View>
+
                             <TouchableOpacity
                                 style={[styles.saveBtn, loading && { opacity: 0.7 }]}
                                 onPress={handleSave}
@@ -311,7 +396,10 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                     <TouchableOpacity
                         style={styles.outlineButton}
                         onPress={() => {
-                            setTempProfile(profile);
+                            setTempProfile({
+                                ...profile,
+                                hasPassedTheory: profile.studentFields?.hasPassedTheory === true
+                            });
                             setModalVisible(true);
                         }}
                     >
@@ -323,12 +411,12 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
 
                 <View style={styles.formSection}>
                     <Text style={styles.sectionTitle}>פרטים אישיים</Text>
-
                     <InputField label="שם פרטי" value={profile.firstName} editable={false} />
                     <InputField label="שם משפחה" value={profile.lastName} editable={false} />
                     <InputField label="מספר זהות" value={profile.identityNumber || ''} editable={false} />
                     <InputField label="טלפון" value={profile.phoneNumber || ''} editable={false} />
                     <InputField label="מייל" value={profile.email} editable={false} />
+                    <InputField label="מבחן תאוריה" value={theoryDisplayString} editable={false} />
 
                     <Text style={[styles.sectionTitle]}>כתובת</Text>
 
@@ -365,7 +453,7 @@ const styles = StyleSheet.create({
     profileImage: { width: 110, height: 110, borderRadius: 55, backgroundColor: '#00C2E8' },
     initialsContainer: { justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#fff', overflow: 'hidden' },
     initialsText: { color: '#fff', fontSize: 45, fontWeight: 'bold', textAlign: 'center', includeFontPadding: false, textAlignVertical: 'center', paddingBottom: 5, lineHeight: 55 },
-    cameraIconBadge: { position: 'absolute', right: 0, bottom: 5, backgroundColor: '#fff', borderRadius: 15, padding: 6, elevation: 3 },
+    cameraIconBadge: { position: 'absolute', right: 0, bottom: 5, backgroundColor: '#fff', borderRadius: 15, padding: 6 },
     actionButtonsContainer: { flexDirection: 'row', justifyContent: 'center', marginBottom: 10 },
     outlineButton: { borderWidth: 1, borderColor: '#00C2E8', borderRadius: 20, paddingVertical: 8, paddingHorizontal: 25 },
     outlineButtonText: { color: '#0194b1', fontSize: 14, fontWeight: '600' },
@@ -381,8 +469,14 @@ const styles = StyleSheet.create({
     modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
     modalContent: { backgroundColor: '#fff', width: '85%', borderRadius: 15, padding: 25, elevation: 10 },
     modalHeader: { fontSize: 18, fontWeight: 'bold', marginBottom: 20, textAlign: 'center' },
-    modalInputWrapper: { flexDirection: 'row', alignItems: 'center', borderBottomColor: '#d7d7d7', borderBottomWidth: 1.5, marginBottom: 15, paddingHorizontal: 5 },
+    modalInputWrapper: { flexDirection: 'row', alignItems: 'center', borderBottomColor: '#d7d7d7', borderBottomWidth: 1.5, marginBottom: 8, paddingHorizontal: 5 },
     modalInput: { flex: 1, paddingVertical: 8, textAlign: 'right', fontSize: 15, color: '#333' },
+    theorySection: { width: '100%', marginTop: 5, marginBottom: 20 },
+    theoryLabel: { fontSize: 15, fontWeight: '600', color: '#333', textAlign: 'right', marginBottom: 2 },
+    theoryOptions: { flexDirection: 'row-reverse', justifyContent: 'flex-start', gap: 25, paddingVertical: 8 },
+    theoryOption: { flexDirection: 'row-reverse', alignItems: 'center', gap: 7 },
+    theoryOptionSelected: { opacity: 1 },
+    theoryOptionText: { fontSize: 14, color: '#333' },
     errorText: { color: '#D32F2F', fontSize: 12, fontWeight: '500', textAlign: 'right', marginTop: 0.5, paddingRight: 5, },
     saveBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },

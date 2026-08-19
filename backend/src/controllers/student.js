@@ -29,7 +29,7 @@ export const getMyProfile = async (req, res) => {
     try {
         const student = await User.findByPk(req.user.id, {
             attributes:
-                ['id', 'firstName', 'lastName', 'identityNumber', 'email', 'phoneNumber', 'street', 'city', 'profileImage', 'role', 'createdAt'],
+                ['id', 'firstName', 'lastName', 'identityNumber', 'email', 'phoneNumber', 'street', 'city', 'profileImage', 'role', 'createdAt', 'studentFields'],
             include: [
                 {
                     model: Tutor,
@@ -242,7 +242,17 @@ export const getStudentProfile = async (req, res) => {
 
 export const updateStudentProfile = async (req, res) => {
     try {
-        const { firstName, lastName, identityNumber, phoneNumber, city, street, profileImage } = req.body;
+        const {
+            firstName,
+            lastName,
+            identityNumber,
+            phoneNumber,
+            city,
+            street,
+            profileImage,
+            hasPassedTheory
+        } = req.body;
+
         const userId = req.user.id;
 
         const user = await User.findByPk(userId);
@@ -259,6 +269,16 @@ export const updateStudentProfile = async (req, res) => {
         if (street !== undefined) user.street = street;
         if (profileImage !== undefined) user.profileImage = profileImage;
 
+        if (hasPassedTheory !== undefined) {
+
+            user.studentFields = {
+                ...(user.studentFields || {}),
+                hasPassedTheory: (hasPassedTheory === true)
+            };
+
+            user.changed('studentFields', true);
+        }
+
         const isAllFieldsFull =
             user.firstName?.trim() &&
             user.lastName?.trim() &&
@@ -267,7 +287,9 @@ export const updateStudentProfile = async (req, res) => {
             user.city?.trim() &&
             user.street?.trim();
 
-        user.isSetupComplete = !!isAllFieldsFull;
+        const theoryPassed = user.studentFields?.hasPassedTheory === true;
+
+        user.isSetupComplete = !!isAllFieldsFull && theoryPassed;
 
         await user.save();
 
@@ -275,14 +297,16 @@ export const updateStudentProfile = async (req, res) => {
             include: [{
                 model: Tutor,
                 as: 'chosenTutor',
-                include: [{ model: User, as: 'user', attributes: ['firstName', 'lastName', 'identityNumber', 'phoneNumber', 'profileImage'] }]
+                include: [{
+                    model: User,
+                    as: 'user',
+                    attributes: ['firstName', 'lastName', 'identityNumber', 'phoneNumber', 'profileImage']
+                }]
             }]
         });
 
-        res.status(200).json({
-            message: "הפרופיל עודכן בהצלחה",
-            user: updatedUser
-        });
+        res.status(200).json({ message: "הפרופיל עודכן בהצלחה", user: updatedUser });
+
     } catch (error) {
         console.error("Error updating profile:", error);
         res.status(500).json({ message: "שגיאה בעדכון הפרטים" });
@@ -493,7 +517,7 @@ export const selectTutor = async (req, res) => {
                 where: {
                     studentId,
                     tutorId: currentTutorId,
-                    type: NOTIFICATION_TYPES.PENDING_LESSON_FORM
+                    type: NOTIFICATION_TYPES.STUDENT_QUIT_PENDING_GOALS
                 }
             });
         }
@@ -564,7 +588,7 @@ export const unselectTutor = async (req, res) => {
                 where: {
                     studentId,
                     tutorId: currentTutorId,
-                    type: NOTIFICATION_TYPES.PENDING_LESSON_FORM
+                    type: NOTIFICATION_TYPES.STUDENT_QUIT_PENDING_GOALS
                 }
             });
         }
