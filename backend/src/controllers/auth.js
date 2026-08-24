@@ -9,9 +9,13 @@ import jwt from 'jsonwebtoken';
 export const register = async (req, res) => {
     try {
         const {
-            firstName, lastName, email, password, role,
+            firstName, lastName, email, password, acceptedTerms, role,
             carModel, pricePerLesson, lessonDuration, experienceYears, bio
         } = req.body;
+
+        if (!acceptedTerms) {
+            return res.status(400).json({ message: "חובה לאשר את תנאי השימוש ומדיניות הפרטיות כדי להירשם" });
+        }
 
         if (!password || password.length < 6 || password.length > 12) {
             return res.status(400).json({ message: "הסיסמה חייבת לכלול בין 6 ל-12 תווים" });
@@ -30,6 +34,8 @@ export const register = async (req, res) => {
             email,
             password: hashedPassword,
             role,
+            acceptedTerms: true,
+            acceptedTermsAt: new Date()
         });
 
         if (role === 'tutor') {

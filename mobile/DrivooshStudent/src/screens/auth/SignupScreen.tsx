@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import apiClient from '../../api/apiClient';
 import LoadingScreen from '@/src/components/LoadingScreen';
 
 
-export default function SignupScreen({ navigation }: any) {
+export default function SignupScreen() {
+    const navigation = useNavigation<any>();
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [isChecked, setIsChecked] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const validateEmail = (text: string) => {
@@ -22,6 +25,11 @@ export default function SignupScreen({ navigation }: any) {
     const handleSignup = async () => {
         if (!firstName.trim() || !lastName.trim() || !email.trim() || !password) {
             Alert.alert('שגיאה', 'אנא מלא את כל השדות כדי להמשיך.');
+            return;
+        }
+
+        if (!isChecked) {
+            Alert.alert('שגיאה', 'חובה לאשר את תנאי השימוש ומדיניות הפרטיות כדי להירשם.');
             return;
         }
 
@@ -124,10 +132,9 @@ export default function SignupScreen({ navigation }: any) {
                         <View style={styles.inputContainer}>
                             <Text style={styles.label}>סיסמה</Text>
 
-                            {/* המיכל המשותף החדש שיחזיק את שניהם בפנים */}
                             <View style={styles.passwordContainer}>
                                 <TextInput
-                                    style={[styles.input, { flex: 1 }]} // flex: 1 גורם לו לתפוס את כל הרוחב עד האייקון
+                                    style={[styles.input, { flex: 1 }]}
                                     placeholder="•••••••••"
                                     placeholderTextColor="#9CA3AF"
                                     value={password}
@@ -143,6 +150,26 @@ export default function SignupScreen({ navigation }: any) {
                                     <Ionicons name={showPassword ? "eye-outline" : "eye-off-outline"} size={22} color="#888" />
                                 </TouchableOpacity>
                             </View>
+                        </View>
+
+                        <View style={styles.checkboxContainer}>
+                            <TouchableOpacity onPress={() => setIsChecked(!isChecked)} activeOpacity={0.8}>
+                                <Ionicons
+                                    name={isChecked ? "checkbox" : "square-outline"}
+                                    size={22}
+                                    color="#00C2E8"
+                                />
+                            </TouchableOpacity>
+                            <Text style={styles.checkboxLabel}>
+                                אני מאשר/ת את{' '}
+                                <Text style={styles.inlineLink} onPress={() => navigation.navigate('LegalContent', { type: 'terms' })}>
+                                    תנאי השימוש
+                                </Text>{' '}
+                                ו
+                                <Text style={styles.inlineLink} onPress={() => navigation.navigate('LegalContent', { type: 'privacy' })}>
+                                    מדיניות הפרטיות
+                                </Text>
+                            </Text>
                         </View>
 
                         <TouchableOpacity
@@ -161,10 +188,8 @@ export default function SignupScreen({ navigation }: any) {
                                 כבר יש לך חשבון? <Text style={styles.linkTextBold}>התחבר</Text>
                             </Text>
                         </TouchableOpacity>
-
                     </View>
                 </View>
-
             </ScrollView>
         </SafeAreaView>
     );
@@ -184,6 +209,9 @@ const styles = StyleSheet.create({
     input: { paddingHorizontal: 16, fontSize: 16, color: '#111', textAlign: 'right', alignItems: 'center', backgroundColor: '#F3F4F6', height: 52, borderRadius: 12, paddingLeft: 14, },
     passwordContainer: { flexDirection: 'row-reverse', alignItems: 'center', backgroundColor: '#F3F4F6', height: 52, borderRadius: 12, paddingLeft: 14, },
     eyeIcon: { justifyContent: 'center', alignItems: 'center', height: '100%', paddingRight: 10, },
+    checkboxContainer: { flexDirection: 'row-reverse', alignItems: 'center', marginBottom: 20, marginTop: 4 },
+    checkboxLabel: { fontSize: 13, color: '#4B5563', marginRight: 5, textAlign: 'right', flex: 1, lineHeight: 18 },
+    inlineLink: { color: '#00C2E8', fontWeight: '600', textDecorationLine: 'underline' },
     button: { height: 56, borderRadius: 28, backgroundColor: '#00C2E8', justifyContent: 'center', alignItems: 'center', marginTop: 10 },
     buttonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
     linkContainer: { marginTop: 30, alignItems: 'center' },

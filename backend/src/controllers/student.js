@@ -61,24 +61,6 @@ export const getMyProfile = async (req, res) => {
 };
 
 
-// export const getCurrentUser = async (req, res) => {
-//     try {
-//         const user = await User.findByPk(req.user.id, {
-//             attributes: { exclude: ['password'] }
-//         });
-
-//         if (!user) {
-//             return res.status(404).json({ message: "משתמש מחובר לא נמצא" });
-//         }
-
-//         res.json(user);
-
-//     } catch (error) {
-//         res.status(500).json({ message: "שגיאה בשליפת נתוני המשתמש הנוכחי" });
-//     }
-// };
-
-
 export const getStudentProfile = async (req, res) => {
     const { studentId } = req.params;
     const currentTutorId = req.user.tutorId;
@@ -632,25 +614,5 @@ export const unselectTutor = async (req, res) => {
     } catch (error) {
         console.error('[unselectTutor] Server error:', error);
         res.status(500).json({ message: 'שגיאת שרת בהסרת המורה' });
-    }
-};
-
-
-export const deleteStudentAccount = async (req, res) => {
-    try {
-        const userId = req.user.id;
-
-        const user = await User.findByPk(userId);
-
-        if (!user) {
-            return res.status(404).json({ message: "משתמש לא נמצא" });
-        }
-
-        await user.destroy();
-
-        res.status(200).json({ message: "חשבון התלמיד נמחק בהצלחה מהמערכת" });
-    } catch (error) {
-        console.error("Error deleting account:", error);
-        res.status(500).json({ message: "שגיאה בתהליך מחיקת החשבון" });
     }
 };

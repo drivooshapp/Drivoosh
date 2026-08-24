@@ -55,8 +55,6 @@ app.use("/api/review", reviewRouter);
 app.use("/api/goalForm", goalFormRouter);
 app.use("/api/notification", notificationRouter);
 
-// const PORT = process.env.PORT || 5000
-// app.listen(PORT, () => console.log(`server is running on port ${PORT}`));
 
 const PORT = process.env.PORT || 5000;
 

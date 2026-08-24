@@ -22,6 +22,8 @@ import MessaggesScreen from './src/screens/main/MessaggesScreen';
 import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import AllReviews from './src/screens/main/AllReviews';
 import AlertsScreen from './src/screens/main/AlertsScreen';
+import LegalContentScreen from './src/screens/main/LegalContentScreen';
+import SupportScreen from './src/screens/main/SupportScreen';
 import StudentCart from './src/screens/student/StudentCart';
 import LessonsHistory from './src/screens/student/LessonsHistory';
 import ProgressFormScreen from './src/screens/student/ProgressForm/NavigationToFormScreen';
@@ -366,6 +368,9 @@ export default function App() {
                             )}
                         </Stack.Screen>
                     )}
+                    <Stack.Screen name="LegalContent" component={LegalContentScreen} />
+                    <Stack.Screen name="SupportScreen" component={SupportScreen} />
+
                 </Stack.Navigator>
             </NavigationContainer>
         </>

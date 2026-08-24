@@ -1,6 +1,6 @@
 import express from "express";
 import { authenticate } from "../middleware/authMiddleware.js";
-import { getAllUsers,getStudentProfile, getMyProfile,getTutorStudentHistory, updateStudentProfile,updateExternalLessons, selectTutor, unselectTutor, deleteStudentAccount } from "../controllers/student.js"
+import { getAllUsers,getStudentProfile, getMyProfile,getTutorStudentHistory, updateStudentProfile,updateExternalLessons, selectTutor, unselectTutor } from "../controllers/student.js"
 
 
 const router = express.Router();
@@ -13,7 +13,6 @@ router.put("/updateProfile", authenticate, updateStudentProfile);
 router.put("/updateExternalLessons/:studentId", updateExternalLessons);
 router.put("/selectTutor/:tutorId", authenticate, selectTutor);
 router.put("/unselectTutor", authenticate, unselectTutor);
-router.delete("/deleteAccount", authenticate, deleteStudentAccount);
 
 
 export default router;

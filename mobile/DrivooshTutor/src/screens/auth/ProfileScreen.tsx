@@ -2,7 +2,7 @@ import LoadingScreen from '@/src/components/LoadingScreen';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import React, { useCallback, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, ActionSheetIOS, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import apiClient from '../../api/apiClient';
@@ -38,6 +38,7 @@ interface InputFieldProps {
 }
 
 const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
+    const navigation = useNavigation<any>();
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isModalVisible, setModalVisible] = useState(false);
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -82,7 +83,6 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
 
             setProfile(combinedProfile);
         } catch (error) {
-            // console.error('שגיאה בטעינת הפרופיל:', error);
             Alert.alert('שגיאה', 'תקלה בהצגת נתוני משתמש');
         } finally {
             setFetching(false);
@@ -107,7 +107,7 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                             if (onLogout) onLogout();
                         } catch (error) {
                             console.log(error);
-                            Alert.alert('שגיאה', 'לא ניתן היה למחוק את החשבון כרגע.');
+                            Alert.alert('שגיאה', 'לא ניתן למחוק את החשבון כרגע.');
                         } finally {
                             setLoading(false);
                         }
@@ -175,17 +175,17 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
         return `${hours}:${minutes}`;
     };
 
-    const handleConfirmStartHour = (date: Date) => {
-        const formattedTime = formatRequiredTime(date);
-        setTempProfile({ ...tempProfile, workStartHour: formattedTime });
-        setShowStartPicker(false);
-    };
+    // const handleConfirmStartHour = (date: Date) => {
+    //     const formattedTime = formatRequiredTime(date);
+    //     setTempProfile({ ...tempProfile, workStartHour: formattedTime });
+    //     setShowStartPicker(false);
+    // };
 
-    const handleConfirmEndHour = (date: Date) => {
-        const formattedTime = formatRequiredTime(date);
-        setTempProfile({ ...tempProfile, workEndHour: formattedTime });
-        setShowEndPicker(false);
-    };
+    // const handleConfirmEndHour = (date: Date) => {
+    //     const formattedTime = formatRequiredTime(date);
+    //     setTempProfile({ ...tempProfile, workEndHour: formattedTime });
+    //     setShowEndPicker(false);
+    // };
 
     const handleSave = async () => {
         try {
@@ -326,12 +326,28 @@ const ProfileScreen: React.FC<any> = ({ onSetupComplete, onLogout }) => {
                 </View>
 
                 <View style={styles.footerSection}>
-                    <TouchableOpacity style={styles.deleteAccountBtn} onPress={handleDeleteAccount}>
+                    <View style={styles.legalLinksWrapper}>
+                        <TouchableOpacity onPress={() => navigation.navigate('LegalContent', { type: 'terms' })}>
+                            <Text style={styles.legalLinkText}>תנאי שימוש</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.legalDot}>•</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate('LegalContent', { type: 'privacy' })}>
+                            <Text style={styles.legalLinkText}>מדיניות פרטיות</Text>
+                        </TouchableOpacity>
+                        <Text style={styles.legalDot}>•</Text>
+                        <TouchableOpacity onPress={() => {
+                            const rootNav = navigation.getParent() || navigation;
+                            rootNav.navigate('SupportScreen');
+                        }}>
+                            <Text style={styles.legalLinkText}>תמיכה</Text>
+                        </TouchableOpacity>
+                    </View>
+
+                    <TouchableOpacity style={styles.deleteAccountBtn} onPress={handleDeleteAccount} activeOpacity={0.7}>
                         <Text style={styles.deleteAccountText}>מחיקת חשבון לצמיתות</Text>
-                        <Ionicons name="trash-outline" size={18} color="#FF4A4A" />
+                        <Ionicons name="trash-outline" size={16} color="#FF4A4A" />
                     </TouchableOpacity>
                 </View>
-
 
                 <EditProfileModal
                     isVisible={isModalVisible}
@@ -391,9 +407,12 @@ const styles = StyleSheet.create({
     saveBtn: { backgroundColor: '#1A1A1A', height: 55, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     saveBtnText: { color: '#FFF', fontWeight: 'bold', fontSize: 16 },
     cancelText: { color: '#01829b', fontWeight: '600', textAlign: 'center', marginTop: 15 },
-    footerSection: { margin: 40, alignItems: 'center', paddingHorizontal: 30 },
-    deleteAccountBtn: { flexDirection: 'row', alignItems: 'center' },
-    deleteAccountText: { color: '#FF4A4A', fontSize: 14, fontWeight: '500', marginRight: 8 },
+    footerSection: { marginTop: 60, marginBottom: 50, alignItems: 'center', paddingHorizontal: 25 },
+    legalLinksWrapper: { flexDirection: 'row-reverse', alignItems: 'center', justifyContent: 'center', marginBottom: 24, },
+    legalLinkText: { fontSize: 13, color: '#6B7280', fontWeight: '400', },
+    legalDot: { color: '#9CA3AF', marginHorizontal: 12, fontSize: 12, },
+    deleteAccountBtn: { flexDirection: 'row-reverse', alignItems: 'center', opacity: 0.85 },
+    deleteAccountText: { color: '#FF4A4A', fontSize: 13, fontWeight: '500', marginLeft: 6 },
 });
 
 export default ProfileScreen;

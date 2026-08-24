@@ -18,6 +18,10 @@ const User = sequelize.define('User', {
     isSetupComplete: { type: DataTypes.BOOLEAN, defaultValue: false },
     resetPasswordToken: { type: DataTypes.STRING, allowNull: true },
     resetPasswordExpires: { type: DataTypes.DATE, allowNull: true },
+
+    acceptedTerms: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false },
+    acceptedTermsAt: { type: DataTypes.DATE, allowNull: true },
+
     studentFields: { type: DataTypes.JSON, allowNull: true, defaultValue: null }
 }, {
     timestamps: true

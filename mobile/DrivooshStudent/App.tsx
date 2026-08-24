@@ -22,7 +22,8 @@ import PaymentsScreen from './src/screens/main/PaymentsScreen';
 import SearchTutors from './src/screens/main/SearchTutors';
 import TutorProfileCard from './src/screens/main/TutorProfileCard';
 import ViewProgressForm from './src/screens/main/ViewProgressForm';
-
+import LegalContentScreen from './src/screens/main/LegalContentScreen';
+import SupportScreen from './src/screens/main/SupportScreen';
 
 const Stack = createStackNavigator();
 const Drawer = createDrawerNavigator();
@@ -33,7 +34,6 @@ function SearchStackScreen() {
     <SearchStack.Navigator screenOptions={{ headerShown: false }}>
       <SearchStack.Screen name="SearchMain" component={SearchTutors} />
       <SearchStack.Screen name="TutorDetails" component={TutorProfileCard} />
-
       <SearchStack.Screen name="AllReviews" component={AllReviews} />
     </SearchStack.Navigator>
   );
@@ -219,7 +219,7 @@ export default function App() {
       }
 
       setUserToken(token);
-      
+
       if (profileImage)
         setUserName(profileImage);
 
@@ -319,6 +319,9 @@ export default function App() {
                   )}
                 </Stack.Screen>
               )}
+              <Stack.Screen name="LegalContent" component={LegalContentScreen} />
+              <Stack.Screen name="SupportScreen" component={SupportScreen} />
+
             </Stack.Navigator>
           </NavigationContainer>
         </View>
