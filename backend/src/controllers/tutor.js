@@ -270,7 +270,7 @@ export const getTutorDashboardData = async (req, res) => {
                 {
                     model: User,
                     as: 'student',
-                    include: [{ model: User, attributes: ['firstName', 'lastName'] }]
+                    attributes: ['firstName', 'lastName']
                 }
             ],
             order: [['lessonDate', 'ASC'], ['startTime', 'ASC']]
@@ -289,11 +289,8 @@ export const getTutorDashboardData = async (req, res) => {
         }) || null;
 
         let studentFullName = '';
-        if (nextBooking) {
-            const sUser = nextBooking.student?.User || nextBooking.student;
-            if (sUser && sUser.firstName) {
-                studentFullName = `${sUser.firstName} ${sUser.lastName || ''}`.trim();
-            }
+        if (nextBooking && nextBooking.student) {
+            studentFullName = `${nextBooking.student.firstName} ${nextBooking.student.lastName || ''}`.trim();
         }
 
         const totalPendingCount = await Booking.count({
