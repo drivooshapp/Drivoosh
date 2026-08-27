@@ -266,6 +266,13 @@ export const getTutorDashboardData = async (req, res) => {
                 status: 'confirmed',
                 lessonDate: { [Op.gte]: startOfToday }
             },
+            include: [
+                {
+                    model: User,
+                    as: 'student',
+                    include: [{ model: User, attributes: ['firstName', 'lastName'] }]
+                }
+            ],
             order: [['lessonDate', 'ASC'], ['startTime', 'ASC']]
         });
 
@@ -280,6 +287,14 @@ export const getTutorDashboardData = async (req, res) => {
             const lessonEndTime = b.endTime;
             return lessonEndTime > currentTimeString;
         }) || null;
+
+        let studentFullName = '';
+        if (nextBooking) {
+            const sUser = nextBooking.student?.User || nextBooking.student;
+            if (sUser && sUser.firstName) {
+                studentFullName = `${sUser.firstName} ${sUser.lastName || ''}`.trim();
+            }
+        }
 
         const totalPendingCount = await Booking.count({
             where: { tutorId: tutor.id, status: 'pending' }
@@ -322,6 +337,7 @@ export const getTutorDashboardData = async (req, res) => {
                 nextLesson: nextBooking ? {
                     id: nextBooking.id,
                     studentId: nextBooking.studentId,
+                    studentName: studentFullName,
                     pickupLocation: nextBooking.pickupLocation || 'טרם עודכן',
                     startTime: nextBooking.startTime,
                     endTime: nextBooking.endTime,

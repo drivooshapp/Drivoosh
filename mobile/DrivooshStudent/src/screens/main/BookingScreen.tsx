@@ -435,7 +435,7 @@ export default function NewBookingScreen({ navigation }: any) {
                 onPress={handleBooking}
                 disabled={loading}
             >
-                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>הזמן שיעור</Text>}
+                {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>קבע שיעור</Text>}
             </TouchableOpacity>
 
             <Modal visible={showCalendar} transparent animationType="fade">
@@ -504,6 +504,6 @@ const styles = StyleSheet.create({
     calendarContainer: { backgroundColor: '#fff', borderRadius: 20, padding: 15, width: '90%' },
     closeButton: { marginTop: 15, alignItems: 'center', padding: 12, backgroundColor: '#f0f0f0', borderRadius: 10 },
     closeButtonText: { color: '#333', fontWeight: 'bold' },
-    submitButton: { backgroundColor: '#00C2E8', padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 40, marginBottom: 20 },
+    submitButton: { backgroundColor: '#00C2E8', padding: 18, borderRadius: 15, alignItems: 'center', marginTop: 40, marginBottom: 40 },
     submitText: { color: '#fff', fontSize: 18, fontWeight: 'bold' }
 });

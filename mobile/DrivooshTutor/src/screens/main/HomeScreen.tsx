@@ -164,9 +164,6 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
-  // useEffect(() => {
-  //   fetchDashboard();
-  // }, []);
   useFocusEffect(
   useCallback(() => {
     fetchDashboard();

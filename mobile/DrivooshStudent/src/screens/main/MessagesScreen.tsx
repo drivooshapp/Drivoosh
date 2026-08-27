@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
   dateBadge: { backgroundColor: '#F8FAFC', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8, borderWidth: 1, borderColor: '#F1F5F9' },
   cardDate: { fontSize: 11, color: '#64748B', fontWeight: '600' },
   cardText: { fontSize: 14.5, color: '#334155', textAlign: 'right', lineHeight: 23, fontWeight: '400' },
-  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: 40, paddingHorizontal: 32 },
+  emptyContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 },
   emptyTitle: { fontSize: 18, fontWeight: '700', color: '#1E293B', marginTop: 16, textAlign: 'center' },
   emptySubtitle: { fontSize: 14, color: '#94A3B8', marginTop: 6, textAlign: 'center', lineHeight: 20 }
 });

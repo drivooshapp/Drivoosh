@@ -23,8 +23,6 @@ export default function LegalContentScreen({ route, navigation }: any) {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 <Text style={styles.docSubtitle}>עדכון אחרון: אוגוסט 2026</Text>
 
-                <View style={styles.divider} />
-
                 {sections.map((section, index) => (
                     <View key={index} style={styles.sectionBlock}>
                         <Text style={styles.sectionTitle}>{section.title}</Text>
@@ -89,8 +87,7 @@ const styles = StyleSheet.create({
     backButton: { padding: 4 },
     scrollContent: { paddingHorizontal: 24, paddingTop: 28, paddingBottom: 60 },
     docTitle: { fontSize: 24, fontWeight: '700', color: '#111827', textAlign: 'right', marginBottom: 6 },
-    docSubtitle: { fontSize: 13, color: '#6B7280', textAlign: 'right', marginBottom: 20 },
-    divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#E5E7EB', marginBottom: 24 },
+    docSubtitle: { fontSize: 13, color: '#6B7280', textAlign: 'left', marginBottom: 20 },
     sectionBlock: { marginBottom: 24 },
     sectionTitle: { fontSize: 15, fontWeight: '600', color: '#111827', textAlign: 'right', marginBottom: 8 },
     sectionText: { fontSize: 14, color: '#4B5563', textAlign: 'right', lineHeight: 22 }
